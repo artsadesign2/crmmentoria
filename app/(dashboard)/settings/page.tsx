@@ -40,6 +40,14 @@ import {
   Sun,
   Moon,
   Zap,
+  MessageCircle,
+  Send,
+  QrCode,
+  Copy,
+  ExternalLink,
+  Power,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +70,17 @@ import {
   ROLE_HIERARCHIES,
   canDeleteUser,
 } from '@/lib/permissions';
+import {
+  getEvolutionConfig,
+  saveEvolutionConfig,
+  checkEvolutionConnection,
+  fetchEvolutionQRCode,
+  sendEvolutionWhatsAppMessage,
+  logoutEvolutionInstance,
+  EvolutionApiConfig,
+  EvolutionConnectionState,
+  EvolutionQRCodeResponse,
+} from '@/lib/evolution-api';
 
 export default function SettingsPage() {
   const { activePaletteId, activePalette, isLightMode, setPalette, resetToDefault: resetTheme } =
@@ -83,7 +102,7 @@ export default function SettingsPage() {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<
-    'design' | 'permissions' | 'users' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
+    'design' | 'permissions' | 'users' | 'whatsapp' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
   >('design');
 
   // Company / Whitelabel State
@@ -140,6 +159,123 @@ export default function SettingsPage() {
   const [csvStatus, setCsvStatus] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isResetPermissionsModalOpen, setIsResetPermissionsModalOpen] = useState(false);
+
+  // Evolution API / WhatsApp State
+  const [evolutionConfig, setEvolutionConfig] = useState<EvolutionApiConfig>({
+    serverUrl: '',
+    apiKey: '',
+    instanceName: 'rocket-club-crm',
+  });
+  const [evolutionState, setEvolutionState] = useState<EvolutionConnectionState>({ state: 'unknown' });
+  const [evolutionQr, setEvolutionQr] = useState<EvolutionQRCodeResponse | null>(null);
+  const [isCheckingEvolution, setIsCheckingEvolution] = useState(false);
+  const [isFetchingQr, setIsFetchingQr] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [evolutionShowKey, setEvolutionShowKey] = useState(false);
+  const [evolutionTestPhone, setEvolutionTestPhone] = useState('');
+  const [evolutionTestMsg, setEvolutionTestMsg] = useState('Olá! Mensagem de teste do CRM Rocket Club via Evolution API.');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testFeedback, setTestFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [copiedWebhookUrl, setCopiedWebhookUrl] = useState(false);
+  const [evolutionSavedSuccess, setEvolutionSavedSuccess] = useState(false);
+
+  // Load Evolution config on mount
+  useEffect(() => {
+    const cfg = getEvolutionConfig();
+    setEvolutionConfig(cfg);
+    if (cfg.serverUrl && cfg.apiKey && cfg.instanceName) {
+      checkEvolutionConnection(cfg).then((res) => {
+        if (res.success) {
+          setEvolutionState(res.state);
+        }
+      });
+    }
+  }, []);
+
+  const handleSaveEvolutionConfig = () => {
+    saveEvolutionConfig(evolutionConfig);
+    setEvolutionSavedSuccess(true);
+    setTimeout(() => setEvolutionSavedSuccess(false), 3000);
+    handleCheckEvolutionStatus();
+  };
+
+  const handleCheckEvolutionStatus = async () => {
+    setIsCheckingEvolution(true);
+    setTestFeedback(null);
+    try {
+      const res = await checkEvolutionConnection(evolutionConfig);
+      setEvolutionState(res.state);
+      if (!res.success && res.error) {
+        setTestFeedback({ success: false, message: res.error });
+      }
+    } catch (e: any) {
+      setTestFeedback({ success: false, message: e.message || 'Erro ao checar status.' });
+    } finally {
+      setIsCheckingEvolution(false);
+    }
+  };
+
+  const handleGenerateQrCode = async () => {
+    setIsFetchingQr(true);
+    setEvolutionQr(null);
+    setTestFeedback(null);
+    try {
+      saveEvolutionConfig(evolutionConfig);
+      const res = await fetchEvolutionQRCode(evolutionConfig);
+      if (res.success && res.qrcode) {
+        setEvolutionQr(res.qrcode);
+        setEvolutionState({ state: 'connecting' });
+      } else {
+        setTestFeedback({ success: false, message: res.error || 'Não foi possível obter o QR Code.' });
+      }
+    } catch (e: any) {
+      setTestFeedback({ success: false, message: e.message || 'Erro ao solicitar QR Code.' });
+    } finally {
+      setIsFetchingQr(false);
+    }
+  };
+
+  const handleLogoutEvolution = async () => {
+    if (!confirm('Deseja realmente desconectar esta instância do WhatsApp?')) return;
+    setIsLoggingOut(true);
+    try {
+      const res = await logoutEvolutionInstance(evolutionConfig);
+      if (res.success) {
+        setEvolutionState({ state: 'close' });
+        setEvolutionQr(null);
+        setTestFeedback({ success: true, message: 'Instância desconectada com sucesso!' });
+      } else {
+        setTestFeedback({ success: false, message: res.error || 'Erro ao desconectar.' });
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleSendEvolutionTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!evolutionTestPhone.trim() || !evolutionTestMsg.trim()) {
+      setTestFeedback({ success: false, message: 'Informe o telefone e o texto da mensagem.' });
+      return;
+    }
+    setIsSendingTest(true);
+    setTestFeedback(null);
+    try {
+      const res = await sendEvolutionWhatsAppMessage(evolutionTestPhone, evolutionTestMsg, evolutionConfig);
+      if (res.success) {
+        setTestFeedback({
+          success: true,
+          message: `Mensagem enviada com sucesso no WhatsApp! (ID: ${res.messageId})`,
+        });
+      } else {
+        setTestFeedback({ success: false, message: res.error || 'Falha no envio da mensagem.' });
+      }
+    } catch (e: any) {
+      setTestFeedback({ success: false, message: e.message || 'Erro inesperado no envio.' });
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
 
   // Load from localStorage if present
   useEffect(() => {
@@ -557,6 +693,31 @@ export default function SettingsPage() {
         >
           <Users size={16} />
           <span>Usuários & Hierarquia</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('whatsapp')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'whatsapp'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'whatsapp'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <MessageCircle size={16} />
+          <span>WhatsApp (Evolution API)</span>
+          {evolutionState.state === 'open' && (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+          )}
         </button>
 
         <button
@@ -1298,6 +1459,364 @@ export default function SettingsPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: WHATSAPP EVOLUTION API (INTEGRAÇÃO COMPLETA & DISPARADOR)             */}
+      {/* ========================================================================= */}
+      {activeTab === 'whatsapp' && (
+        <div className="space-y-8 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F293D]">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    <MessageCircle size={22} className="text-emerald-400" />
+                    <span>Integração WhatsApp CRM (Evolution API v2)</span>
+                  </h3>
+                  {evolutionState.state === 'open' ? (
+                    <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs font-black">
+                      🟢 Instância Conectada & Ativa
+                    </Badge>
+                  ) : evolutionState.state === 'connecting' ? (
+                    <Badge variant="outline" className="bg-amber-500/15 text-amber-300 border-amber-500/30 text-xs font-bold">
+                      🟡 Aguardando Leitura do QR Code
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-red-500/15 text-red-400 border-red-500/30 text-xs font-bold">
+                      🔴 Desconectado
+                    </Badge>
+                  )}
+                </div>
+                <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Conecte sua instância da Evolution API (hospedada em VPS/Docker/Railway) para controlar e disparar atendimentos de leads diretamente pelo Rocket Club.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCheckEvolutionStatus}
+                  disabled={isCheckingEvolution}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                    isLightMode
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                      : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
+                  }`}
+                >
+                  <RefreshCw size={13} className={isCheckingEvolution ? 'animate-spin' : ''} />
+                  <span>{isCheckingEvolution ? 'Checando...' : 'Verificar Status'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Architecture Banner / Info Alert */}
+            <div className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
+              isLightMode ? 'bg-emerald-50/70 border-emerald-200' : 'bg-emerald-950/20 border-emerald-500/30'
+            }`}>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/40">
+                <Zap size={16} />
+              </div>
+              <div className="text-xs space-y-1">
+                <p className={`font-bold ${isLightMode ? 'text-emerald-950' : 'text-emerald-300'}`}>
+                  Arquitetura de Alta Disponibilidade (Rocket Club + Evolution API)
+                </p>
+                <p className={isLightMode ? 'text-emerald-800' : 'text-slate-300'}>
+                  O Rocket Club roda no Vercel (Front/APIs com CDN global) e conecta-se via HTTPS REST à sua <strong>Evolution API</strong> rodando em VPS/Docker (que mantém o WebSocket 24/7 com o WhatsApp). O atendimento e histórico ocorrem 100% dentro do CRM.
+                </p>
+              </div>
+            </div>
+
+            {/* Credentials Form & Live Connection Box */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left 2 Cols: Form */}
+              <div className="lg:col-span-2 space-y-5">
+                <div className={`p-5 rounded-3xl border space-y-4 ${
+                  isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/80 border-[#1F293D]'
+                }`}>
+                  <h4 className={`text-xs font-black uppercase tracking-wider ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    1. Credenciais da Evolution API
+                  </h4>
+
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className={`block font-bold mb-1.5 ${isLightMode ? 'text-slate-700' : 'text-slate-300'}`}>
+                        URL do Servidor Evolution API (com https://)
+                      </label>
+                      <input
+                        type="url"
+                        value={evolutionConfig.serverUrl}
+                        onChange={(e) => setEvolutionConfig((prev) => ({ ...prev, serverUrl: e.target.value }))}
+                        placeholder="https://api.evolution.suaempresa.com.br"
+                        className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Exemplo: https://whatsapp-api.dominio.com ou URL pública do Railway/Render
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block font-bold mb-1.5 ${isLightMode ? 'text-slate-700' : 'text-slate-300'}`}>
+                          API Key Global / Token de Autenticação
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={evolutionShowKey ? 'text' : 'password'}
+                            value={evolutionConfig.apiKey}
+                            onChange={(e) => setEvolutionConfig((prev) => ({ ...prev, apiKey: e.target.value }))}
+                            placeholder="Sua AUTHENTICATION_API_KEY"
+                            className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3.5 py-2.5 pr-10 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setEvolutionShowKey(!evolutionShowKey)}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
+                          >
+                            {evolutionShowKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={`block font-bold mb-1.5 ${isLightMode ? 'text-slate-700' : 'text-slate-300'}`}>
+                          Nome da Instância (Instance Name)
+                        </label>
+                        <input
+                          type="text"
+                          value={evolutionConfig.instanceName}
+                          onChange={(e) => setEvolutionConfig((prev) => ({ ...prev, instanceName: e.target.value }))}
+                          placeholder="rocket-club-crm"
+                          className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-[#1F293D] flex-wrap gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSaveEvolutionConfig}
+                          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
+                        >
+                          <Save size={14} />
+                          <span>Salvar Credenciais</span>
+                        </button>
+                        {evolutionSavedSuccess && (
+                          <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                            <Check size={14} /> Salvo!
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleGenerateQrCode}
+                          disabled={isFetchingQr || !evolutionConfig.serverUrl}
+                          className="px-4 py-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md disabled:opacity-50"
+                        >
+                          <QrCode size={14} />
+                          <span>{isFetchingQr ? 'Gerando QR...' : 'Conectar / Gerar QR Code'}</span>
+                        </button>
+
+                        {evolutionState.state === 'open' && (
+                          <button
+                            type="button"
+                            onClick={handleLogoutEvolution}
+                            disabled={isLoggingOut}
+                            className="px-3 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-1.5 transition-all disabled:opacity-50"
+                            title="Desconectar WhatsApp"
+                          >
+                            <Power size={13} />
+                            <span>{isLoggingOut ? 'Desconectando...' : 'Desconectar'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Webhook Endpoint Box for Evolution Manager */}
+                <div className={`p-5 rounded-3xl border space-y-3 ${
+                  isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/80 border-[#1F293D]'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <h4 className={`text-xs font-black uppercase tracking-wider ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                      2. Configuração do Webhook no Servidor
+                    </h4>
+                    <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-300 border-yellow-500/30">
+                      Recepção Automática
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-slate-400">
+                    Cadastre a URL abaixo na sua Evolution API para que todas as mensagens recebidas caiam automaticamente na timeline dos Leads no CRM:
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/whatsapp` : 'https://seu-dominio.com/api/webhook/whatsapp'}
+                      className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3.5 py-2 text-xs text-yellow-400 font-mono focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/whatsapp` : '';
+                        navigator.clipboard.writeText(url);
+                        setCopiedWebhookUrl(true);
+                        setTimeout(() => setCopiedWebhookUrl(false), 2500);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-200 text-xs font-bold border border-[#1F293D] shrink-0 flex items-center gap-1.5 transition-colors"
+                    >
+                      {copiedWebhookUrl ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                      <span>{copiedWebhookUrl ? 'Copiado!' : 'Copiar'}</span>
+                    </button>
+                  </div>
+
+                  <div className="text-[11px] text-slate-400 space-y-1 pt-1">
+                    <span className="font-bold text-slate-300">Eventos recomendados para ativar:</span>
+                    <div className="flex gap-2 flex-wrap text-[10px] font-mono">
+                      <span className="px-2 py-0.5 rounded bg-[#131926] border border-[#1F293D] text-emerald-400">MESSAGES_UPSERT</span>
+                      <span className="px-2 py-0.5 rounded bg-[#131926] border border-[#1F293D] text-blue-400">MESSAGES_UPDATE</span>
+                      <span className="px-2 py-0.5 rounded bg-[#131926] border border-[#1F293D] text-amber-400">CONNECTION_UPDATE</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Col: Live QR Code & Status Box */}
+              <div className="space-y-5">
+                <div className={`p-5 rounded-3xl border flex flex-col items-center justify-center text-center space-y-4 min-h-[320px] ${
+                  isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/90 border-[#1F293D]'
+                }`}>
+                  <div className="flex items-center justify-between w-full pb-2 border-b border-[#1F293D]/60">
+                    <span className="text-xs font-black uppercase text-slate-300 tracking-wider">
+                      Painel de Conexão
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {evolutionConfig.instanceName}
+                    </span>
+                  </div>
+
+                  {evolutionQr?.base64 ? (
+                    // Live QR Code Render
+                    <div className="space-y-3 flex flex-col items-center animate-in zoom-in-95 duration-200">
+                      <div className="p-3 bg-white rounded-2xl shadow-2xl border-4 border-yellow-500/50">
+                        <img
+                          src={evolutionQr.base64.startsWith('data:') ? evolutionQr.base64 : `data:image/png;base64,${evolutionQr.base64}`}
+                          alt="QR Code WhatsApp"
+                          className="w-48 h-48 object-contain"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-xs font-extrabold text-yellow-400 block">
+                          Abra o WhatsApp no celular
+                        </span>
+                        <p className="text-[11px] text-slate-400 max-w-[200px] leading-tight">
+                          Configurações &gt; Aparelhos Conectados &gt; Conectar Aparelho
+                        </p>
+                      </div>
+
+                      {evolutionQr.pairingCode && (
+                        <div className="p-2 rounded-xl bg-[#131926] border border-[#1F293D] text-[11px]">
+                          Código de pareamento: <strong className="text-yellow-400 font-mono">{evolutionQr.pairingCode}</strong>
+                        </div>
+                      )}
+                    </div>
+                  ) : evolutionState.state === 'open' ? (
+                    // Connected State Visualizer
+                    <div className="space-y-3 flex flex-col items-center py-4">
+                      <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border-2 border-emerald-500/40 shadow-xl shadow-emerald-500/10">
+                        <Wifi size={28} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-100">WhatsApp Conectado!</h4>
+                        {evolutionState.profileName && (
+                          <p className="text-xs text-emerald-400 font-bold mt-0.5">{evolutionState.profileName}</p>
+                        )}
+                        {evolutionState.ownerJid && (
+                          <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                            {evolutionState.ownerJid.split('@')[0]}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 max-w-[200px] leading-tight pt-1">
+                        Pronto para disparar e receber mensagens no CRM em tempo real.
+                      </p>
+                    </div>
+                  ) : (
+                    // Offline state prompt
+                    <div className="space-y-3 flex flex-col items-center py-6 text-slate-500">
+                      <div className="w-14 h-14 rounded-2xl bg-[#131926] text-slate-500 flex items-center justify-center border border-[#1F293D]">
+                        <QrCode size={26} />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Nenhum QR Code ativo</span>
+                        <p className="text-[11px] text-slate-500 max-w-[220px] leading-tight mt-1">
+                          Preencha as credenciais ao lado e clique em &quot;Conectar / Gerar QR Code&quot; para parear seu WhatsApp.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Test Dispatcher */}
+                <div className={`p-5 rounded-3xl border space-y-3 ${
+                  isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/80 border-[#1F293D]'
+                }`}>
+                  <span className="text-xs font-black uppercase text-slate-300 tracking-wider block">
+                    3. Teste Rápido de Envio
+                  </span>
+
+                  <form onSubmit={handleSendEvolutionTest} className="space-y-2.5 text-xs">
+                    <div>
+                      <input
+                        type="text"
+                        value={evolutionTestPhone}
+                        onChange={(e) => setEvolutionTestPhone(e.target.value)}
+                        placeholder="Telefone (ex: 11 99999-8888)"
+                        className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <textarea
+                        rows={2}
+                        value={evolutionTestMsg}
+                        onChange={(e) => setEvolutionTestMsg(e.target.value)}
+                        placeholder="Texto da mensagem de teste..."
+                        className="w-full bg-[#131926] border border-[#1F293D] rounded-xl p-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSendingTest || !evolutionConfig.serverUrl}
+                      className="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      <Send size={13} />
+                      <span>{isSendingTest ? 'Enviando...' : 'Disparar Teste'}</span>
+                    </button>
+
+                    {testFeedback && (
+                      <div className={`p-2.5 rounded-xl border text-[11px] leading-tight ${
+                        testFeedback.success
+                          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                          : 'bg-red-500/15 text-red-300 border-red-500/30'
+                      }`}>
+                        {testFeedback.message}
+                      </div>
+                    )}
+                  </form>
+                </div>
+              </div>
             </div>
           </Card>
         </div>

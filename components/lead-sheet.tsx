@@ -43,6 +43,7 @@ import {
   XCircle,
   HelpCircle,
 } from 'lucide-react';
+import { sendEvolutionWhatsAppMessage, getEvolutionConfig } from '@/lib/evolution-api';
 import { Lead, LEAD_STAGES, LeadLog } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -112,6 +113,8 @@ export function LeadSheet({
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
   const [customWhatsAppMsg, setCustomWhatsAppMsg] = useState('');
   const [copiedMsg, setCopiedMsg] = useState(false);
+  const [isSendingEvolution, setIsSendingEvolution] = useState(false);
+  const [evolutionFeedback, setEvolutionFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // Mount and Entrance Animation
   useEffect(() => {
@@ -823,42 +826,115 @@ export function LeadSheet({
                   />
                 </div>
 
+                {/* Evolution Feedback Alert */}
+                {evolutionFeedback && (
+                  <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                    evolutionFeedback.success
+                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      : 'bg-red-500/15 text-red-300 border-red-500/30'
+                  }`}>
+                    <span>{evolutionFeedback.message}</span>
+                    <button
+                      type="button"
+                      onClick={() => setEvolutionFeedback(null)}
+                      className="text-slate-400 hover:text-slate-200"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#1F293D]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(customWhatsAppMsg);
-                      setCopiedMsg(true);
-                      setTimeout(() => setCopiedMsg(false), 2500);
-                    }}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] text-slate-300 text-xs font-bold border border-[#1F293D] flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    {copiedMsg ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    <span>{copiedMsg ? 'Mensagem Copiada!' : 'Copiar Texto'}</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(customWhatsAppMsg);
+                        setCopiedMsg(true);
+                        setTimeout(() => setCopiedMsg(false), 2500);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] text-slate-300 text-xs font-bold border border-[#1F293D] flex items-center justify-center gap-1.5 transition-colors"
+                      title="Copiar texto para área de transferência"
+                    >
+                      {copiedMsg ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                      <span>{copiedMsg ? 'Copiado!' : 'Copiar'}</span>
+                    </button>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openWhatsApp(formData.phone, formData.name);
+                        const autoLog: LeadLog = {
+                          id: `log-${Date.now()}`,
+                          type: 'whatsapp',
+                          title: `Abertura WhatsApp Web (${WHATSAPP_TEMPLATES[selectedTemplateIndex]?.title})`,
+                          description: customWhatsAppMsg,
+                          createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
+                          author: 'Atendente Humano',
+                        };
+                        const updatedLogs = [autoLog, ...(formData.timelineLogs || lead.timelineLogs || [])];
+                        updateField('timelineLogs', updatedLogs);
+                        updateField('lastContact', new Date().toISOString().split('T')[0]);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] text-slate-300 text-xs font-bold border border-[#1F293D] flex items-center justify-center gap-1.5 transition-colors"
+                      title="Abrir no WhatsApp Web"
+                    >
+                      <span>Abrir WhatsApp Web</span>
+                    </button>
+                  </div>
+
+                  {/* Primary Direct Evolution API Send Button */}
                   <button
                     type="button"
-                    onClick={() => {
-                      openWhatsApp(formData.phone, formData.name);
-                      // Auto-log interaction in timeline
-                      const autoLog: LeadLog = {
-                        id: `log-${Date.now()}`,
-                        type: 'whatsapp',
-                        title: `Disparo WhatsApp (${WHATSAPP_TEMPLATES[selectedTemplateIndex]?.title})`,
-                        description: customWhatsAppMsg,
-                        createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
-                        author: 'Agente IA WhatsApp',
-                      };
-                      const updatedLogs = [autoLog, ...(formData.timelineLogs || lead.timelineLogs || [])];
-                      updateField('timelineLogs', updatedLogs);
-                      updateField('lastContact', new Date().toISOString().split('T')[0]);
+                    disabled={isSendingEvolution}
+                    onClick={async () => {
+                      if (!formData.phone) {
+                        setEvolutionFeedback({ success: false, message: 'Lead sem telefone cadastrado.' });
+                        return;
+                      }
+                      setIsSendingEvolution(true);
+                      setEvolutionFeedback(null);
+                      try {
+                        const res = await sendEvolutionWhatsAppMessage(formData.phone, customWhatsAppMsg);
+                        if (res.success) {
+                          setEvolutionFeedback({
+                            success: true,
+                            message: 'Mensagem entregue no WhatsApp do Lead via Evolution API! 🚀',
+                          });
+
+                          // Log to timeline
+                          const autoLog: LeadLog = {
+                            id: `log-${Date.now()}`,
+                            type: 'whatsapp',
+                            title: `Disparo Direto Evolution API (${WHATSAPP_TEMPLATES[selectedTemplateIndex]?.title})`,
+                            description: customWhatsAppMsg,
+                            createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
+                            author: 'Evolution API (CRM)',
+                          };
+                          const updatedLogs = [autoLog, ...(formData.timelineLogs || lead.timelineLogs || [])];
+                          updateField('timelineLogs', updatedLogs);
+                          updateField('lastContact', new Date().toISOString().split('T')[0]);
+                        } else {
+                          // Fallback feedback with option to open WhatsApp Web
+                          setEvolutionFeedback({
+                            success: false,
+                            message: res.error || 'Falha no envio via Evolution API. Verifique as credenciais ou use o WhatsApp Web.',
+                          });
+                        }
+                      } catch (err: any) {
+                        setEvolutionFeedback({
+                          success: false,
+                          message: err.message || 'Erro de conexão com o servidor Evolution API.',
+                        });
+                      } finally {
+                        setIsSendingEvolution(false);
+                      }
                     }}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Send size={15} />
-                    <span>Enviar no WhatsApp & Registrar Log 🚀</span>
+                    <span>{isSendingEvolution ? 'Enviando...' : 'Enviar Direto via Evolution API 🚀'}</span>
                   </button>
                 </div>
               </div>
