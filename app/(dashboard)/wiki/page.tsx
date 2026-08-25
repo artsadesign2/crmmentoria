@@ -13,11 +13,14 @@ import {
   X,
 } from 'lucide-react';
 import { ArticleCard } from '@/components/ui/blog-post-card';
+import { Modal } from '@/components/ui/modal';
 import { Article, MOCK_ARTICLES } from '@/lib/mock-data';
+import { useTheme } from '@/lib/theme-context';
 
 const DEPARTMENTS = ['Todos', 'Operacional', 'Comercial', 'Financeiro', 'Jurídico'];
 
 export default function WikiPage() {
+  const { isLightMode, activePalette } = useTheme();
   const [articles, setArticles] = useState<Article[]>(MOCK_ARTICLES);
   const [selectedDept, setSelectedDept] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,26 +70,37 @@ export default function WikiPage() {
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 text-xs font-bold uppercase tracking-wider mb-2">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 border"
+            style={{
+              backgroundColor: activePalette.tokens.badgeBg,
+              color: activePalette.tokens.primary,
+              borderColor: activePalette.tokens.badgeBorder,
+            }}
+          >
             <BookOpen size={14} /> Wiki & Base de Conhecimento
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-            Central de <span className="gold-gradient-text">Processos & Documentos</span>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            Central de <span className="theme-gradient-text">Processos & Documentos</span>
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className={`text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
             Artigos, SOPs e materiais de referência compartilhados em formato panorâmico com shadcn UI.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-72">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-64 sm:w-72">
             <Search size={16} className="absolute left-3.5 top-3 text-slate-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar artigos ou SOPs..."
-              className="w-full bg-[#131926] border border-[#1F293D] rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-yellow-500/40"
+              className={`w-full border rounded-xl pl-10 pr-4 py-2 text-xs placeholder-slate-500 focus:outline-none ${
+                isLightMode
+                  ? 'bg-white border-slate-300 text-slate-900'
+                  : 'bg-[#131926] border-[#1F293D] text-slate-200'
+              }`}
             />
           </div>
 
@@ -103,7 +117,12 @@ export default function WikiPage() {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all flex items-center gap-2 shrink-0"
+            className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-2 shrink-0"
+            style={{
+              backgroundColor: activePalette.tokens.primary,
+              color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+            }}
           >
             <Plus size={16} />
             <span>Novo Artigo</span>
@@ -112,20 +131,34 @@ export default function WikiPage() {
       </div>
 
       {/* Department Tabs Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#1F293D]">
-        {DEPARTMENTS.map((dept) => (
-          <button
-            key={dept}
-            onClick={() => setSelectedDept(dept)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              selectedDept === dept
-                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 shadow'
-                : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D]'
-            }`}
-          >
-            {dept}
-          </button>
-        ))}
+      <div className={`flex items-center gap-2 overflow-x-auto pb-2 border-b ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
+        {DEPARTMENTS.map((dept) => {
+          const isSel = selectedDept === dept;
+          return (
+            <button
+              key={dept}
+              onClick={() => setSelectedDept(dept)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                isSel
+                  ? 'shadow-sm'
+                  : isLightMode
+                  ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  : 'bg-[#131926]/60 text-slate-400 border-[#1F293D] hover:bg-[#1F293D]'
+              }`}
+              style={
+                isSel
+                  ? {
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }
+                  : {}
+              }
+            >
+              {dept}
+            </button>
+          );
+        })}
       </div>
 
       {/* Expanded Modern shadcn Article Cards Grid */}
@@ -151,143 +184,173 @@ export default function WikiPage() {
         ))}
       </div>
 
-      {/* Article Reader Modal */}
+      {/* Standardized Premium Article Reader Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-[#131926] border border-[#1F293D] rounded-3xl p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-start justify-between pb-4 border-b border-[#1F293D]">
-              <div className="space-y-2">
-                <span className="px-3 py-1 rounded-xl text-[10px] font-bold uppercase bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
-                  {selectedArticle.department} • {selectedArticle.category}
-                </span>
-                <h2 className="text-2xl font-bold text-slate-100">{selectedArticle.title}</h2>
-                <p className="text-xs text-slate-400">Escrito por {selectedArticle.author} em {selectedArticle.createdAt}</p>
-              </div>
-              <button onClick={() => setSelectedArticle(null)} className="text-slate-400 hover:text-slate-200">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="prose prose-invert max-w-none text-xs text-slate-300 leading-relaxed space-y-4">
-              <p className="font-semibold text-slate-200 text-sm">{selectedArticle.summary}</p>
-              <div className="p-5 rounded-2xl bg-[#0B0F17]/60 border border-[#1F293D] space-y-4">
-                <p>{selectedArticle.content}</p>
-                <p>
-                  Para dúvidas adicionais ou sugestões de alteração neste procedimento operacional padrão (SOP), entre em contato com o responsável pelo departamento de {selectedArticle.department}.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
-              <button
-                onClick={() => setSelectedArticle(null)}
-                className="px-5 py-2.5 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors"
-              >
-                Fechar Artigo
-              </button>
+        <Modal
+          isOpen={Boolean(selectedArticle)}
+          onClose={() => setSelectedArticle(null)}
+          title={selectedArticle.title}
+          subtitle={`Escrito por ${selectedArticle.author} em ${selectedArticle.createdAt}`}
+          icon={<BookOpen size={20} />}
+          badge={
+            <span
+              className="px-2.5 py-0.5 rounded-xl text-[10px] font-bold uppercase border"
+              style={{
+                backgroundColor: activePalette.tokens.badgeBg,
+                color: activePalette.tokens.primary,
+                borderColor: activePalette.tokens.badgeBorder,
+              }}
+            >
+              {selectedArticle.department} • {selectedArticle.category}
+            </span>
+          }
+          size="2xl"
+        >
+          <div className="prose prose-invert max-w-none text-xs leading-relaxed space-y-4">
+            <p className={`font-semibold text-sm ${isLightMode ? 'text-slate-800' : 'text-slate-200'}`}>
+              {selectedArticle.summary}
+            </p>
+            <div
+              className={`p-5 rounded-2xl border space-y-4 ${
+                isLightMode ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0B0F17]/60 border-[#1F293D] text-slate-300'
+              }`}
+            >
+              <p>{selectedArticle.content}</p>
+              <p>
+                Para dúvidas adicionais ou sugestões de alteração neste procedimento operacional padrão (SOP), entre em contato com o responsável pelo departamento de {selectedArticle.department}.
+              </p>
             </div>
           </div>
-        </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/40 mt-4">
+            <button
+              onClick={() => setSelectedArticle(null)}
+              className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              Fechar Artigo
+            </button>
+          </div>
+        </Modal>
       )}
 
-      {/* New Article Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <form
-            onSubmit={handleCreateArticle}
-            className="w-full max-w-xl bg-[#131926] border border-[#1F293D] rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <FileText size={18} className="text-yellow-400" />
-                <span>Novo Artigo ou SOP</span>
-              </h3>
-              <button type="button" onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                <X size={20} />
-              </button>
+      {/* Standardized Premium New Article Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Novo Artigo ou SOP de Processo"
+        subtitle="Publique um procedimento operacional para a equipe ou mentorados"
+        icon={<FileText size={20} />}
+        size="lg"
+      >
+        <form onSubmit={handleCreateArticle} className="space-y-4 text-xs">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Título do Documento</label>
+              <input
+                type="text"
+                required
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Ex: SOP de Qualificação Comercial"
+                className={`w-full border rounded-xl px-3.5 py-2.5 font-semibold focus:outline-none ${
+                  isLightMode
+                    ? 'bg-white border-slate-300 text-slate-900'
+                    : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Título do Documento</label>
+                <label className="block text-slate-400 font-semibold mb-1">Departamento</label>
+                <select
+                  value={newDept}
+                  onChange={(e) => setNewDept(e.target.value)}
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                    isLightMode
+                      ? 'bg-white border-slate-300 text-slate-900'
+                      : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                >
+                  {DEPARTMENTS.filter((d) => d !== 'Todos').map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
                 <input
                   type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ex: SOP de Qualificação Comercial"
-                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Departamento</label>
-                  <select
-                    value={newDept}
-                    onChange={(e) => setNewDept(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  >
-                    {DEPARTMENTS.filter((d) => d !== 'Todos').map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="Processos, Vendas..."
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Resumo Executivo</label>
-                <input
-                  type="text"
-                  value={newSummary}
-                  onChange={(e) => setNewSummary(e.target.value)}
-                  placeholder="Resumo em poucas palavras..."
-                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Conteúdo Completo</label>
-                <textarea
-                  rows={4}
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  placeholder="Escreva as instruções passo a passo..."
-                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="Processos, Vendas..."
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                    isLightMode
+                      ? 'bg-white border-slate-300 text-slate-900'
+                      : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1F293D] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
-              >
-                Publicar Artigo
-              </button>
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Resumo Executivo</label>
+              <input
+                type="text"
+                value={newSummary}
+                onChange={(e) => setNewSummary(e.target.value)}
+                placeholder="Resumo em poucas palavras..."
+                className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                  isLightMode
+                    ? 'bg-white border-slate-300 text-slate-900'
+                    : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
             </div>
-          </form>
-        </div>
-      )}
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Conteúdo Completo</label>
+              <textarea
+                rows={4}
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                placeholder="Escreva as instruções passo a passo..."
+                className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none resize-none ${
+                  isLightMode
+                    ? 'bg-white border-slate-300 text-slate-900'
+                    : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800/40">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1F293D] border border-[#1F293D]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              Publicar Artigo
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

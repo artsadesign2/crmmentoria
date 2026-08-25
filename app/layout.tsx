@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+import { ThemeProvider } from '@/lib/theme-context';
+import { AuthProvider } from '@/lib/auth-context';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -18,9 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${jakarta.variable} dark`}>
-      <body className="bg-[#0B0F17] text-slate-100 antialiased selection:bg-yellow-500/30 selection:text-yellow-200">
-        {children}
+    <html lang="pt-BR" className={`${jakarta.variable}`}>
+      <body className="antialiased selection:bg-yellow-500/30 selection:text-yellow-200">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

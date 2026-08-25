@@ -23,11 +23,14 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { EventItem, MOCK_EVENTS } from '@/lib/mock-data';
 import { useNotifications } from '@/lib/notification-context';
-import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
+import { useTheme } from '@/lib/theme-context';
 
 export default function EventsPage() {
+  const { isLightMode, activePalette } = useTheme();
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [confirmedEventIds, setConfirmedEventIds] = useState<string[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'UPCOMING' | 'LIVE' | 'FINISHED'>('ALL');
@@ -76,9 +79,9 @@ export default function EventsPage() {
     } catch (e) {}
   };
 
-  // ONE-TIME RSVP HANDLER (Prevents infinite increment)
+  // ONE-TIME RSVP HANDLER
   const handleConfirmRsvp = (eventId: string) => {
-    if (confirmedEventIds.includes(eventId)) return; // Already confirmed!
+    if (confirmedEventIds.includes(eventId)) return;
 
     const updatedRsvps = [...confirmedEventIds, eventId];
     setConfirmedEventIds(updatedRsvps);
@@ -101,121 +104,139 @@ export default function EventsPage() {
 
     saveEventsList(updatedEvents);
 
-    addNotification({
-      sector: 'events',
-      type: 'success',
-      title: '🎟️ Presença Confirmada no Evento!',
-      message: `Você confirmou presença em "${targetEvent?.title || 'Evento da Mentoria'}". Seu ingresso digital está reservado.`,
-      link: '/events',
-      actionText: 'Ver Agenda',
-    });
-
-    setToastMsg(`🎉 Presença confirmada em "${targetEvent?.title}"!`);
+    setToastMsg(`Presença confirmada no evento "${targetEvent?.title || 'Selecionado'}"! 🎉`);
     setTimeout(() => setToastMsg(null), 4000);
+
+    addNotification({
+      type: 'success',
+      title: 'Presença Confirmada em Evento',
+      message: `Você garantiu seu lugar no evento "${targetEvent?.title || 'Encontro Oficial'}".`,
+      sector: 'events',
+      link: '/events',
+      actionText: 'Ver Detalhes do Evento',
+    });
   };
 
-  // Create Event
+  const handleCancelRsvp = (eventId: string) => {
+    const updatedRsvps = confirmedEventIds.filter((id) => id !== eventId);
+    setConfirmedEventIds(updatedRsvps);
+
+    try {
+      localStorage.setItem('rocket_club_confirmed_rsvps', JSON.stringify(updatedRsvps));
+    } catch (e) {}
+
+    const updatedEvents = events.map((e) => {
+      if (e.id === eventId) {
+        return {
+          ...e,
+          attendeesCount: Math.max(0, e.attendeesCount - 1),
+        };
+      }
+      return e;
+    });
+
+    saveEventsList(updatedEvents);
+    setToastMsg('Confirmação de presença cancelada.');
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const newEv: EventItem = {
-      id: `e-${Date.now()}`,
-      title,
-      description: description || 'Encontro presencial exclusivo de mentoria, hotseat e networking executivo.',
-      location: location || 'São Paulo / SP',
-      date: date || new Date().toISOString(),
+    const newEvent: EventItem = {
+      id: `ev-${Date.now()}`,
+      title: title.trim(),
+      description: description.trim() || 'Descrição do encontro executivo.',
+      location: location.trim() || 'São Paulo - SP',
+      date: date || new Date(Date.now() + 86400000 * 7).toISOString(),
       attendeesCount: 1,
-      maxAttendees: parseInt(maxAttendees) || 50,
+      maxAttendees: parseInt(maxAttendees, 10) || 50,
       price: parseFloat(price) || 0,
       status,
     };
 
-    const updated = [newEv, ...events];
+    const updated = [newEvent, ...events];
     saveEventsList(updated);
-
-    addNotification({
-      sector: 'events',
-      type: 'info',
-      title: `📅 Novo Evento Publicado: ${newEv.title}`,
-      message: `Data: ${new Date(newEv.date).toLocaleDateString('pt-BR')} • Local: ${newEv.location}.`,
-      link: '/events',
-      actionText: 'Ver Evento',
-    });
 
     setTitle('');
     setDescription('');
     setLocation('');
     setDate('');
-    setPrice('0');
     setIsAddModalOpen(false);
+
+    setToastMsg(`Novo evento "${newEvent.title}" cadastrado com sucesso!`);
+    setTimeout(() => setToastMsg(null), 3000);
   };
 
-  // Open Edit Modal
   const handleOpenEditModal = (event: EventItem) => {
     setSelectedEvent(event);
     setEditTitle(event.title);
     setEditDescription(event.description);
     setEditLocation(event.location);
-    setEditDate(event.date);
-    setEditMaxAttendees(String(event.maxAttendees));
-    setEditPrice(String(event.price));
+    setEditDate(event.date ? event.date.slice(0, 16) : '');
+    setEditMaxAttendees(event.maxAttendees.toString());
+    setEditPrice(event.price.toString());
     setEditStatus(event.status);
     setIsEditModalOpen(true);
   };
 
-  // Save Event Edits
   const handleSaveEventEdits = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEvent) return;
+    if (!selectedEvent || !editTitle.trim()) return;
 
-    const updatedEvents = events.map((ev) => {
+    const updated = events.map((ev) => {
       if (ev.id === selectedEvent.id) {
         return {
           ...ev,
-          title: editTitle,
-          description: editDescription,
-          location: editLocation,
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          location: editLocation.trim(),
           date: editDate || ev.date,
-          maxAttendees: parseInt(editMaxAttendees) || ev.maxAttendees,
-          price: parseFloat(editPrice) || ev.price,
+          maxAttendees: parseInt(editMaxAttendees, 10) || ev.maxAttendees,
+          price: parseFloat(editPrice) || 0,
           status: editStatus,
         };
       }
       return ev;
     });
 
-    saveEventsList(updatedEvents);
+    saveEventsList(updated);
     setIsEditModalOpen(false);
-    setToastMsg('✅ Dados do evento atualizados com sucesso!');
+    setSelectedEvent(null);
+    setToastMsg('Alterações salvas com sucesso!');
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  // Delete Event Handler
   const handleConfirmDeleteEvent = () => {
     if (!deleteTargetEvent) return;
     const updated = events.filter((e) => e.id !== deleteTargetEvent.id);
     saveEventsList(updated);
-    if (selectedEvent?.id === deleteTargetEvent.id) {
-      setIsEditModalOpen(false);
-      setSelectedEvent(null);
-    }
     setDeleteTargetEvent(null);
-    setToastMsg('🗑️ Evento removido da agenda com sucesso.');
+    setIsEditModalOpen(false);
+    setSelectedEvent(null);
+    setToastMsg('Evento removido com sucesso.');
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const filteredEvents = events.filter((ev) => {
+  const filteredEvents = events.filter((e) => {
     if (selectedFilter === 'ALL') return true;
-    return ev.status === selectedFilter;
+    return e.status === selectedFilter;
   });
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm font-bold flex items-center gap-2.5 shadow-xl animate-in slide-in-from-top duration-300">
-          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+        <div
+          className="fixed top-6 right-6 z-50 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top duration-300 font-bold text-xs"
+          style={{
+            backgroundColor: isLightMode ? '#0F172A' : '#131926',
+            color: '#F8FAFC',
+            border: `1px solid ${activePalette.tokens.primary}`,
+          }}
+        >
+          <CheckCircle2 size={18} style={{ color: activePalette.tokens.primary }} />
           <span>{toastMsg}</span>
         </div>
       )}
@@ -224,378 +245,403 @@ export default function EventsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <Badge variant="default" className="mb-2">
-            <Calendar size={14} className="mr-1.5" /> Agenda de Eventos & Imersões Presenciais
+            <Calendar size={14} className="mr-1.5" /> Agenda Executiva Oficial
           </Badge>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-            Agenda de <span className="gold-gradient-text">Encontros & Imersões</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Eventos, <span className="theme-gradient-text">Imersões & Hotseats</span>
           </h1>
-          <p className="text-sm text-slate-400">
-            Confirme sua presença com 1 clique, gerencie lotes e edite encontros estratégicos do ecossistema.
+          <p className={`text-xs sm:text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+            Confirme sua presença nos encontros presenciais e imersões de alta performance.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
+          className="px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
+          style={{
+            backgroundColor: activePalette.tokens.primary,
+            color: isLightMode ? '#FFFFFF' : '#0B0F17',
+          }}
         >
           <Plus size={16} />
-          <span>Criar Novo Evento</span>
+          <span>Cadastrar Evento</span>
         </button>
       </div>
 
-      {/* Status Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      {/* Filter Tabs */}
+      <div className={`flex items-center gap-2 overflow-x-auto pb-2 border-b ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
         {[
-          { id: 'ALL', label: 'Todos os Encontros' },
-          { id: 'UPCOMING', label: 'Próximos' },
-          { id: 'LIVE', label: 'Ao Vivo Agora' },
-          { id: 'FINISHED', label: 'Concluídos' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSelectedFilter(tab.id as any)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-              selectedFilter === tab.id
-                ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
-                : 'bg-[#131926] text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { key: 'ALL', label: 'Todos os Encontros' },
+          { key: 'UPCOMING', label: 'Próximos / Confirmados' },
+          { key: 'LIVE', label: 'Ao Vivo Agora' },
+          { key: 'FINISHED', label: 'Encerrados' },
+        ].map((tab) => {
+          const isSel = selectedFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setSelectedFilter(tab.key as any)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                isSel
+                  ? 'shadow-sm'
+                  : isLightMode
+                  ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  : 'bg-[#131926]/60 text-slate-400 border-[#1F293D] hover:bg-[#1F293D]'
+              }`}
+              style={
+                isSel
+                  ? {
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }
+                  : {}
+              }
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Expanded Events Grid */}
+      {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((event) => {
-          const percent = Math.round((event.attendeesCount / event.maxAttendees) * 100);
           const isConfirmed = confirmedEventIds.includes(event.id);
           const isFull = event.attendeesCount >= event.maxAttendees;
 
           return (
             <Card
               key={event.id}
-              className="p-6 bg-[#131926] border-[#1F293D] hover:border-yellow-500/40 transition-all space-y-5 flex flex-col justify-between shadow-xl group"
+              className={`p-6 flex flex-col justify-between transition-all group ${
+                isConfirmed
+                  ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/5'
+                  : 'hover:border-slate-600'
+              }`}
             >
               <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] uppercase font-bold py-0.5 px-2 ${
-                          event.status === 'LIVE'
-                            ? 'border-red-500 text-red-400 bg-red-500/10 animate-pulse'
-                            : event.status === 'UPCOMING'
-                            ? 'border-yellow-500/40 text-yellow-300 bg-yellow-500/10'
-                            : 'border-slate-600 text-slate-400'
-                        }`}
-                      >
-                        {event.status === 'LIVE' ? '🔴 Ao Vivo' : event.status === 'UPCOMING' ? 'Confirmado' : 'Concluído'}
-                      </Badge>
-                      {event.price > 0 ? (
-                        <span className="text-xs font-bold text-emerald-400">
-                          R$ {event.price.toLocaleString('pt-BR')}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          Incluso na Mentoria
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-yellow-400 transition-colors leading-tight">
-                      {event.title}
-                    </h3>
-                  </div>
+                <div className="flex items-start justify-between gap-2">
+                  <span
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                      event.status === 'LIVE'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                        : event.status === 'UPCOMING'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
+                    }`}
+                  >
+                    {event.status === 'LIVE' ? '🔴 Ao Vivo' : event.status === 'UPCOMING' ? '📅 Confirmado' : 'Concluído'}
+                  </span>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5">
                     <button
-                      type="button"
                       onClick={() => handleOpenEditModal(event)}
-                      className="p-2 rounded-xl bg-[#0B0F17] hover:bg-[#1F293D] text-slate-400 hover:text-yellow-400 border border-[#1F293D] transition-colors"
+                      className="p-1.5 rounded-lg bg-[#0B0F17] hover:bg-[#1F293D] text-slate-400 hover:text-slate-200 border border-[#1F293D] transition-colors"
                       title="Editar Evento"
                     >
-                      <Pencil size={14} />
+                      <Pencil size={13} />
                     </button>
-                    <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center">
-                      <Ticket size={18} />
-                    </div>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed">{event.description}</p>
+                <div>
+                  <h3 className={`text-base font-bold transition-colors ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    {event.title}
+                  </h3>
+                  <p className={`text-xs mt-1 leading-relaxed line-clamp-2 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                    {event.description}
+                  </p>
+                </div>
 
-                <div className="space-y-2 text-xs text-slate-300">
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0F17] border border-[#1F293D]">
-                    <MapPin size={14} className="text-yellow-400 shrink-0" />
-                    <span className="truncate font-semibold">{event.location}</span>
+                <div className="space-y-2 pt-2 text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} style={{ color: activePalette.tokens.primary }} />
+                    <span>{new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0F17] border border-[#1F293D]">
-                    <Clock size={14} className="text-yellow-400 shrink-0" />
-                    <span className="font-semibold">{new Date(event.date).toLocaleString('pt-BR')}</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} style={{ color: activePalette.tokens.primary }} />
+                    <span className="truncate">{event.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users size={14} style={{ color: activePalette.tokens.primary }} />
+                    <span>
+                      {event.attendeesCount} / {event.maxAttendees} confirmados {isFull && '(Lotado)'}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Progress & RSVP Action */}
-              <div className="space-y-3 pt-3 border-t border-[#1F293D]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Users size={14} className="text-yellow-400" /> Vagas Ocupadas
-                  </span>
-                  <span className="font-bold text-yellow-300">
-                    {event.attendeesCount} / {event.maxAttendees} ({percent}%)
-                  </span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-[#0B0F17] overflow-hidden border border-[#1F293D]">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      percent >= 90
-                        ? 'bg-gradient-to-r from-red-500 to-amber-500'
-                        : 'bg-gradient-to-r from-yellow-500 to-amber-300'
-                    }`}
-                    style={{ width: `${Math.min(100, percent)}%` }}
-                  />
-                </div>
-
-                {/* RSVP BUTTON (Single Confirmation - Prevents Infinite Increment) */}
-                <div className="pt-1">
-                  {isConfirmed ? (
+              {/* Action Button */}
+              <div className="pt-5 border-t border-slate-800/40 mt-4">
+                {isConfirmed ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5">
+                      <CheckCircle2 size={15} />
+                      <span>Presença Confirmada!</span>
+                    </div>
                     <button
-                      disabled
-                      className="w-full py-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 cursor-default"
+                      onClick={() => handleCancelRsvp(event.id)}
+                      className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold"
+                      title="Cancelar Presença"
                     >
-                      <CheckCircle2 size={16} className="text-emerald-400" />
-                      <span>Presença Confirmada ✅</span>
+                      Cancelar
                     </button>
-                  ) : isFull ? (
-                    <button
-                      disabled
-                      className="w-full py-2.5 rounded-xl bg-[#0B0F17] text-slate-500 border border-[#1F293D] text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed"
-                    >
-                      <span>Vagas Esgotadas</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleConfirmRsvp(event.id)}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 hover:from-yellow-400 hover:to-amber-300 text-slate-950 text-xs font-black shadow-md shadow-yellow-500/20 transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
-                    >
-                      <UserCheck size={16} />
-                      <span>Confirmar Minha Presença</span>
-                    </button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleConfirmRsvp(event.id)}
+                    disabled={isFull}
+                    className="w-full py-2.5 rounded-xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                    style={{
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }}
+                  >
+                    <UserCheck size={16} />
+                    <span>{isFull ? 'Vagas Esgotadas' : 'Confirmar Minha Presença'}</span>
+                  </button>
+                )}
               </div>
             </Card>
           );
         })}
       </div>
 
-      {/* Edit Event Modal */}
+      {/* Standardized Edit Event Modal */}
       {isEditModalOpen && selectedEvent && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSaveEventEdits} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <Pencil size={18} className="text-yellow-400" />
-                  <span>Editar Evento / Imersão</span>
-                </h3>
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={20} />
-                </button>
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Editar Evento ou Imersão"
+          subtitle="Atualize as informações de horário, local e vagas do encontro"
+          icon={<Pencil size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleSaveEventEdits} className="space-y-4 text-xs">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Título do Evento</label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
               </div>
 
-              <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Descrição</label>
+                <textarea
+                  rows={3}
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none resize-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Localização / Link</label>
+                <input
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título do Evento</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Data & Horário</label>
                   <input
-                    type="text"
-                    required
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+                    type="datetime-local"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                      isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Descrição</label>
-                  <textarea
-                    rows={3}
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Localização / Link da Sala</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas Máximas)</label>
                   <input
-                    type="text"
-                    value={editLocation}
-                    onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                    type="number"
+                    value={editMaxAttendees}
+                    onChange={(e) => setEditMaxAttendees(e.target.value)}
+                    className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                      isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Data & Horário</label>
-                    <input
-                      type="datetime-local"
-                      value={editDate}
-                      onChange={(e) => setEditDate(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas Máximas)</label>
-                    <input
-                      type="number"
-                      value={editMaxAttendees}
-                      onChange={(e) => setEditMaxAttendees(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Preço do Ingresso (R$)</label>
-                    <input
-                      type="number"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Status do Encontro</label>
-                    <select
-                      value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value as any)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    >
-                      <option value="UPCOMING">Confirmado / Futuro</option>
-                      <option value="LIVE">Ao Vivo Agora</option>
-                      <option value="FINISHED">Concluído / Encerrado</option>
-                    </select>
-                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#1F293D]">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Preço do Ingresso (R$)</label>
+                  <input
+                    type="number"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                      isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as any)}
+                    className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                      isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
+                  >
+                    <option value="UPCOMING">Confirmado / Futuro</option>
+                    <option value="LIVE">Ao Vivo Agora</option>
+                    <option value="FINISHED">Concluído / Encerrado</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800/40">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetEvent(selectedEvent)}
+                className="px-3.5 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> Excluir Evento
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setDeleteTargetEvent(selectedEvent)}
-                  className="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <Trash2 size={14} /> Excluir Evento
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1F293D] transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all flex items-center gap-1.5"
-                  >
-                    <Save size={14} />
-                    <span>Salvar Alterações</span>
-                  </button>
-                </div>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* New Event Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md bg-[#131926] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D]">
-            <form onSubmit={handleCreateEvent} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <Sparkles size={18} className="text-yellow-400" />
-                  <span>Cadastrar Novo Evento ou Imersão</span>
-                </h3>
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título do Evento</label>
-                  <input
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Imersão Rocket Mastermind Q4"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Localização / Link</label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Ex: Hotel Tivoli Mofarrej / Zoom"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Data & Horário</label>
-                    <input
-                      type="datetime-local"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas)</label>
-                    <input
-                      type="number"
-                      value={maxAttendees}
-                      onChange={(e) => setMaxAttendees(e.target.value)}
-                      placeholder="60"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1F293D] transition-colors"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
+                  className="px-5 py-2.5 rounded-xl font-bold shadow-md"
+                  style={{
+                    backgroundColor: activePalette.tokens.primary,
+                    color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  }}
                 >
-                  Publicar Evento
+                  Salvar Alterações
                 </button>
               </div>
-            </form>
-          </Card>
-        </div>
+            </div>
+          </form>
+        </Modal>
       )}
+
+      {/* Standardized New Event Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Cadastrar Novo Evento ou Imersão"
+        subtitle="Agende encontros, hotseats ou workshops exclusivos da mentoria"
+        icon={<Sparkles size={20} />}
+        size="md"
+      >
+        <form onSubmit={handleCreateEvent} className="space-y-4 text-xs">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Título do Evento</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex: Imersão Rocket Mastermind Q4"
+                className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                  isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Descrição</label>
+              <textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detalhes e objetivos da imersão..."
+                className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none resize-none ${
+                  isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Localização / Link</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Ex: Hotel Tivoli Mofarrej / Zoom"
+                className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                  isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Data & Horário</label>
+                <input
+                  type="datetime-local"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas)</label>
+                <input
+                  type="number"
+                  value={maxAttendees}
+                  onChange={(e) => setMaxAttendees(e.target.value)}
+                  placeholder="60"
+                  className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800/40">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              Publicar Evento
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Styled Delete Confirmation Modal */}
       <ConfirmDeleteModal

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { Member, MOCK_TRANSACTIONS, MOCK_EVENTS } from '@/lib/mock-data';
 
 interface BirthdayMember {
@@ -538,28 +539,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* MODAL: GERADOR DE CARD EXCLUSIVO DE ANIVERSÁRIO             */}
-      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* MODAL: GERADOR DE CARD EXCLUSIVO DE ANIVERSÁRIO */}
       {selectedBirthdayMember && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-              <div className="flex items-center gap-2">
-                <PartyPopper size={18} className="text-yellow-400" />
-                <h3 className="text-sm sm:text-base font-bold text-slate-100">
-                  Card de Homenagem de Aniversário
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBirthdayMember(null)}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
+        <Modal
+          isOpen={Boolean(selectedBirthdayMember)}
+          onClose={() => setSelectedBirthdayMember(null)}
+          title="Card de Homenagem de Aniversário"
+          subtitle={`Celebrando a vida de ${selectedBirthdayMember.name} (${selectedBirthdayMember.companyName})`}
+          icon={<PartyPopper size={20} />}
+          size="lg"
+        >
+          <div className="space-y-5">
             {/* LIVE PREVIEW OF THE LUXURY GOLDEN CARD */}
             <div className="relative p-6 rounded-2xl bg-gradient-to-br from-[#1C2538] via-[#0B0F17] to-[#0A0D14] border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/10 space-y-4 text-center overflow-hidden">
               {/* Gold Top Accents */}
@@ -657,8 +647,8 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

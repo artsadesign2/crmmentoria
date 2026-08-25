@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { Lead, LEAD_STAGES, MOCK_LEADS, LeadLog } from '@/lib/mock-data';
 import { useNotifications } from '@/lib/notification-context';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
@@ -837,34 +838,20 @@ export default function CrmPage() {
 
       {/* Quick WhatsApp Smart Dispatcher Modal */}
       {isWhatsAppModalOpen && whatsAppLead && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-xl bg-[#111728] border-emerald-500/40 p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between pb-3 border-b border-[#1F293D]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40 shrink-0">
-                  <MessageCircle size={20} />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-100 text-sm flex items-center gap-2">
-                    <span>Disparador Inteligente WhatsApp</span>
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 text-[10px]">
-                      Lead CRM
-                    </Badge>
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Lead: <strong className="text-slate-200">{whatsAppLead.name}</strong> • {whatsAppLead.company} ({whatsAppLead.phone})
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsWhatsAppModalOpen(false)}
-                className="text-slate-400 hover:text-slate-200 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
+        <Modal
+          isOpen={isWhatsAppModalOpen}
+          onClose={() => setIsWhatsAppModalOpen(false)}
+          title="Disparador Inteligente WhatsApp"
+          subtitle={`Lead: ${whatsAppLead.name} • ${whatsAppLead.company} (${whatsAppLead.phone})`}
+          icon={<MessageCircle size={20} />}
+          badge={
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 text-[10px]">
+              Lead CRM
+            </Badge>
+          }
+          size="xl"
+        >
+          <div className="space-y-4">
             {/* Template Selector Pills */}
             <div className="space-y-2">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -971,145 +958,140 @@ export default function CrmPage() {
                 </button>
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Modal>
       )}
 
       {/* Add New Lead Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#111728] border-yellow-500/30 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-            <form onSubmit={handleCreateLead} className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                  <Sparkles size={18} className="text-yellow-400" />
-                  <span>Cadastrar Nova Oportunidade no Funil</span>
-                </h3>
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={20} />
-                </button>
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Cadastrar Nova Oportunidade no Funil"
+          subtitle="Adicione dados do prospect para acompanhamento no CRM"
+          icon={<Sparkles size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleCreateLead} className="space-y-4">
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-extrabold mb-1">Nome Completo do Prospect</label>
+                <input
+                  type="text"
+                  required
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Ex: Dr. Leonardo Martins"
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 font-bold focus:outline-none focus:border-yellow-500/50"
+                />
               </div>
 
-              <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-extrabold mb-1">Nome Completo do Prospect</label>
+                  <label className="block text-slate-300 font-bold mb-1">Empresa / Negócio</label>
                   <input
                     type="text"
-                    required
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Ex: Dr. Leonardo Martins"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 font-bold focus:outline-none focus:border-yellow-500/50"
+                    value={newCompany}
+                    onChange={(e) => setNewCompany(e.target.value)}
+                    placeholder="Ex: Martins Group"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Empresa / Negócio</label>
-                    <input
-                      type="text"
-                      value={newCompany}
-                      onChange={(e) => setNewCompany(e.target.value)}
-                      placeholder="Ex: Martins Group"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Especialidade / Nicho</label>
-                    <input
-                      type="text"
-                      value={newSpecialty}
-                      onChange={(e) => setNewSpecialty(e.target.value)}
-                      placeholder="Ex: E-commerce High-Ticket"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Especialidade / Nicho</label>
+                  <input
+                    type="text"
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    placeholder="Ex: E-commerce High-Ticket"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">WhatsApp / Telefone</label>
-                    <input
-                      type="text"
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(maskPhone(e.target.value))}
-                      placeholder="(11) 98888-7777"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Valor Proposta (R$)</label>
-                    <input
-                      type="number"
-                      value={newEstimatedValue}
-                      onChange={(e) => setNewEstimatedValue(e.target.value)}
-                      placeholder="25000"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-emerald-400 font-black focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">WhatsApp / Telefone</label>
+                  <input
+                    type="text"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(maskPhone(e.target.value))}
+                    placeholder="(11) 98888-7777"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  />
                 </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Valor Proposta (R$)</label>
+                  <input
+                    type="number"
+                    value={newEstimatedValue}
+                    onChange={(e) => setNewEstimatedValue(e.target.value)}
+                    placeholder="25000"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-emerald-400 font-black focus:outline-none focus:border-yellow-500/40"
+                  />
+                </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Origem do Lead</label>
-                    <select
-                      value={newSource}
-                      onChange={(e) => setNewSource(e.target.value as Lead['source'])}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/40"
-                    >
-                      <option value="Instagram">Instagram</option>
-                      <option value="Indicação">Indicação</option>
-                      <option value="Tráfego Pago">Tráfego Pago</option>
-                      <option value="Evento Presencial">Evento Presencial</option>
-                      <option value="WhatsApp Direct">WhatsApp Direct</option>
-                      <option value="Outros">Outros</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-bold mb-1">Prioridade</label>
-                    <select
-                      value={newPriority}
-                      onChange={(e) => setNewPriority(e.target.value as Lead['priority'])}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/40"
-                    >
-                      <option value="alta">🔥 Alta</option>
-                      <option value="media">⚡ Média</option>
-                      <option value="baixa">⏳ Baixa</option>
-                    </select>
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Origem do Lead</label>
+                  <select
+                    value={newSource}
+                    onChange={(e) => setNewSource(e.target.value as Lead['source'])}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/40"
+                  >
+                    <option value="Instagram">Instagram</option>
+                    <option value="Indicação">Indicação</option>
+                    <option value="Tráfego Pago">Tráfego Pago</option>
+                    <option value="Evento Presencial">Evento Presencial</option>
+                    <option value="WhatsApp Direct">WhatsApp Direct</option>
+                    <option value="Outros">Outros</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-bold mb-1">Anotações Iniciais do Diagnóstico</label>
-                  <textarea
-                    rows={2}
-                    value={newNotes}
-                    onChange={(e) => setNewNotes(e.target.value)}
-                    placeholder="Desafios relatados, faturamento aproximado e objetivo..."
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl p-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
+                  <label className="block text-slate-300 font-bold mb-1">Prioridade</label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value as Lead['priority'])}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/40"
+                  >
+                    <option value="alta">🔥 Alta</option>
+                    <option value="media">⚡ Média</option>
+                    <option value="baixa">⏳ Baixa</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1E293B] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-black text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
-                >
-                  Criar e Abrir Ficha 🚀
-                </button>
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Anotações Iniciais do Diagnóstico</label>
+                <textarea
+                  rows={2}
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  placeholder="Desafios relatados, faturamento aproximado e objetivo..."
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl p-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                />
               </div>
-            </form>
-          </Card>
-        </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1E293B] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-black text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
+              >
+                Criar e Abrir Ficha 🚀
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Delete Confirmation Modal */}

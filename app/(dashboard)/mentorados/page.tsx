@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { Member, KANBAN_STAGES } from '@/lib/mock-data';
 import { generatePdfDirectlyInPage } from '@/lib/pdf-export';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
@@ -592,33 +593,28 @@ export default function MentoradosPage() {
 
       {/* In-Page PDF Progress Modal */}
       {isGeneratingPdf && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md bg-[#111728] border-yellow-500/40 p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 flex items-center justify-center shrink-0 shadow-inner">
-                <Loader2 size={24} className="animate-spin" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-100 text-sm">Compilador de PDF de Alta Resolução</h3>
-                <p className="text-xs text-yellow-400 font-semibold mt-0.5">{pdfStatusMessage}</p>
-              </div>
+        <Modal
+          isOpen={isGeneratingPdf}
+          onClose={() => {}}
+          title="Compilador de PDF de Alta Resolução"
+          subtitle={pdfStatusMessage}
+          icon={<Loader2 size={20} className="animate-spin text-yellow-400" />}
+          size="md"
+        >
+          <div className="space-y-3 py-2">
+            <div className="w-full h-3 bg-[#0B0F17] rounded-full overflow-hidden border border-[#1F293D]">
+              <div
+                className="h-full bg-gradient-to-r from-yellow-500 via-amber-400 to-emerald-400 transition-all duration-300 rounded-full shadow-sm shadow-yellow-500/50"
+                style={{ width: `${pdfProgressPercent}%` }}
+              />
             </div>
-
-            <div className="space-y-1.5">
-              <div className="w-full h-2.5 bg-[#0B0F17] rounded-full overflow-hidden border border-[#1F293D]">
-                <div
-                  className="h-full bg-gradient-to-r from-yellow-500 via-amber-400 to-emerald-400 transition-all duration-300 rounded-full shadow-sm shadow-yellow-500/50"
-                  style={{ width: `${pdfProgressPercent}%` }}
-                />
-              </div>
-              {pdfPageCountInfo && (
-                <span className="text-[11px] text-slate-400 block text-right font-mono">
-                  {pdfPageCountInfo}
-                </span>
-              )}
-            </div>
-          </Card>
-        </div>
+            {pdfPageCountInfo && (
+              <span className="text-xs text-slate-400 block text-right font-mono">
+                {pdfPageCountInfo}
+              </span>
+            )}
+          </div>
+        </Modal>
       )}
 
       {/* VIEW MODE 1: KANBAN DRAG & DROP */}
@@ -929,128 +925,119 @@ export default function MentoradosPage() {
 
       {/* Add New Member Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#111728] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 border-[#1F293D]">
-            <form onSubmit={handleAddMember} className="space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-lg font-extrabold text-slate-100 flex items-center gap-2">
-                  <Sparkles size={18} className="text-yellow-400" />
-                  <span>Cadastrar Novo Mentorado na Base</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-200"
-                >
-                  <X size={20} />
-                </button>
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Cadastrar Novo Mentorado na Base"
+          subtitle="Adicione informações cadastrais para gerar a ficha e o acompanhamento"
+          icon={<Sparkles size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleAddMember} className="space-y-4">
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Nome Completo do Mentorado</label>
+                <input
+                  type="text"
+                  required
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Ex: Dr. Gabriel Miranda"
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 font-bold focus:outline-none focus:border-yellow-500/50"
+                />
               </div>
 
-              <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Nome Completo do Mentorado</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Especialidade / Nicho</label>
                   <input
                     type="text"
-                    required
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Ex: Dr. Gabriel Miranda"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 font-bold focus:outline-none focus:border-yellow-500/50"
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    placeholder="Ex: Cirurgião Plástico"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Especialidade / Nicho</label>
-                    <input
-                      type="text"
-                      value={newSpecialty}
-                      onChange={(e) => setNewSpecialty(e.target.value)}
-                      placeholder="Ex: Cirurgião Plástico"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Empresa / Clínica</label>
-                    <input
-                      type="text"
-                      value={newCompany}
-                      onChange={(e) => setNewCompany(e.target.value)}
-                      placeholder="Ex: Miranda Clinic LTDA"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">E-mail Corporativo</label>
-                    <input
-                      type="email"
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      placeholder="gabriel@mirandaclinic.com"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">WhatsApp</label>
-                    <input
-                      type="text"
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(maskPhone(e.target.value))}
-                      placeholder="(11) 98765-4321"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Faturamento Mensal Estimado</label>
-                    <input
-                      type="text"
-                      value={newRevenue}
-                      onChange={(e) => setNewRevenue(e.target.value)}
-                      placeholder="Ex: R$ 120.000,00"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Etapa Inicial no Kanban</label>
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value as Member['status'])}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
-                    >
-                      {KANBAN_STAGES.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Empresa / Clínica</label>
+                  <input
+                    type="text"
+                    value={newCompany}
+                    onChange={(e) => setNewCompany(e.target.value)}
+                    placeholder="Ex: Miranda Clinic LTDA"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1E293B] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-extrabold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
-                >
-                  Salvar e Abrir Ficha
-                </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">E-mail Corporativo</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="gabriel@mirandaclinic.com"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">WhatsApp</label>
+                  <input
+                    type="text"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(maskPhone(e.target.value))}
+                    placeholder="(11) 98765-4321"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
+                  />
+                </div>
               </div>
-            </form>
-          </Card>
-        </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Faturamento Mensal Estimado</label>
+                  <input
+                    type="text"
+                    value={newRevenue}
+                    onChange={(e) => setNewRevenue(e.target.value)}
+                    placeholder="Ex: R$ 120.000,00"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:outline-none focus:border-yellow-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Etapa Inicial no Kanban</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value as Member['status'])}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/50"
+                  >
+                    {KANBAN_STAGES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-semibold hover:bg-[#1E293B] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-extrabold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all"
+              >
+                Salvar e Abrir Ficha
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Styled Delete Confirmation Modal */}

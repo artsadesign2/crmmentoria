@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { Course, MOCK_COURSES } from '@/lib/mock-data';
 import { useNotifications } from '@/lib/notification-context';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
@@ -1429,22 +1430,15 @@ export default function AcademyPage() {
       {/* MODAL: GERENCIAR CATEGORIAS DOS CURSOS                      */}
       {/* ═══════════════════════════════════════════════════════════ */}
       {isManageCategoriesModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-              <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
-                <Tags size={18} className="text-yellow-400" />
-                <span>Gerenciador de Categorias da Academy</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsManageCategoriesModalOpen(false)}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
+        <Modal
+          isOpen={isManageCategoriesModalOpen}
+          onClose={() => setIsManageCategoriesModalOpen(false)}
+          title="Gerenciador de Categorias da Academy"
+          subtitle="Organize as trilhas de conhecimento e especializações"
+          icon={<Tags size={20} />}
+          size="lg"
+        >
+          <div className="space-y-4">
             {/* Add Category Form */}
             <form onSubmit={handleAddCategory} className="space-y-3">
               <label className="block text-xs text-slate-300 font-semibold">
@@ -1513,570 +1507,545 @@ export default function AcademyPage() {
                 Concluir
               </button>
             </div>
-          </Card>
-        </div>
+          </div>
+        </Modal>
       )}
 
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* MODAL 1: CRIAR NOVO CURSO                                   */}
       {/* ═══════════════════════════════════════════════════════════ */}
       {isCreateCourseModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleCreateCourse} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Sparkles size={16} className="text-yellow-400" />
-                  <span>Cadastrar Novo Curso na Academy</span>
-                </h3>
-                <button type="button" onClick={() => setIsCreateCourseModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={18} />
-                </button>
+        <Modal
+          isOpen={isCreateCourseModalOpen}
+          onClose={() => setIsCreateCourseModalOpen(false)}
+          title="Cadastrar Novo Curso na Academy"
+          subtitle="Crie uma nova formação executiva com trilha modular de aulas"
+          icon={<Sparkles size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleCreateCourse} className="space-y-4 text-xs">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Título do Curso</label>
+                <input
+                  type="text"
+                  required
+                  value={newCourseTitle}
+                  onChange={(e) => setNewCourseTitle(e.target.value)}
+                  placeholder="Ex: Gestão Financeira para Empresas High-Ticket"
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+                />
               </div>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título do Curso</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCourseTitle}
-                    onChange={(e) => setNewCourseTitle(e.target.value)}
-                    placeholder="Ex: Gestão Financeira para Empresas High-Ticket"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
-                    <select
-                      value={newCourseCategory}
-                      onChange={(e) => setNewCourseCategory(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-semibold"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Nível de Dificuldade</label>
-                    <select
-                      value={newCourseLevel}
-                      onChange={(e) => setNewCourseLevel(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    >
-                      <option value="Iniciante">Iniciante</option>
-                      <option value="Intermediário">Intermediário</option>
-                      <option value="Avançado">Avançado</option>
-                      <option value="Master">Master</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Descrição / Objetivos do Curso</label>
-                  <textarea
-                    rows={3}
-                    value={newCourseDesc}
-                    onChange={(e) => setNewCourseDesc(e.target.value)}
-                    placeholder="O que o mentorado irá dominar ao concluir este curso..."
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">URL da Imagem de Capa</label>
-                  <input
-                    type="url"
-                    value={newCourseCover}
-                    onChange={(e) => setNewCourseCover(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateCourseModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs hover:scale-105 transition-all shadow-md shadow-yellow-500/20"
-                >
-                  Criar Curso
-                </button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* MODAL 2: EDITAR CURSO                                       */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {isEditCourseModalOpen && selectedCourse && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSaveCourseEdits} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Pencil size={16} className="text-yellow-400" />
-                  <span>Editar Informações do Curso</span>
-                </h3>
-                <button type="button" onClick={() => setIsEditCourseModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título do Curso</label>
-                  <input
-                    type="text"
-                    required
-                    value={editCourseTitle}
-                    onChange={(e) => setEditCourseTitle(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
-                    <select
-                      value={editCourseCategory}
-                      onChange={(e) => setEditCourseCategory(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Nível</label>
-                    <input
-                      type="text"
-                      value={editCourseLevel}
-                      onChange={(e) => setEditCourseLevel(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Descrição</label>
-                  <textarea
-                    rows={3}
-                    value={editCourseDesc}
-                    onChange={(e) => setEditCourseDesc(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">URL da Imagem de Capa</label>
-                  <input
-                    type="url"
-                    value={editCourseCover}
-                    onChange={(e) => setEditCourseCover(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setDeleteTargetCourse(selectedCourse)}
-                  className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <Trash2 size={13} /> Excluir Curso
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditCourseModalOpen(false)}
-                    className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 flex items-center gap-1.5"
-                  >
-                    <Save size={14} /> Salvar Alterações
-                  </button>
-                </div>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* MODAL 3: ADICIONAR NOVA AULA                                */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {isAddLessonModalOpen && selectedCourse && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleCreateLesson} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Plus size={16} className="text-yellow-400" />
-                  <span>Adicionar Nova Aula no Curso</span>
-                </h3>
-                <button type="button" onClick={() => setIsAddLessonModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Módulo de Destino</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
                   <select
-                    value={targetModuleId}
-                    onChange={(e) => setTargetModuleId(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                    value={newCourseCategory}
+                    onChange={(e) => setNewCourseCategory(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-semibold"
                   >
-                    {currentModules.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.title}
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título da Aula</label>
-                  <input
-                    type="text"
-                    required
-                    value={lessonTitle}
-                    onChange={(e) => setLessonTitle(e.target.value)}
-                    placeholder="Ex: 2.3 Estrutura de Contrato & Garantias"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Duração da Aula</label>
-                    <input
-                      type="text"
-                      value={lessonDuration}
-                      onChange={(e) => setLessonDuration(e.target.value)}
-                      placeholder="Ex: 22:30"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">URL do Vídeo</label>
-                    <input
-                      type="text"
-                      required
-                      value={lessonVideoSrc}
-                      onChange={(e) => setLessonVideoSrc(e.target.value)}
-                      placeholder="YouTube, Vimeo ou link MP4"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Resumo & Objetivos</label>
-                  <textarea
-                    rows={3}
-                    value={lessonDescription}
-                    onChange={(e) => setLessonDescription(e.target.value)}
-                    placeholder="Explicação do conteúdo abordado na aula..."
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
-                </div>
-
-                {/* Dynamic Materials List (Max 5) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider block">
-                      Materiais de Apoio ({lessonMaterials.length}/5)
-                    </span>
-                    {lessonMaterials.length < 5 ? (
-                      <button
-                        type="button"
-                        onClick={handleAddMaterialField}
-                        className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg hover:bg-yellow-500/20 transition-all"
-                      >
-                        <Plus size={13} /> Adicionar Arquivo
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-bold text-yellow-500/80 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                        Limite de 5 atingido
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {lessonMaterials.map((mat, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
-                          <input
-                            type="text"
-                            value={mat.name}
-                            onChange={(e) => handleMaterialChange(idx, 'name', e.target.value)}
-                            placeholder={`Nome do Arquivo #${idx + 1} (Ex: Roteiro.pdf)`}
-                            className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                          />
-                          <input
-                            type="text"
-                            value={mat.link}
-                            onChange={(e) => handleMaterialChange(idx, 'link', e.target.value)}
-                            placeholder="Link do Download / Drive / S3"
-                            className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                          />
-                        </div>
-                        {lessonMaterials.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMaterialField(idx)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-[#131926] transition-colors shrink-0"
-                            title="Remover este arquivo"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <label className="block text-slate-400 font-semibold mb-1">Nível de Dificuldade</label>
+                  <select
+                    value={newCourseLevel}
+                    onChange={(e) => setNewCourseLevel(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  >
+                    <option value="Iniciante">Iniciante</option>
+                    <option value="Intermediário">Intermediário</option>
+                    <option value="Avançado">Avançado</option>
+                    <option value="Master">Master</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#1F293D]">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Descrição / Objetivos do Curso</label>
+                <textarea
+                  rows={3}
+                  value={newCourseDesc}
+                  onChange={(e) => setNewCourseDesc(e.target.value)}
+                  placeholder="O que o mentorado irá dominar ao concluir este curso..."
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">URL da Imagem de Capa</label>
+                <input
+                  type="url"
+                  value={newCourseCover}
+                  onChange={(e) => setNewCourseCover(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setIsCreateCourseModalOpen(false)}
+                className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs hover:scale-105 transition-all shadow-md shadow-yellow-500/20"
+              >
+                Criar Curso
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* MODAL 2: EDITAR CURSO                                       */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {isEditCourseModalOpen && selectedCourse && (
+        <Modal
+          isOpen={isEditCourseModalOpen}
+          onClose={() => setIsEditCourseModalOpen(false)}
+          title="Editar Informações do Curso"
+          subtitle={`Curso: ${selectedCourse.title}`}
+          icon={<Pencil size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleSaveCourseEdits} className="space-y-4 text-xs">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Título do Curso</label>
+                <input
+                  type="text"
+                  required
+                  value={editCourseTitle}
+                  onChange={(e) => setEditCourseTitle(e.target.value)}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Categoria</label>
+                  <select
+                    value={editCourseCategory}
+                    onChange={(e) => setEditCourseCategory(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Nível</label>
+                  <input
+                    type="text"
+                    value={editCourseLevel}
+                    onChange={(e) => setEditCourseLevel(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Descrição</label>
+                <textarea
+                  rows={3}
+                  value={editCourseDesc}
+                  onChange={(e) => setEditCourseDesc(e.target.value)}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">URL da Imagem de Capa</label>
+                <input
+                  type="url"
+                  value={editCourseCover}
+                  onChange={(e) => setEditCourseCover(e.target.value)}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetCourse(selectedCourse)}
+                className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 size={13} /> Excluir Curso
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddLessonModalOpen(false)}
+                  onClick={() => setIsEditCourseModalOpen(false)}
                   className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 flex items-center gap-1.5"
                 >
-                  <Plus size={15} /> Adicionar Aula
+                  <Save size={14} /> Salvar Alterações
                 </button>
               </div>
-            </form>
-          </Card>
-        </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* MODAL 3: ADICIONAR NOVA AULA                                */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {isAddLessonModalOpen && selectedCourse && (
+        <Modal
+          isOpen={isAddLessonModalOpen}
+          onClose={() => setIsAddLessonModalOpen(false)}
+          title="Adicionar Nova Aula no Curso"
+          subtitle={`Curso: ${selectedCourse.title}`}
+          icon={<Plus size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleCreateLesson} className="space-y-4 text-xs">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Módulo de Destino</label>
+                <select
+                  value={targetModuleId}
+                  onChange={(e) => setTargetModuleId(e.target.value)}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                >
+                  {currentModules.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Título da Aula</label>
+                <input
+                  type="text"
+                  required
+                  value={lessonTitle}
+                  onChange={(e) => setLessonTitle(e.target.value)}
+                  placeholder="Ex: 2.3 Estrutura de Contrato & Garantias"
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Duração da Aula</label>
+                  <input
+                    type="text"
+                    value={lessonDuration}
+                    onChange={(e) => setLessonDuration(e.target.value)}
+                    placeholder="Ex: 22:30"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">URL do Vídeo</label>
+                  <input
+                    type="text"
+                    required
+                    value={lessonVideoSrc}
+                    onChange={(e) => setLessonVideoSrc(e.target.value)}
+                    placeholder="YouTube, Vimeo ou link MP4"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Resumo & Objetivos</label>
+                <textarea
+                  rows={3}
+                  value={lessonDescription}
+                  onChange={(e) => setLessonDescription(e.target.value)}
+                  placeholder="Explicação do conteúdo abordado na aula..."
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                />
+              </div>
+
+              {/* Dynamic Materials List (Max 5) */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider block">
+                    Materiais de Apoio ({lessonMaterials.length}/5)
+                  </span>
+                  {lessonMaterials.length < 5 ? (
+                    <button
+                      type="button"
+                      onClick={handleAddMaterialField}
+                      className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg hover:bg-yellow-500/20 transition-all"
+                    >
+                      <Plus size={13} /> Adicionar Arquivo
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold text-yellow-500/80 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
+                      Limite de 5 atingido
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {lessonMaterials.map((mat, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={mat.name}
+                          onChange={(e) => handleMaterialChange(idx, 'name', e.target.value)}
+                          placeholder={`Nome do Arquivo #${idx + 1} (Ex: Roteiro.pdf)`}
+                          className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                        />
+                        <input
+                          type="text"
+                          value={mat.link}
+                          onChange={(e) => handleMaterialChange(idx, 'link', e.target.value)}
+                          placeholder="Link do Download / Drive / S3"
+                          className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                        />
+                      </div>
+                      {lessonMaterials.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMaterialField(idx)}
+                          className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-[#131926] transition-colors shrink-0"
+                          title="Remover este arquivo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setIsAddLessonModalOpen(false)}
+                className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors flex items-center gap-1.5"
+              >
+                <Plus size={15} /> Adicionar Aula
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* MODAL 4: EDITAR AULA EXISTENTE                              */}
       {/* ═══════════════════════════════════════════════════════════ */}
       {isEditLessonModalOpen && editingLesson && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSaveLessonEdits} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Pencil size={16} className="text-yellow-400" />
-                  <span>Editar Aula</span>
-                </h3>
-                <button type="button" onClick={() => setIsEditLessonModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Título da Aula</label>
-                  <input
-                    type="text"
-                    required
-                    value={lessonTitle}
-                    onChange={(e) => setLessonTitle(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Duração</label>
-                    <input
-                      type="text"
-                      value={lessonDuration}
-                      onChange={(e) => setLessonDuration(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">URL do Vídeo</label>
-                    <input
-                      type="text"
-                      required
-                      value={lessonVideoSrc}
-                      onChange={(e) => setLessonVideoSrc(e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Resumo & Descrição</label>
-                  <textarea
-                    rows={3}
-                    value={lessonDescription}
-                    onChange={(e) => setLessonDescription(e.target.value)}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
-                  />
-                </div>
-
-                {/* Dynamic Materials List (Max 5) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider block">
-                      Materiais de Apoio ({lessonMaterials.length}/5)
-                    </span>
-                    {lessonMaterials.length < 5 ? (
-                      <button
-                        type="button"
-                        onClick={handleAddMaterialField}
-                        className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg hover:bg-yellow-500/20 transition-all"
-                      >
-                        <Plus size={13} /> Adicionar Arquivo
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-bold text-yellow-500/80 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                        Limite de 5 atingido
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {lessonMaterials.map((mat, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
-                          <input
-                            type="text"
-                            value={mat.name}
-                            onChange={(e) => handleMaterialChange(idx, 'name', e.target.value)}
-                            placeholder={`Nome do Arquivo #${idx + 1}`}
-                            className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                          />
-                          <input
-                            type="text"
-                            value={mat.link}
-                            onChange={(e) => handleMaterialChange(idx, 'link', e.target.value)}
-                            placeholder="Link do Download"
-                            className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                          />
-                        </div>
-                        {lessonMaterials.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMaterialField(idx)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-[#131926] transition-colors shrink-0"
-                            title="Remover este arquivo"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1F293D]">
-                <button
-                  type="button"
-                  onClick={() => setDeleteTargetLesson(editingLesson)}
-                  className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <Trash2 size={13} /> Excluir Aula
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditLessonModalOpen(false)}
-                    className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 flex items-center gap-1.5"
-                  >
-                    <Save size={14} /> Salvar Aula
-                  </button>
-                </div>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {/* MODAL 5: CRIAR NOVO MÓDULO                                  */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {isAddModuleModalOpen && selectedCourse && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-md bg-[#131926] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 border-[#1F293D]">
-            <form onSubmit={handleCreateModule} className="space-y-4 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <FolderPlus size={16} className="text-yellow-400" />
-                  <span>Adicionar Novo Módulo</span>
-                </h3>
-                <button type="button" onClick={() => setIsAddModuleModalOpen(false)} className="text-slate-400 hover:text-slate-200">
-                  <X size={18} />
-                </button>
-              </div>
-
+        <Modal
+          isOpen={isEditLessonModalOpen}
+          onClose={() => setIsEditLessonModalOpen(false)}
+          title="Editar Aula"
+          subtitle={`Aula: ${editingLesson.title}`}
+          icon={<Pencil size={20} />}
+          size="lg"
+        >
+          <form onSubmit={handleSaveLessonEdits} className="space-y-4 text-xs">
+            <div className="space-y-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Título do Módulo</label>
+                <label className="block text-slate-400 font-semibold mb-1">Título da Aula</label>
                 <input
                   type="text"
                   required
-                  value={newModuleName}
-                  onChange={(e) => setNewModuleName(e.target.value)}
-                  placeholder="Ex: Módulo 3: Escala de Tráfego & Funis Perpétuos"
+                  value={lessonTitle}
+                  onChange={(e) => setLessonTitle(e.target.value)}
                   className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#1F293D]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Duração</label>
+                  <input
+                    type="text"
+                    value={lessonDuration}
+                    onChange={(e) => setLessonDuration(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">URL do Vídeo</label>
+                  <input
+                    type="text"
+                    required
+                    value={lessonVideoSrc}
+                    onChange={(e) => setLessonVideoSrc(e.target.value)}
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Resumo & Descrição</label>
+                <textarea
+                  rows={3}
+                  value={lessonDescription}
+                  onChange={(e) => setLessonDescription(e.target.value)}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40 resize-none"
+                />
+              </div>
+
+              {/* Dynamic Materials List (Max 5) */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-yellow-400 uppercase tracking-wider block">
+                    Materiais de Apoio ({lessonMaterials.length}/5)
+                  </span>
+                  {lessonMaterials.length < 5 ? (
+                    <button
+                      type="button"
+                      onClick={handleAddMaterialField}
+                      className="text-[11px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg hover:bg-yellow-500/20 transition-all"
+                    >
+                      <Plus size={13} /> Adicionar Arquivo
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold text-yellow-500/80 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
+                      Limite de 5 atingido
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {lessonMaterials.map((mat, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={mat.name}
+                          onChange={(e) => handleMaterialChange(idx, 'name', e.target.value)}
+                          placeholder={`Nome do Arquivo #${idx + 1}`}
+                          className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                        />
+                        <input
+                          type="text"
+                          value={mat.link}
+                          onChange={(e) => handleMaterialChange(idx, 'link', e.target.value)}
+                          placeholder="Link do Download"
+                          className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                        />
+                      </div>
+                      {lessonMaterials.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMaterialField(idx)}
+                          className="p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-[#131926] transition-colors shrink-0"
+                          title="Remover este arquivo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetLesson(editingLesson)}
+                className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 size={13} /> Excluir Aula
+              </button>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddModuleModalOpen(false)}
+                  onClick={() => setIsEditLessonModalOpen(false)}
                   className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400"
+                  className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 flex items-center gap-1.5"
                 >
-                  Criar Módulo
+                  <Save size={14} /> Salvar Aula
                 </button>
               </div>
-            </form>
-          </Card>
-        </div>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* MODAL 5: CRIAR NOVO MÓDULO                                  */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {isAddModuleModalOpen && selectedCourse && (
+        <Modal
+          isOpen={isAddModuleModalOpen}
+          onClose={() => setIsAddModuleModalOpen(false)}
+          title="Adicionar Novo Módulo"
+          subtitle={`Curso: ${selectedCourse.title}`}
+          icon={<FolderPlus size={20} />}
+          size="md"
+        >
+          <form onSubmit={handleCreateModule} className="space-y-4 text-xs">
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Título do Módulo</label>
+              <input
+                type="text"
+                required
+                value={newModuleName}
+                onChange={(e) => setNewModuleName(e.target.value)}
+                placeholder="Ex: Módulo 3: Escala de Tráfego & Funis Perpétuos"
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setIsAddModuleModalOpen(false)}
+                className="px-3.5 py-2 rounded-xl bg-[#0B0F17] text-slate-400 text-xs font-semibold hover:bg-[#1F293D]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400"
+              >
+                Criar Módulo
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Styled Delete Confirmation Modal: Categoria */}

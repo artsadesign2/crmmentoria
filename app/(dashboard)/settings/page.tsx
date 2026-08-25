@@ -32,10 +32,18 @@ import {
   CheckSquare,
   Square,
   AlertCircle,
+  AlertTriangle,
   FileText,
+  UserCheck,
+  Edit2,
+  RefreshCw,
+  Sun,
+  Moon,
+  Zap,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Modal } from '@/components/ui/modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import {
   DEFAULT_TENANT,
@@ -45,11 +53,38 @@ import {
   FeatureFlags,
 } from '@/lib/tenant';
 import { maskCnpj, maskPhone } from '@/lib/masks';
+import { useTheme, COLOR_PALETTES, PaletteId } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth-context';
+import {
+  UserRole,
+  SystemUser,
+  RolePermissions,
+  ROLE_HIERARCHIES,
+  canDeleteUser,
+} from '@/lib/permissions';
 
 export default function SettingsPage() {
+  const { activePaletteId, activePalette, isLightMode, setPalette, resetToDefault: resetTheme } =
+    useTheme();
+  const {
+    currentUser,
+    currentRole,
+    systemUsers,
+    rolePermissions,
+    isMaster,
+    isAdmin,
+    switchUser,
+    switchRoleSimulation,
+    addUser,
+    updateUser,
+    deleteUser,
+    toggleRolePermission,
+    resetRolePermissions,
+  } = useAuth();
+
   const [activeTab, setActiveTab] = useState<
-    'company' | 'levels' | 'system' | 'users' | 'depts' | 'csv' | 'saas'
-  >('company');
+    'design' | 'permissions' | 'users' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
+  >('design');
 
   // Company / Whitelabel State
   const [company, setCompany] = useState<CompanyData>(DEFAULT_TENANT.company);
@@ -57,12 +92,29 @@ export default function SettingsPage() {
   const [iconUrl, setIconUrl] = useState<string>(DEFAULT_TENANT.company.iconUrl || '');
   const [primaryColor, setPrimaryColor] = useState(DEFAULT_TENANT.primaryColor);
 
-  // Access Levels & Permissions State
+  // Access Levels State
   const [accessLevels, setAccessLevels] = useState<AccessLevel[]>(DEFAULT_ACCESS_LEVELS);
   const [selectedLevelId, setSelectedLevelId] = useState<string>(DEFAULT_ACCESS_LEVELS[0].id);
   const [isCreatingLevel, setIsCreatingLevel] = useState(false);
   const [newLevelName, setNewLevelName] = useState('');
   const [newLevelDesc, setNewLevelDesc] = useState('');
+
+  // Selected Role for Permission Matrix Tab
+  const [matrixRole, setMatrixRole] = useState<UserRole>('Master');
+
+  // User Management Modals State
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<SystemUser | null>(null);
+  const [deletingUserTarget, setDeletingUserTarget] = useState<SystemUser | null>(null);
+  const [deleteBlockedReason, setDeleteBlockedReason] = useState<string | null>(null);
+
+  // New User Form State
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('Administrador');
+  const [newUserDept, setNewUserDept] = useState('Operacional');
+  const [userActionError, setUserActionError] = useState<string | null>(null);
 
   // 5 Pillars
   const [pillars, setPillars] = useState([
@@ -75,26 +127,19 @@ export default function SettingsPage() {
 
   // Departments List
   const [departments, setDepartments] = useState([
-    { id: 'd1', name: 'Operacional', fixed: true },
-    { id: 'd2', name: 'Comercial', fixed: true },
-    { id: 'd3', name: 'Financeiro', fixed: true },
-    { id: 'd4', name: 'Jurídico', fixed: true },
+    { id: 'd1', name: 'Diretoria Executiva', fixed: true },
+    { id: 'd2', name: 'Operações & Gestão', fixed: true },
+    { id: 'd3', name: 'Comercial & Vendas', fixed: true },
+    { id: 'd4', name: 'Academy & Wiki', fixed: true },
+    { id: 'd5', name: 'Financeiro', fixed: true },
   ]);
   const [newDeptName, setNewDeptName] = useState('');
-
-  // Users List
-  const [usersList, setUsersList] = useState([
-    { id: 'u1', name: 'Comandante Master', email: 'master@rocketclub.com', levelId: 'lvl-master' },
-    { id: 'u2', name: 'Atendimento Tripulação', email: 'atendimento@rocketclub.com', levelId: 'lvl-pro' },
-  ]);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserLevelId, setNewUserLevelId] = useState('lvl-pro');
 
   // SaaS Features
   const [features, setFeatures] = useState<FeatureFlags>(DEFAULT_TENANT.features);
   const [csvStatus, setCsvStatus] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isResetPermissionsModalOpen, setIsResetPermissionsModalOpen] = useState(false);
 
   // Load from localStorage if present
   useEffect(() => {
@@ -167,103 +212,177 @@ export default function SettingsPage() {
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  // Permission Matrix Toggle for selected Level
-  const toggleModulePermission = (
-    levelId: string,
-    moduleKey: keyof AccessLevel['modules']
-  ) => {
-    setAccessLevels((prev) =>
-      prev.map((lvl) => {
-        if (lvl.id === levelId) {
-          return {
-            ...lvl,
-            modules: {
-              ...lvl.modules,
-              [moduleKey]: !lvl.modules[moduleKey],
-            },
-          };
-        }
-        return lvl;
-      })
-    );
-  };
-
-  const handleCreateNewLevel = (e: React.FormEvent) => {
+  // Handle Create New User
+  const handleCreateUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLevelName.trim()) return;
+    setUserActionError(null);
 
-    const newLvl: AccessLevel = {
-      id: `lvl-${Date.now()}`,
-      name: newLevelName,
-      badge: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-      description: newLevelDesc || 'Nível de acesso personalizado.',
-      isCustom: true,
-      modules: {
-        dashboard: true,
-        crm: false,
-        mentorados: false,
-        academy: true,
-        wiki: true,
-        financial: false,
-        events: true,
-        settings: false,
-      },
-    };
+    const result = addUser({
+      name: newUserName,
+      email: newUserEmail,
+      phone: newUserPhone,
+      role: newUserRole,
+      department: newUserDept,
+      status: 'ATIVO',
+      lastActive: 'Cadastrado agora',
+    });
 
-    setAccessLevels([...accessLevels, newLvl]);
-    setSelectedLevelId(newLvl.id);
-    setNewLevelName('');
-    setNewLevelDesc('');
-    setIsCreatingLevel(false);
-  };
-
-  const [deleteTargetLevel, setDeleteTargetLevel] = useState<AccessLevel | null>(null);
-
-  const handleConfirmDeleteLevel = () => {
-    if (!deleteTargetLevel) return;
-    const levelId = deleteTargetLevel.id;
-    setAccessLevels(accessLevels.filter((lvl) => lvl.id !== levelId));
-    if (selectedLevelId === levelId) {
-      setSelectedLevelId(accessLevels[0]?.id || '');
+    if (result.success) {
+      setIsNewUserModalOpen(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPhone('');
+      setNewUserRole('Administrador');
+    } else {
+      setUserActionError(result.error || 'Erro ao criar usuário.');
     }
-    setDeleteTargetLevel(null);
   };
 
-  const selectedLevel =
-    accessLevels.find((lvl) => lvl.id === selectedLevelId) || accessLevels[0];
-
-  const handleAddDept = (e: React.FormEvent) => {
+  // Handle Edit User Submit
+  const handleEditUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDeptName.trim()) return;
-    setDepartments([...departments, { id: `d-${Date.now()}`, name: newDeptName, fixed: false }]);
-    setNewDeptName('');
+    if (!editingUser) return;
+    setUserActionError(null);
+
+    const result = updateUser(editingUser.id, editingUser);
+    if (result.success) {
+      setEditingUser(null);
+    } else {
+      setUserActionError(result.error || 'Erro ao editar usuário.');
+    }
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUserName.trim() || !newUserEmail.trim()) return;
-    setUsersList([
-      ...usersList,
-      { id: `u-${Date.now()}`, name: newUserName, email: newUserEmail, levelId: newUserLevelId },
-    ]);
-    setNewUserName('');
-    setNewUserEmail('');
+  // Handle Delete User Click (with Hierarchy Verification)
+  const handleInitiateDeleteUser = (user: SystemUser) => {
+    const check = canDeleteUser(currentRole, user);
+    if (!check.allowed) {
+      setDeleteBlockedReason(check.reason || 'Exclusão não autorizada.');
+      setDeletingUserTarget(user);
+    } else {
+      setDeleteBlockedReason(null);
+      setDeletingUserTarget(user);
+    }
   };
 
-  const handleProcessCSV = () => {
-    setCsvStatus('Processando arquivo CSV... 34 registros validados e importados!');
-    setTimeout(() => setCsvStatus(null), 4000);
+  const handleConfirmDeleteUser = () => {
+    if (!deletingUserTarget) return;
+    const res = deleteUser(deletingUserTarget.id);
+    if (res.success) {
+      setDeletingUserTarget(null);
+      setDeleteBlockedReason(null);
+    } else {
+      setDeleteBlockedReason(res.error || 'Não foi possível excluir.');
+    }
   };
 
-  const moduleDefinitions: { key: keyof AccessLevel['modules']; name: string; desc: string; icon: string }[] = [
-    { key: 'dashboard', name: 'Painel Executivo / Dashboard', desc: 'Métricas gerais, faturamento estimado e health score.', icon: '📊' },
-    { key: 'crm', name: 'CRM (Novos Leads & Prospecção)', desc: 'Funil de vendas, diagnóstico e conversão de prospects.', icon: '🎯' },
-    { key: 'mentorados', name: 'Base de Mentorados & Fichas', desc: 'Acompanhamento de evolução, níveis e Members Book PDF.', icon: '👥' },
-    { key: 'academy', name: 'Rocket Academy (Aulas)', desc: 'Acesso a cursos, videoaulas e comentários.', icon: '🎓' },
-    { key: 'wiki', name: 'Wiki & SOPs de Conhecimento', desc: 'Processos internos, manuais e diretrizes operacionais.', icon: '📖' },
-    { key: 'financial', name: 'Gestão Financeira & Caixa', desc: 'Controle de mensalidades, faturamento e custos.', icon: '💰' },
-    { key: 'events', name: 'Eventos & Imersões Presenciais', desc: 'Agenda de encontros, hotseats e controle de presenças.', icon: '📅' },
-    { key: 'settings', name: 'Configurações do Sistema', desc: 'Whitelabel, dados da empresa, permissões e usuários.', icon: '⚙️' },
+  const permissionSections: {
+    title: string;
+    description: string;
+    icon: string;
+    items: { key: keyof RolePermissions; label: string; desc: string }[];
+  }[] = [
+    {
+      title: '📊 Dashboard & Métricas Executivas',
+      description: 'Acesso às métricas de desempenho, faturamento e saúde da operação.',
+      icon: '📊',
+      items: [
+        { key: 'viewDashboard', label: 'Visualizar Dashboard', desc: 'Permite abrir o painel executivo principal' },
+        { key: 'exportDashboardReports', label: 'Exportar Relatórios Executivos', desc: 'Download de relatórios consolidados em PDF' },
+      ],
+    },
+    {
+      title: '🎯 CRM & Gestão de Novos Leads',
+      description: 'Controle de funil de vendas, captação, diagnóstico e movimentação de pipeline.',
+      icon: '🎯',
+      items: [
+        { key: 'viewCRM', label: 'Visualizar CRM', desc: 'Acesso à lista e colunas do pipeline' },
+        { key: 'createLeads', label: 'Cadastrar Novos Leads', desc: 'Adicionar novas oportunidades no CRM' },
+        { key: 'editLeads', label: 'Editar & Diagnosticar Leads', desc: 'Alterar status, notas e campos executivos' },
+        { key: 'deleteLeads', label: 'Excluir Leads', desc: 'Remover oportunidades de negócio' },
+        { key: 'exportCRM', label: 'Exportar Base de Leads', desc: 'Extrair relatórios de conversão' },
+      ],
+    },
+    {
+      title: '👥 Base de Mentorados & Fichas',
+      description: 'Gestão completa dos membros acelerados, níveis, pilares e Members Book.',
+      icon: '👥',
+      items: [
+        { key: 'viewMembers', label: 'Visualizar Mentorados', desc: 'Consultar listagem e perfis de membros' },
+        { key: 'createMembers', label: 'Cadastrar Novo Mentorado', desc: 'Adicionar mentorado à base do ecossistema' },
+        { key: 'editMembers', label: 'Editar Fichas & Diagnóstico', desc: 'Atualizar informações cadastrais e pilares' },
+        { key: 'deleteMembers', label: 'Excluir Mentorado', desc: 'Remover cadastro de mentorado' },
+        { key: 'exportMembersPDF', label: 'Gerar Ficha & Members Book PDF', desc: 'Download do book de apresentação profissional' },
+      ],
+    },
+    {
+      title: '📋 Kanban de Acompanhamento',
+      description: 'Quadro visual de status de evolução (Cinza, Azul, Verde, Amarelo, Vermelha, Ouro, Diamante).',
+      icon: '📋',
+      items: [
+        { key: 'viewKanban', label: 'Visualizar Kanban', desc: 'Acessar as raias de acompanhamento' },
+        { key: 'moveKanbanCards', label: 'Mover Cards no Quadro', desc: 'Arrastar e soltar membros entre as etapas' },
+      ],
+    },
+    {
+      title: '🎓 Rocket Academy (Salas de Aula & Cursos)',
+      description: 'Acesso a videoaulas, módulos, comentários e gestão de conteúdo educacional.',
+      icon: '🎓',
+      items: [
+        { key: 'viewAcademy', label: 'Assistir Aulas & Cursos', desc: 'Acesso às salas de aula da Academy' },
+        { key: 'createCourses', label: 'Criar Novos Cursos', desc: 'Publicar cursos e trilhas de mentoria' },
+        { key: 'editCourses', label: 'Editar Aulas & Módulos', desc: 'Alterar vídeos, materiais e descrições' },
+        { key: 'deleteCourses', label: 'Excluir Cursos', desc: 'Remover módulos de treinamento' },
+        { key: 'commentLessons', label: 'Publicar Comentários & Dúvidas', desc: 'Interagir na área de discussão de cada aula' },
+      ],
+    },
+    {
+      title: '📖 Wiki & SOPs de Conhecimento',
+      description: 'Manuais operacionais, diretrizes, processos e documentações estratégicas.',
+      icon: '📖',
+      items: [
+        { key: 'viewWiki', label: 'Ler Artigos da Wiki', desc: 'Consultar processos e manuais internos' },
+        { key: 'createArticles', label: 'Criar Artigos', desc: 'Escrever novos documentos e tutoriais' },
+        { key: 'editArticles', label: 'Editar Conteúdo', desc: 'Atualizar artigos existentes' },
+        { key: 'deleteArticles', label: 'Excluir Artigos', desc: 'Remover documentos da base de conhecimento' },
+        { key: 'manageDepartments', label: 'Gerenciar Departamentos', desc: 'Criar e renomear categorias da Wiki' },
+      ],
+    },
+    {
+      title: '💰 Gestão Financeira & Caixa',
+      description: 'Controle de mensalidades, fluxo de caixa, custos e faturamento da operação.',
+      icon: '💰',
+      items: [
+        { key: 'viewFinancial', label: 'Visualizar Financeiro', desc: 'Ver saldo geral, extratos e gráficos' },
+        { key: 'createTransactions', label: 'Lançar Receitas / Despesas', desc: 'Cadastrar novas entradas e saídas' },
+        { key: 'editTransactions', label: 'Editar Lançamentos', desc: 'Modificar valores e status de pagamentos' },
+        { key: 'deleteTransactions', label: 'Excluir Lançamentos', desc: 'Remover transações financeiras' },
+        { key: 'exportFinancial', label: 'Exportar Relatório Financeiro', desc: 'Baixar DRE e demonstrativos em PDF/CSV' },
+      ],
+    },
+    {
+      title: '📅 Eventos, Imersões & Hotseats',
+      description: 'Calendário de encontros presenciais, controle de presenças e confirmações (RSVP).',
+      icon: '📅',
+      items: [
+        { key: 'viewEvents', label: 'Visualizar Agenda de Eventos', desc: 'Consultar calendário de imersões' },
+        { key: 'rsvpEvents', label: 'Confirmar Presença (RSVP)', desc: 'Garantir vaga em eventos e encontros' },
+        { key: 'createEvents', label: 'Criar Novos Eventos', desc: 'Agendar imersões, hotseats e workshops' },
+        { key: 'manageAttendees', label: 'Gerenciar Participantes & Check-in', desc: 'Confirmar lista de presença presencial' },
+        { key: 'deleteEvents', label: 'Excluir Eventos', desc: 'Remover eventos agendados' },
+      ],
+    },
+    {
+      title: '⚙️ Configurações, Whitelabel & Governança',
+      description: 'Personalização da marca, paletas de cores, matriz de permissões e controle de contas.',
+      icon: '⚙️',
+      items: [
+        { key: 'viewSettings', label: 'Acessar Central de Configurações', desc: 'Abrir a área de ajustes do sistema' },
+        { key: 'manageWhitelabel', label: 'Personalizar Whitelabel & Logos', desc: 'Alterar razão social, logos e dados corporativos' },
+        { key: 'manageDesignSystem', label: 'Alterar Design System & Paleta de Cores', desc: 'Mudar tema visual entre as 4 paletas' },
+        { key: 'managePermissionsMatrix', label: 'Controlar Matriz de Permissões RBAC', desc: 'Ligar e desligar acessos dos cargos (Exclusivo Master)' },
+        { key: 'manageUsers', label: 'Gerenciar Usuários & Contas', desc: 'Criar, editar e excluir contas (respeitando hierarquia)' },
+      ],
+    },
   ];
 
   return (
@@ -272,13 +391,13 @@ export default function SettingsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <Badge variant="default" className="mb-2">
-            <Settings size={14} className="mr-1.5" /> Painel de Configurações Multi-Tenant
+            <Settings size={14} className="mr-1.5" /> Central de Governança & Design System
           </Badge>
           <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-            Central de <span className="gold-gradient-text">Personalização & Governança</span>
+            Configurações, <span className="theme-gradient-text">Permissões & Design</span>
           </h1>
-          <p className="text-sm text-slate-400">
-            Cadastre os dados da sua empresa, logotipos da marca, níveis de assinatura e controle de permissões.
+          <p className={`text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+            Gerencie os níveis de acesso (Master, Admin, Editor, Cliente, Usuário), paletas visuais e identidade corporativa.
           </p>
         </div>
 
@@ -296,7 +415,12 @@ export default function SettingsPage() {
 
           <button
             onClick={handleSaveAll}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-yellow-500/20 hover:scale-105 transition-all flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-2"
+            style={{
+              backgroundColor: activePalette.tokens.primary,
+              color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+            }}
           >
             {savedSuccess ? <Check size={16} /> : <Save size={16} />}
             <span>{savedSuccess ? 'Configurações Salvas!' : 'Salvar Alterações'}</span>
@@ -304,15 +428,154 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Simulator Quick Role Switcher Banner */}
+      <div
+        className={`p-4 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg ${
+          isLightMode ? 'bg-white border-slate-200' : 'bg-[#131926]/90 border-[#1F293D]'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md font-bold"
+            style={{
+              backgroundColor: activePalette.tokens.badgeBg,
+              color: activePalette.tokens.primary,
+              border: `1px solid ${activePalette.tokens.badgeBorder}`,
+            }}
+          >
+            <Zap size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                Simulador de Acesso Rápido (Role Testing)
+              </span>
+              <Badge variant="outline" className={ROLE_HIERARCHIES[currentRole]?.badge}>
+                Você está logado como: {currentUser.name} ({currentRole})
+              </Badge>
+            </div>
+            <p className={`text-[11px] ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              Alterne instantaneamente para testar a experiência e restrições de cada nível hierárquico em tempo real:
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(['Master', 'Administrador', 'Editor', 'Cliente', 'Usuário'] as UserRole[]).map((role) => {
+            const isCurrent = currentRole === role;
+            return (
+              <button
+                key={role}
+                onClick={() => switchRoleSimulation(role)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                  isCurrent
+                    ? 'shadow-md scale-105'
+                    : isLightMode
+                    ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                    : 'bg-[#0B0F17] text-slate-400 border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+                }`}
+                style={
+                  isCurrent
+                    ? {
+                        backgroundColor: activePalette.tokens.primary,
+                        color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                        borderColor: activePalette.tokens.primary,
+                      }
+                    : {}
+                }
+              >
+                {role}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-[#1F293D] pb-3 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('design')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'design'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'design'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <Palette size={16} />
+          <span>Design System & Cores (4 Paletas)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('permissions')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'permissions'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'permissions'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <Shield size={16} />
+          <span>Matriz de Permissões RBAC</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'users'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'users'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <Users size={16} />
+          <span>Usuários & Hierarquia</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('company')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'company'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'company'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
           <Building2 size={16} />
           <span>Dados da Empresa & Logos</span>
@@ -322,45 +585,63 @@ export default function SettingsPage() {
           onClick={() => setActiveTab('levels')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'levels'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'levels'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
-          <Shield size={16} />
-          <span>Níveis & Permissões</span>
+          <Key size={16} />
+          <span>Planos & Assinaturas</span>
         </button>
 
         <button
           onClick={() => setActiveTab('system')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'system'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'system'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
           <Target size={16} />
           <span>5 Pilares</span>
         </button>
 
         <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            activeTab === 'users'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
-              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
-          }`}
-        >
-          <Users size={16} />
-          <span>Usuários & Acesso</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('depts')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'depts'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'depts'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
           <Building size={16} />
           <span>Departamentos</span>
@@ -370,9 +651,19 @@ export default function SettingsPage() {
           onClick={() => setActiveTab('csv')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'csv'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'csv'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
           <FileSpreadsheet size={16} />
           <span>Importar CSV</span>
@@ -382,27 +673,649 @@ export default function SettingsPage() {
           onClick={() => setActiveTab('saas')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'saas'
-              ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
               : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
           }`}
+          style={
+            activeTab === 'saas'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
         >
           <Sliders size={16} />
           <span>Módulos SaaS</span>
         </button>
       </div>
 
-      {/* Tab 1: DADOS DA EMPRESA & LOGOTIPOS (WHITELABEL COMPLETO) */}
+      {/* ========================================================================= */}
+      {/* TAB: DESIGN SYSTEM & 4 PALETAS DE CORES VIBRANTES                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'design' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F293D]">
+              <div>
+                <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                  <Palette size={20} style={{ color: activePalette.tokens.primary }} />
+                  <span>Personalização do Design System & Paleta de Cores</span>
+                </h3>
+                <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Selecione entre 4 paletas visuais com contraste inteligente adaptativo. Quando uma paleta exige fundo claro para contraste ideal, o tema adapta automaticamente.
+                </p>
+              </div>
+
+              <button
+                onClick={resetTheme}
+                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 shrink-0 ${
+                  isLightMode
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                    : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
+                }`}
+              >
+                <RefreshCw size={14} />
+                <span>Restaurar Padrão (Rocket Gold)</span>
+              </button>
+            </div>
+
+            {/* 4 Color Palette Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {(Object.keys(COLOR_PALETTES) as PaletteId[]).map((paletteKey) => {
+                const pal = COLOR_PALETTES[paletteKey];
+                const isSelected = activePaletteId === paletteKey;
+
+                return (
+                  <div
+                    key={paletteKey}
+                    onClick={() => setPalette(paletteKey)}
+                    className={`p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      isSelected
+                        ? 'ring-2 scale-[1.02] shadow-2xl'
+                        : isLightMode
+                        ? 'bg-slate-50 hover:bg-white border-slate-200 hover:border-slate-300'
+                        : 'bg-[#0B0F17]/80 hover:bg-[#131926] border-[#1F293D] hover:border-slate-600'
+                    }`}
+                    style={
+                      isSelected
+                        ? {
+                            borderColor: pal.tokens.primary,
+                            boxShadow: `0 10px 30px -10px ${pal.tokens.glow}`,
+                          }
+                        : {}
+                    }
+                  >
+                    {/* Ambient Glow */}
+                    <div
+                      className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-25 group-hover:opacity-40 transition-opacity"
+                      style={{ background: pal.tokens.primary }}
+                    />
+
+                    <div className="flex items-start justify-between gap-3 relative z-10">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className={`text-base font-extrabold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                            {pal.name}
+                          </h4>
+                          {isSelected && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0.5 px-2 font-black uppercase"
+                              style={{
+                                backgroundColor: pal.tokens.badgeBg,
+                                color: pal.tokens.primary,
+                                borderColor: pal.tokens.badgeBorder,
+                              }}
+                            >
+                              ✓ Ativa
+                            </Badge>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-1 leading-relaxed ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {pal.subtitle}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {pal.mode === 'light' ? (
+                          <span className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                            <Sun size={11} /> Light Luxe
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                            <Moon size={11} /> Dark Theme
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Color Swatch Preview */}
+                    <div className="mt-4 pt-4 border-t border-slate-800/40 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold text-slate-400">Paleta de Tons:</span>
+                        <div className="flex items-center -space-x-1.5">
+                          {pal.previewColors.map((hex, idx) => (
+                            <div
+                              key={idx}
+                              className="w-6 h-6 rounded-full border-2 border-slate-900 shadow"
+                              style={{ backgroundColor: hex }}
+                              title={`Cor: ${hex}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          isSelected
+                            ? 'text-white'
+                            : isLightMode
+                            ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                            : 'bg-[#1F293D] text-slate-300 hover:bg-slate-700'
+                        }`}
+                        style={isSelected ? { backgroundColor: pal.tokens.primary } : {}}
+                      >
+                        {isSelected ? 'Em Uso' : 'Aplicar Paleta'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Live Visual Token Preview Box */}
+            <div
+              className={`p-6 rounded-3xl border space-y-4 ${
+                isLightMode ? 'bg-white border-slate-200 shadow-lg' : 'bg-[#0B0F17] border-[#1F293D]'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className={`text-sm font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    👀 Demonstração ao Vivo dos Tokens do Tema Selecionado
+                  </h4>
+                  <p className={`text-xs ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Todos os botões, badges, gráficos e modais do ecossistema herdam automaticamente estas propriedades:
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                {/* Button Token */}
+                <div
+                  className={`p-4 rounded-2xl border space-y-2.5 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#131926] border-[#1F293D]'
+                  }`}
+                >
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Botão Principal</span>
+                  <button
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs shadow-md transition-transform hover:scale-105"
+                    style={{
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }}
+                  >
+                    🚀 Ação Primária
+                  </button>
+                </div>
+
+                {/* Badge Token */}
+                <div
+                  className={`p-4 rounded-2xl border space-y-2.5 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#131926] border-[#1F293D]'
+                  }`}
+                >
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Badge & Destaque</span>
+                  <div
+                    className="p-2.5 rounded-xl border text-center font-bold text-xs"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
+                    ★ Mentorado Ouro
+                  </div>
+                </div>
+
+                {/* Card Token */}
+                <div
+                  className={`p-4 rounded-2xl border space-y-2.5 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#131926] border-[#1F293D]'
+                  }`}
+                >
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Card com Glow</span>
+                  <div
+                    className={`p-2.5 rounded-xl border font-semibold text-[11px] ${
+                      isLightMode ? 'bg-white border-slate-200' : 'bg-[#0B0F17] border-slate-700'
+                    }`}
+                  >
+                    Faturamento: <strong style={{ color: activePalette.tokens.primary }}>R$ 250k/mês</strong>
+                  </div>
+                </div>
+
+                {/* Gradient Text Token */}
+                <div
+                  className={`p-4 rounded-2xl border space-y-2.5 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#131926] border-[#1F293D]'
+                  }`}
+                >
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Gradiente de Texto</span>
+                  <div className="font-extrabold text-base theme-gradient-text text-center pt-1">
+                    ROCKET CLUB VIP
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: MATRIZ DE PERMISSÕES RBAC                                             */}
+      {/* ========================================================================= */}
+      {activeTab === 'permissions' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F293D]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    <Shield size={20} style={{ color: activePalette.tokens.primary }} />
+                    <span>Matriz de Permissões RBAC dos Níveis de Usuário</span>
+                  </h3>
+                  <Badge variant="outline" className="text-yellow-400 border-yellow-500/40">
+                    Controle de Acesso
+                  </Badge>
+                </div>
+                <p className={`text-xs mt-1 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  O Comandante Master pode ligar e desligar permissões granulares de cada um dos 5 níveis: <strong>Master, Administrador, Editor, Cliente, Usuário</strong>.
+                </p>
+              </div>
+
+              {isMaster ? (
+                <button
+                  onClick={() => setIsResetPermissionsModalOpen(true)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 shrink-0 ${
+                    isLightMode
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                      : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
+                  }`}
+                >
+                  <RefreshCw size={14} />
+                  <span>Restaurar Matriz Padrão</span>
+                </button>
+              ) : (
+                <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                  <Lock size={14} />
+                  <span>Modo Somente Leitura (Logado como {currentRole})</span>
+                </div>
+              )}
+            </div>
+
+            {/* Role Switcher Tabs */}
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-2">
+              {(['Master', 'Administrador', 'Editor', 'Cliente', 'Usuário'] as UserRole[]).map((role) => {
+                const info = ROLE_HIERARCHIES[role];
+                const isSelected = matrixRole === role;
+
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setMatrixRole(role)}
+                    className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
+                      isSelected
+                        ? 'scale-105 shadow-lg'
+                        : isLightMode
+                        ? 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        : 'bg-[#0B0F17]/70 text-slate-400 border-[#1F293D] hover:bg-[#1F293D]'
+                    }`}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: activePalette.tokens.badgeBg,
+                            color: activePalette.tokens.primary,
+                            borderColor: activePalette.tokens.primary,
+                          }
+                        : {}
+                    }
+                  >
+                    <Key size={14} style={isSelected ? { color: activePalette.tokens.primary } : {}} />
+                    <span>{role}</span>
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase"
+                      style={{
+                        backgroundColor: info.color + '25',
+                        color: info.color,
+                      }}
+                    >
+                      Nível {info.rank}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Role Header Banner */}
+            <div
+              className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+                isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/90 border-[#1F293D]'
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className={`text-base font-extrabold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    Permissões para o cargo: <span style={{ color: activePalette.tokens.primary }}>{matrixRole}</span>
+                  </h4>
+                  <Badge variant="outline" className={ROLE_HIERARCHIES[matrixRole]?.badge}>
+                    Nível de Hierarquia {ROLE_HIERARCHIES[matrixRole]?.rank} de 5
+                  </Badge>
+                </div>
+                <p className={`text-xs mt-0.5 ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {ROLE_HIERARCHIES[matrixRole]?.description}
+                </p>
+              </div>
+
+              {matrixRole === 'Master' && (
+                <span className="px-3 py-1.5 rounded-xl bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 text-[11px] font-extrabold shrink-0 hidden sm:inline">
+                  👑 Acesso Total & Irrestrito
+                </span>
+              )}
+            </div>
+
+            {/* Granular Permission Grid by Section */}
+            <div className="space-y-6">
+              {permissionSections.map((sec, idx) => (
+                <div
+                  key={idx}
+                  className={`p-5 rounded-3xl border space-y-4 ${
+                    isLightMode ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0B0F17]/60 border-[#1F293D]'
+                  }`}
+                >
+                  <div className="pb-3 border-b border-slate-800/40 flex items-center justify-between">
+                    <div>
+                      <h4 className={`text-sm font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                        {sec.title}
+                      </h4>
+                      <p className={`text-xs ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {sec.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {sec.items.map((perm) => {
+                      const isEnabled = rolePermissions[matrixRole]?.[perm.key] ?? false;
+                      const isLocked = matrixRole === 'Master'; // Master is permanently unrestricted
+
+                      return (
+                        <div
+                          key={perm.key}
+                          onClick={() => {
+                            if (!isMaster || isLocked) return;
+                            toggleRolePermission(matrixRole, perm.key);
+                          }}
+                          className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                            isLocked || !isMaster ? 'cursor-default' : 'cursor-pointer hover:border-slate-600'
+                          } ${
+                            isEnabled
+                              ? isLightMode
+                                ? 'bg-slate-50 border-slate-200'
+                                : 'bg-[#131926] border-slate-800'
+                              : isLightMode
+                              ? 'bg-white/50 border-slate-200 opacity-60'
+                              : 'bg-[#0B0F17]/40 border-slate-800/60 opacity-60'
+                          }`}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <span
+                              className={`text-xs font-bold block truncate ${
+                                isEnabled
+                                  ? isLightMode
+                                    ? 'text-slate-900'
+                                    : 'text-slate-100'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              {perm.label}
+                            </span>
+                            <span className={`text-[11px] leading-tight block ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {perm.desc}
+                            </span>
+                          </div>
+
+                          {/* Toggle Switch */}
+                          <div className="shrink-0">
+                            {isLocked ? (
+                              <span className="w-8 h-8 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center font-bold text-xs border border-yellow-500/40">
+                                ✓
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={!isMaster}
+                                className={`w-12 h-6 rounded-full transition-colors relative flex items-center px-1 ${
+                                  isEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+                                }`}
+                              >
+                                <span
+                                  className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                                    isEnabled ? 'translate-x-6' : 'translate-x-0'
+                                  }`}
+                                />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: USUÁRIOS & HIERARQUIA                                                 */}
+      {/* ========================================================================= */}
+      {activeTab === 'users' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F293D]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    <Users size={20} style={{ color: activePalette.tokens.primary }} />
+                    <span>Gestão de Usuários & Regras de Hierarquia</span>
+                  </h3>
+                  <Badge variant="outline" className="border-blue-500/40 text-blue-300">
+                    {systemUsers.length} Usuários Cadastrados
+                  </Badge>
+                </div>
+                <p className={`text-xs mt-1 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Hierarquia protegida: Usuários Administradores têm acesso total operacional, mas <strong>não podem excluir contas de nível Master</strong>.
+                </p>
+              </div>
+
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setUserActionError(null);
+                    setIsNewUserModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                  style={{
+                    backgroundColor: activePalette.tokens.primary,
+                    color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>Cadastrar Novo Usuário</span>
+                </button>
+              )}
+            </div>
+
+            {/* User List Table */}
+            <div className="overflow-x-auto rounded-2xl border border-[#1F293D]">
+              <table className="w-full text-left text-xs">
+                <thead
+                  className={`border-b ${
+                    isLightMode ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-[#0B0F17] text-slate-400 border-[#1F293D]'
+                  }`}
+                >
+                  <tr>
+                    <th className="p-4 font-bold">Usuário / Nome</th>
+                    <th className="p-4 font-bold">Cargo & Nível</th>
+                    <th className="p-4 font-bold">Departamento</th>
+                    <th className="p-4 font-bold">Status</th>
+                    <th className="p-4 font-bold">Último Acesso</th>
+                    <th className="p-4 font-bold text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1F293D]/60">
+                  {systemUsers.map((usr) => {
+                    const isLogged = currentUser.id === usr.id;
+                    const roleInfo = ROLE_HIERARCHIES[usr.role] || ROLE_HIERARCHIES['Usuário'];
+
+                    return (
+                      <tr
+                        key={usr.id}
+                        className={`transition-colors ${
+                          isLogged
+                            ? isLightMode
+                              ? 'bg-amber-500/10'
+                              : 'bg-yellow-500/10 font-bold'
+                            : isLightMode
+                            ? 'hover:bg-slate-50'
+                            : 'hover:bg-[#131926]/50'
+                        }`}
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow"
+                              style={{
+                                backgroundColor: roleInfo.color + '20',
+                                color: roleInfo.color,
+                                border: `1px solid ${roleInfo.color}50`,
+                              }}
+                            >
+                              {usr.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                                  {usr.name}
+                                </span>
+                                {isLogged && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-yellow-500 text-slate-950 font-black">
+                                    VOCÊ
+                                  </span>
+                                )}
+                                {usr.isPrimaryMaster && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">
+                                    MASTER PRIMÁRIO
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-[11px] block ${isLightMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                {usr.email} • {usr.phone || 'Sem telefone'}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-4">
+                          <Badge variant="outline" className={roleInfo.badge}>
+                            {usr.role} (Nível {roleInfo.rank})
+                          </Badge>
+                        </td>
+
+                        <td className="p-4 text-slate-300 font-medium">
+                          {usr.department || 'Geral'}
+                        </td>
+
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            {usr.status}
+                          </span>
+                        </td>
+
+                        <td className="p-4 text-slate-400 text-[11px]">
+                          {usr.lastActive || 'Recente'}
+                        </td>
+
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Switch to this user button */}
+                            {!isLogged && (
+                              <button
+                                onClick={() => switchUser(usr.id)}
+                                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
+                                  isLightMode
+                                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                                    : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
+                                }`}
+                                title="Fazer login como este usuário para teste"
+                              >
+                                Logar
+                              </button>
+                            )}
+
+                            {isAdmin && (
+                              <button
+                                onClick={() => {
+                                  setUserActionError(null);
+                                  setEditingUser(usr);
+                                }}
+                                className="p-2 rounded-lg bg-[#0B0F17] hover:bg-[#1F293D] text-slate-400 hover:text-slate-200 border border-[#1F293D] transition-colors"
+                                title="Editar dados do usuário"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            )}
+
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleInitiateDeleteUser(usr)}
+                                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
+                                title="Excluir usuário"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: DADOS DA EMPRESA & LOGOTIPOS (WHITELABEL COMPLETO)                    */}
+      {/* ========================================================================= */}
       {activeTab === 'company' && (
         <div className="space-y-8 animate-in fade-in duration-200">
-          {/* Section: Logotipos & Identidade Visual */}
           <Card className="p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1F293D]">
               <div>
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <Palette size={20} className="text-yellow-400" />
+                <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                  <Palette size={20} style={{ color: activePalette.tokens.primary }} />
                   <span>Logotipos & Identidade Visual da Marca</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
                   Envie o logotipo completo e o ícone reduzido para personalizar o menu expandido e recolhido.
                 </p>
               </div>
@@ -412,11 +1325,11 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 1. Logo Completo (Menu Aberto / Topbar / PDF) */}
+              {/* 1. Logo Completo */}
               <Card className="p-5 bg-[#0B0F17]/70 space-y-4 border-[#1F293D]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ImageIcon size={18} className="text-yellow-400" />
+                    <ImageIcon size={18} style={{ color: activePalette.tokens.primary }} />
                     <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                       1. Logo Completo (Menu Expandido & PDF)
                     </span>
@@ -431,7 +1344,14 @@ export default function SettingsPage() {
                     onChange={handleLogoUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/20 group-hover:scale-110 transition-transform">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
                     <Upload size={18} />
                   </div>
                   <div>
@@ -469,11 +1389,11 @@ export default function SettingsPage() {
                 </div>
               </Card>
 
-              {/* 2. Ícone Reduzido / Favicon (Menu Fechado) */}
+              {/* 2. Ícone Reduzido */}
               <Card className="p-5 bg-[#0B0F17]/70 space-y-4 border-[#1F293D]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={18} className="text-yellow-400" />
+                    <Sparkles size={18} style={{ color: activePalette.tokens.primary }} />
                     <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                       2. Ícone Reduzido (Menu Fechado / Compacto)
                     </span>
@@ -488,7 +1408,14 @@ export default function SettingsPage() {
                     onChange={handleIconUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/20 group-hover:scale-110 transition-transform">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border group-hover:scale-110 transition-transform"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
                     <Upload size={18} />
                   </div>
                   <div>
@@ -503,7 +1430,7 @@ export default function SettingsPage() {
                 <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {iconUrl ? (
-                      <img src={iconUrl} alt="Ícone Reduzido" className="w-10 h-10 object-contain rounded-lg p-1 bg-slate-900 border border-[#1F293D]" />
+                      <img src={iconUrl} alt="Ícone Reduzido" className="w-10 h-10 object-contain rounded-lg p-1 bg-slate-900 border border-yellow-500/30" />
                     ) : (
                       <span className="text-xs text-slate-500 italic">Ícone padrão ativo (🚀)</span>
                     )}
@@ -526,61 +1453,16 @@ export default function SettingsPage() {
                 </div>
               </Card>
             </div>
-
-            {/* Live Sidebar Preview (Aberto vs Fechado) */}
-            <div className="p-5 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-4">
-              <span className="text-xs font-bold text-yellow-400 uppercase tracking-wider block">
-                👀 Pré-visualização Dinâmica do Menu Lateral (Sidebar)
-              </span>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Preview Aberto */}
-                <div className="p-4 rounded-xl bg-[#131926] border border-[#1F293D] space-y-2">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase">Modo Expandido (Aberto)</span>
-                  <div className="h-16 px-4 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center gap-3">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="Logo Preview" className="max-h-9 max-w-[160px] object-contain" />
-                    ) : (
-                      <>
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-lg">
-                          🚀
-                        </div>
-                        <div>
-                          <span className="font-bold text-sm text-slate-100 gold-gradient-text block">
-                            {company.tradeName || 'ROCKET CLUB'}
-                          </span>
-                          <span className="text-[9px] text-yellow-500 uppercase font-semibold">SaaS Enterprise</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Preview Fechado */}
-                <div className="p-4 rounded-xl bg-[#131926] border border-[#1F293D] space-y-2">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase">Modo Recolhido (Fechado)</span>
-                  <div className="h-16 px-4 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-center">
-                    {iconUrl ? (
-                      <img src={iconUrl} alt="Ícone Preview" className="w-9 h-9 object-contain rounded-lg p-1 bg-slate-900 border border-yellow-500/30" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-lg">
-                        🚀
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
           </Card>
 
-          {/* Section: Dados Oficiais da Empresa */}
+          {/* Dados Oficiais da Empresa */}
           <Card className="p-6 space-y-6">
             <div className="pb-4 border-b border-[#1F293D]">
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Building2 size={20} className="text-yellow-400" />
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                <Building2 size={20} style={{ color: activePalette.tokens.primary }} />
                 <span>Dados Cadastrais & Contato da Empresa</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
                 Informações corporativas utilizadas na emissão de fichas, contratos, cabeçalhos e relatórios.
               </p>
             </div>
@@ -657,477 +1539,578 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Website Oficial</label>
-                <div className="relative">
-                  <Globe size={14} className="absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="text"
-                    value={company.website}
-                    onChange={(e) => setCompany({ ...company, website: e.target.value })}
-                    placeholder="https://empresa.com.br"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-9 pr-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Endereço Comercial</label>
-                <div className="relative">
-                  <MapPin size={14} className="absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="text"
-                    value={`${company.address.street}, ${company.address.number} - ${company.address.city}/${company.address.state}`}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setCompany({
-                        ...company,
-                        address: { ...company.address, street: val },
-                      });
-                    }}
-                    placeholder="Av. Paulista, 1000 - São Paulo/SP"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-9 pr-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                  />
-                </div>
-              </div>
             </div>
           </Card>
         </div>
       )}
 
-      {/* Tab 2: NÍVEIS DE ACESSO & HIERARQUIA DE PERMISSÕES */}
+      {/* ========================================================================= */}
+      {/* TAB: PLANOS & ASSINATURAS                                                  */}
+      {/* ========================================================================= */}
       {activeTab === 'levels' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <Card className="p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1F293D]">
               <div>
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <Shield size={20} className="text-yellow-400" />
-                  <span>Níveis de Assinatura & Matriz de Permissões</span>
+                <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                  <Key size={20} style={{ color: activePalette.tokens.primary }} />
+                  <span>Níveis de Assinatura & Planos de Membros</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Defina quais módulos cada nível de assinatura ou cargo tem autorização para acessar no portal.
+                <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Categorize os planos de aceleração e mentorias do ecossistema.
                 </p>
               </div>
 
               <button
                 onClick={() => setIsCreatingLevel(!isCreatingLevel)}
-                className="px-4 py-2 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                className="px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }}
               >
                 <Plus size={16} />
-                <span>Novo Nível / Plano</span>
+                <span>Novo Plano / Nível</span>
               </button>
             </div>
 
-            {/* Create New Level Modal / Form */}
-            {isCreatingLevel && (
-              <form
-                onSubmit={handleCreateNewLevel}
-                className="p-4 rounded-2xl bg-[#0B0F17] border border-yellow-500/40 space-y-3 animate-in zoom-in-95 duration-200 text-xs"
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {accessLevels.map((lvl) => (
+                <div
+                  key={lvl.id}
+                  className={`p-5 rounded-3xl border space-y-3 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17] border-[#1F293D]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className={lvl.badge}>
+                      {lvl.name}
+                    </Badge>
+                  </div>
+                  <p className={`text-xs leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                    {lvl.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: 5 PILARES                                                            */}
+      {/* ========================================================================= */}
+      {activeTab === 'system' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="pb-4 border-b border-[#1F293D]">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                <Target size={20} style={{ color: activePalette.tokens.primary }} />
+                <span>5 Pilares da Metodologia Rocket Club</span>
+              </h3>
+              <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Pilares estruturais avaliados no diagnóstico de evolução de cada mentorado.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {pillars.map((pillar, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-2xl border flex items-center gap-3 ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17] border-[#1F293D]'
+                  }`}
+                >
+                  <span
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                    }}
+                  >
+                    #{idx + 1}
+                  </span>
+                  <span className={`text-xs font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    {pillar}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: DEPARTAMENTOS                                                        */}
+      {/* ========================================================================= */}
+      {activeTab === 'depts' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="pb-4 border-b border-[#1F293D]">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                <Building size={20} style={{ color: activePalette.tokens.primary }} />
+                <span>Departamentos & Setores da Operação</span>
+              </h3>
+              <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Organize os artigos da Wiki e responsabilidades dos membros da equipe.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {departments.map((dept) => (
+                <div
+                  key={dept.id}
+                  className={`p-4 rounded-2xl border flex items-center justify-between ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17] border-[#1F293D]'
+                  }`}
+                >
+                  <span className={`text-xs font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    {dept.name}
+                  </span>
+                  {dept.fixed && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Padrão
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: IMPORTAR CSV                                                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'csv' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6 text-center">
+            <div className="w-16 h-16 rounded-3xl mx-auto flex items-center justify-center shadow-lg" style={{ backgroundColor: activePalette.tokens.badgeBg, color: activePalette.tokens.primary }}>
+              <FileSpreadsheet size={32} />
+            </div>
+            <div>
+              <h3 className={`text-lg font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                Importação em Massa via CSV / Planilha
+              </h3>
+              <p className={`text-xs max-w-md mx-auto mt-1 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Importe listas de mentorados, leads do CRM ou transações financeiras de forma automatizada.
+              </p>
+            </div>
+
+            {csvStatus ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold max-w-md mx-auto">
+                {csvStatus}
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setCsvStatus('Validando colunas do arquivo... 34 registros importados com sucesso!');
+                  setTimeout(() => setCsvStatus(null), 4000);
+                }}
+                className="px-6 py-3 rounded-2xl font-bold text-xs shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }}
               >
-                <h4 className="font-bold text-yellow-400 text-sm">Criar Novo Nível de Acesso Personalizado</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Nome do Nível / Assinatura</label>
-                    <input
-                      type="text"
-                      required
-                      value={newLevelName}
-                      onChange={(e) => setNewLevelName(e.target.value)}
-                      placeholder="Ex: Plano Mastermind VIP"
-                      className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Descrição Breve</label>
-                    <input
-                      type="text"
-                      value={newLevelDesc}
-                      onChange={(e) => setNewLevelDesc(e.target.value)}
-                      placeholder="Ex: Acesso a aulas e eventos exclusivos"
-                      className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                    />
-                  </div>
+                <Upload size={16} />
+                <span>Simular Upload de CSV</span>
+              </button>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: MÓDULOS SAAS                                                         */}
+      {/* ========================================================================= */}
+      {activeTab === 'saas' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <Card className="p-6 space-y-6">
+            <div className="pb-4 border-b border-[#1F293D]">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                <Sliders size={20} style={{ color: activePalette.tokens.primary }} />
+                <span>Ativação de Módulos & Feature Flags</span>
+              </h3>
+              <p className={`text-xs ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Ative ou desative módulos inteiros do ecossistema SaaS para este tenant.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { key: 'crm', label: 'CRM & Funil de Vendas' },
+                { key: 'mentorados', label: 'Gestão de Mentorados' },
+                { key: 'academy', label: 'Rocket Academy' },
+                { key: 'wiki', label: 'Wiki & SOPs' },
+                { key: 'financial', label: 'Módulo Financeiro' },
+                { key: 'events', label: 'Eventos Presenciais' },
+                { key: 'whatsapp_automation', label: 'Automação de WhatsApp' },
+                { key: 'ai_copilot', label: 'IA Copilot Executivo' },
+              ].map((mod) => (
+                <div
+                  key={mod.key}
+                  className={`p-4 rounded-2xl border flex items-center justify-between ${
+                    isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17] border-[#1F293D]'
+                  }`}
+                >
+                  <span className={`text-xs font-bold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                    {mod.label}
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                    ATIVO
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: NOVO USUÁRIO                                                       */}
+      {/* ========================================================================= */}
+      <Modal
+        isOpen={isNewUserModalOpen}
+        onClose={() => setIsNewUserModalOpen(false)}
+        title="Cadastrar Novo Usuário"
+        subtitle="Defina o cargo de acesso (Master, Administrador, Editor, Cliente, Usuário) e departamento"
+        icon={<Users size={20} />}
+        size="md"
+      >
+        <form onSubmit={handleCreateUserSubmit} className="space-y-4 text-xs">
+          {userActionError && (
+            <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 font-bold flex items-center gap-2">
+              <AlertCircle size={15} />
+              <span>{userActionError}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-slate-400 font-semibold mb-1">Nome Completo</label>
+            <input
+              type="text"
+              required
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              placeholder="Ex: João da Silva"
+              className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-semibold"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">E-mail Corporativo</label>
+              <input
+                type="email"
+                required
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="usuario@empresa.com.br"
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Telefone / WhatsApp</label>
+              <input
+                type="text"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(maskPhone(e.target.value))}
+                placeholder="(11) 99999-8888"
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Cargo & Nível de Acesso</label>
+              <select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value as UserRole)}
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+              >
+                {isMaster && <option value="Master">👑 Master (Acesso Total)</option>}
+                <option value="Administrador">🛡️ Administrador (Operacional Total)</option>
+                <option value="Editor">✏️ Editor (Conteúdo & CRM)</option>
+                <option value="Cliente">🎓 Cliente (Mentorado VIP)</option>
+                <option value="Usuário">👤 Usuário (Visitante / Básico)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Departamento</label>
+              <select
+                value={newUserDept}
+                onChange={(e) => setNewUserDept(e.target.value)}
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1F293D]">
+            <button
+              type="button"
+              onClick={() => setIsNewUserModalOpen(false)}
+              className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-400 hover:text-slate-200 border border-[#1F293D] font-bold"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl font-bold shadow-md hover:scale-105 transition-all"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              Salvar Usuário
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDITAR USUÁRIO                                                     */}
+      {/* ========================================================================= */}
+      {editingUser && (
+        <Modal
+          isOpen={Boolean(editingUser)}
+          onClose={() => setEditingUser(null)}
+          title={`Editar Usuário: ${editingUser.name}`}
+          subtitle="Atualize os dados e perfil de acesso deste membro da equipe"
+          icon={<Edit2 size={20} />}
+          size="md"
+        >
+          <form onSubmit={handleEditUserSubmit} className="space-y-4 text-xs">
+            {userActionError && (
+              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 font-bold flex items-center gap-2">
+                <AlertCircle size={15} />
+                <span>{userActionError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1">Nome Completo</label>
+              <input
+                type="text"
+                required
+                value={editingUser.name}
+                onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-semibold"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">E-mail</label>
+                <input
+                  type="email"
+                  required
+                  value={editingUser.email}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={editingUser.phone || ''}
+                  onChange={(e) => setEditingUser({ ...editingUser, phone: maskPhone(e.target.value) })}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Cargo / Nível</label>
+                <select
+                  value={editingUser.role}
+                  onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-bold"
+                >
+                  {isMaster && <option value="Master">👑 Master (Acesso Total)</option>}
+                  <option value="Administrador">🛡️ Administrador</option>
+                  <option value="Editor">✏️ Editor</option>
+                  <option value="Cliente">🎓 Cliente</option>
+                  <option value="Usuário">👤 Usuário</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Status</label>
+                <select
+                  value={editingUser.status}
+                  onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as any })}
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                >
+                  <option value="ATIVO">Ativo</option>
+                  <option value="INATIVO">Inativo</option>
+                  <option value="BLOQUEADO">Bloqueado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1F293D]">
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-400 hover:text-slate-200 border border-[#1F293D] font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl font-bold shadow-md hover:scale-105 transition-all"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }}
+              >
+                Atualizar Usuário
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EXCLUSÃO DE USUÁRIO COM VERIFICAÇÃO HIERÁRQUICA                     */}
+      {/* ========================================================================= */}
+      {deletingUserTarget && (
+        <Modal
+          isOpen={Boolean(deletingUserTarget)}
+          onClose={() => {
+            setDeletingUserTarget(null);
+            setDeleteBlockedReason(null);
+          }}
+          size="sm"
+          hideHeader
+        >
+          <div className="text-center space-y-4 pt-2">
+            {deleteBlockedReason ? (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+                  <Shield size={32} className="text-amber-400" />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black text-slate-100">
+                    Ação Bloqueada por Regra Hierárquica
+                  </h3>
+                  <p className="text-xs text-amber-200/90 leading-relaxed bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-left">
+                    🛡️ <strong>Regra do Sistema:</strong> {deleteBlockedReason}
+                  </p>
+                </div>
+
+                <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsCreatingLevel(false)}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#131926] text-slate-400 text-xs font-semibold"
+                    onClick={() => {
+                      setDeletingUserTarget(null);
+                      setDeleteBlockedReason(null);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1F293D] text-slate-200 text-xs font-bold border border-[#1F293D]"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
+                  <Trash2 size={28} className="animate-pulse text-red-500" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-black text-slate-100">Confirmar Exclusão</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Tem certeza que deseja excluir o usuário{' '}
+                    <strong className="text-slate-100">"{deletingUserTarget.name}"</strong> (Cargo:{' '}
+                    {deletingUserTarget.role})? Esta ação é irreversível.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeletingUserTarget(null)}
+                    className="flex-1 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 text-xs font-bold border border-[#1F293D]"
                   >
                     Cancelar
                   </button>
                   <button
-                    type="submit"
-                    className="px-4 py-1.5 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs"
-                  >
-                    Salvar Nível
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Level Selector Pills */}
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-2">
-              {accessLevels.map((lvl) => (
-                <button
-                  key={lvl.id}
-                  onClick={() => setSelectedLevelId(lvl.id)}
-                  className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
-                    selectedLevelId === lvl.id
-                      ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/60 shadow-lg shadow-yellow-500/10 scale-105'
-                      : 'bg-[#0B0F17]/70 text-slate-400 border-[#1F293D] hover:bg-[#1F293D]'
-                  }`}
-                >
-                  <Key size={14} className={selectedLevelId === lvl.id ? 'text-yellow-400' : 'text-slate-500'} />
-                  <span>{lvl.name}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Permissions Matrix for Selected Level */}
-            {selectedLevel && (
-              <div className="p-6 rounded-2xl bg-[#0B0F17]/80 border border-[#1F293D] space-y-6">
-                <div className="flex items-start justify-between pb-4 border-b border-[#1F293D]">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-base font-bold text-slate-100">{selectedLevel.name}</h4>
-                      <Badge variant="outline" className={selectedLevel.badge}>
-                        Nível Ativo
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">{selectedLevel.description}</p>
-                  </div>
-
-                  {selectedLevel.isCustom && (
-                    <button
-                      onClick={() => setDeleteTargetLevel(selectedLevel)}
-                      className="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-semibold hover:bg-red-500/20 flex items-center gap-1"
-                    >
-                      <Trash2 size={13} /> Excluir Nível
-                    </button>
-                  )}
-                </div>
-
-                {/* Modules Permission Checkbox Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {moduleDefinitions.map((mod) => {
-                    const isGranted = selectedLevel.modules[mod.key];
-
-                    return (
-                      <div
-                        key={mod.key}
-                        onClick={() => toggleModulePermission(selectedLevel.id, mod.key)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-4 ${
-                          isGranted
-                            ? 'bg-yellow-500/10 border-yellow-500/40 text-slate-100 shadow-sm'
-                            : 'bg-[#131926]/40 border-[#1F293D]/60 text-slate-400 opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl shrink-0 p-1 rounded-xl bg-[#0B0F17] border border-[#1F293D]">
-                            {mod.icon}
-                          </span>
-                          <div>
-                            <span className="text-xs font-bold block">{mod.name}</span>
-                            <span className="text-[11px] text-slate-400 leading-tight block mt-0.5">
-                              {mod.desc}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="pt-1 shrink-0">
-                          {isGranted ? (
-                            <div className="w-6 h-6 rounded-lg bg-yellow-500 text-slate-950 flex items-center justify-center font-bold">
-                              <Check size={14} />
-                            </div>
-                          ) : (
-                            <div className="w-6 h-6 rounded-lg bg-[#0B0F17] border border-[#1F293D] flex items-center justify-center text-slate-600">
-                              <Lock size={12} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 3: 5 PILARES DA MENTORIA */}
-      {activeTab === 'system' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-[#1F293D]">
-              <div>
-                <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Target size={18} className="text-yellow-400" />
-                  <span>Pilares do Programa de Mentoria</span>
-                </h3>
-                <p className="text-xs text-slate-400">Defina os nomes dos 5 pilares estratégicos da tripulação.</p>
-              </div>
-              <Badge variant="default">5 Pilares</Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              {pillars.map((pillar, idx) => (
-                <div key={idx} className="space-y-1">
-                  <label className="block text-slate-400 font-semibold flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 font-bold flex items-center justify-center text-[10px]">
-                      {idx + 1}
-                    </span>
-                    Pilar {idx + 1}
-                  </label>
-                  <input
-                    type="text"
-                    value={pillar}
-                    onChange={(e) => {
-                      const updated = [...pillars];
-                      updated[idx] = e.target.value;
-                      setPillars(updated);
-                    }}
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40 font-semibold"
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 4: CONTROLE DE USUÁRIOS */}
-      {activeTab === 'users' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-[#1F293D]">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Users size={18} className="text-yellow-400" />
-                <span>Usuários da Equipe & Atribuição de Níveis</span>
-              </h3>
-            </div>
-
-            {/* Add User Form */}
-            <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs items-end bg-[#0B0F17]/60 p-4 rounded-2xl border border-[#1F293D]">
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Nome Completo</label>
-                <input
-                  type="text"
-                  required
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  placeholder="Ex: Dra. Mariana Costa"
-                  className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">E-mail de Acesso</label>
-                <input
-                  type="email"
-                  required
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="mariana@empresa.com"
-                  className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 font-semibold mb-1">Nível de Assinatura / Permissão</label>
-                <select
-                  value={newUserLevelId}
-                  onChange={(e) => setNewUserLevelId(e.target.value)}
-                  className="w-full bg-[#131926] border border-[#1F293D] rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-                >
-                  {accessLevels.map((lvl) => (
-                    <option key={lvl.id} value={lvl.id}>
-                      {lvl.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                className="py-2 px-4 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors flex items-center justify-center gap-1"
-              >
-                <Plus size={14} /> Cadastrar Usuário
-              </button>
-            </form>
-
-            {/* Users Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-[#0B0F17]/60 text-slate-400 font-semibold uppercase text-[10px]">
-                  <tr>
-                    <th className="p-3">Nome</th>
-                    <th className="p-3">E-mail</th>
-                    <th className="p-3">Nível de Assinatura</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1F293D]/60">
-                  {usersList.map((u) => {
-                    const userLvl = accessLevels.find((l) => l.id === u.levelId) || accessLevels[0];
-
-                    return (
-                      <tr key={u.id} className="hover:bg-[#1F293D]/30">
-                        <td className="p-3 font-semibold text-slate-100">{u.name}</td>
-                        <td className="p-3 text-slate-400">{u.email}</td>
-                        <td className="p-3">
-                          <Badge variant="default" className="text-[10px]">
-                            {userLvl.name}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 5: DEPARTAMENTOS */}
-      {activeTab === 'depts' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 space-y-6">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Building2 size={18} className="text-yellow-400" />
-              <span>Gerenciar Departamentos da Empresa / Wiki</span>
-            </h3>
-
-            <form onSubmit={handleAddDept} className="flex gap-3 text-xs">
-              <input
-                type="text"
-                required
-                value={newDeptName}
-                onChange={(e) => setNewDeptName(e.target.value)}
-                placeholder="Nome do Novo Departamento (Ex: Tecnologia, Growth, Jurídico...)"
-                className="flex-1 bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-colors flex items-center gap-1.5"
-              >
-                <Plus size={16} /> Adicionar
-              </button>
-            </form>
-
-            <div className="space-y-2">
-              {departments.map((d) => (
-                <div key={d.id} className="p-3.5 rounded-xl bg-[#0B0F17]/60 border border-[#1F293D] flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200">{d.name}</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {d.fixed ? 'Fixo do Sistema' : 'Personalizado'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 6: IMPORTAÇÃO CSV */}
-      {activeTab === 'csv' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 space-y-6">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <FileSpreadsheet size={18} className="text-yellow-400" />
-              <span>Importação em Massa de Dados (CSV)</span>
-            </h3>
-
-            {csvStatus && (
-              <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
-                {csvStatus}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="p-6 bg-[#0B0F17]/60 space-y-3 border-[#1F293D]">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/20">
-                  <Upload size={20} />
-                </div>
-                <h4 className="text-sm font-bold text-slate-100">1. Formulário de Cadastro (CSV)</h4>
-                <p className="text-xs text-slate-400">Importe dados básicos dos membros (Nome, E-mail, Telefone, Especialidade).</p>
-                <button
-                  onClick={handleProcessCSV}
-                  className="w-full py-2.5 rounded-xl bg-[#1F293D] hover:bg-slate-700 text-yellow-300 font-bold text-xs border border-yellow-500/30 transition-colors"
-                >
-                  Selecionar & Processar CSV
-                </button>
-              </Card>
-
-              <Card className="p-6 bg-[#0B0F17]/60 space-y-3 border-[#1F293D]">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/20">
-                  <FileSpreadsheet size={20} />
-                </div>
-                <h4 className="text-sm font-bold text-slate-100">2. Formulário de Diagnóstico (CSV)</h4>
-                <p className="text-xs text-slate-400">Importe faturamento, metas, desafios e hobbies dos mentorados.</p>
-                <button
-                  onClick={handleProcessCSV}
-                  className="w-full py-2.5 rounded-xl bg-[#1F293D] hover:bg-slate-700 text-yellow-300 font-bold text-xs border border-yellow-500/30 transition-colors"
-                >
-                  Selecionar & Processar CSV
-                </button>
-              </Card>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 7: MÓDULOS SAAS */}
-      {activeTab === 'saas' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 space-y-6">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Sliders size={18} className="text-yellow-400" />
-              <span>Modularidade Global de Recursos (Feature Flags)</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.keys(features).map((key) => (
-                <Card key={key} className="p-4 bg-[#0B0F17]/60 flex items-center justify-between border-[#1F293D]">
-                  <div>
-                    <span className="text-xs font-bold text-slate-100 block uppercase">{key}</span>
-                    <span className="text-[11px] text-slate-400">Ativar módulo na organização</span>
-                  </div>
-                  <button
                     type="button"
-                    onClick={() => setFeatures((prev) => ({ ...prev, [key]: !prev[key as keyof FeatureFlags] }))}
-                    className={`w-12 h-6 rounded-full transition-colors relative p-1 ${
-                      features[key as keyof FeatureFlags] ? 'bg-yellow-500' : 'bg-[#1F293D]'
-                    }`}
+                    onClick={handleConfirmDeleteUser}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-xs font-black shadow-lg shadow-red-500/25"
                   >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-slate-950 transition-transform ${
-                        features[key as keyof FeatureFlags] ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
+                    Confirmar Exclusão
                   </button>
-                </Card>
-              ))}
-            </div>
-          </Card>
-        </div>
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
       )}
 
-      {/* Styled Delete Confirmation Modal */}
-      <ConfirmDeleteModal
-        isOpen={!!deleteTargetLevel}
-        title="Excluir Nível de Acesso"
-        itemName={deleteTargetLevel?.name}
-        description={`Tem certeza que deseja excluir o nível de acesso "${deleteTargetLevel?.name}"? Esta ação removerá este nível personalizado do controle de acessos.`}
-        confirmText="Sim, Excluir Nível"
-        cancelText="Cancelar"
-        onConfirm={handleConfirmDeleteLevel}
-        onCancel={() => setDeleteTargetLevel(null)}
-      />
+      {/* ========================================================================= */}
+      {/* MODAL: CONFIRMAÇÃO PARA RESTAURAR PERMISSÕES PADRÃO                       */}
+      {/* ========================================================================= */}
+      {isResetPermissionsModalOpen && (
+        <Modal
+          isOpen={isResetPermissionsModalOpen}
+          onClose={() => setIsResetPermissionsModalOpen(false)}
+          size="sm"
+          hideHeader
+        >
+          <div className="text-center space-y-4 pt-2">
+            <div className="w-16 h-16 rounded-2xl bg-yellow-500/15 border border-yellow-500/30 text-yellow-400 flex items-center justify-center mx-auto">
+              <RefreshCw size={28} className="text-yellow-400" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-black text-slate-100">Restaurar Matriz Recomendada</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Deseja restaurar as permissões recomendadas de fábrica para todos os 5 cargos (Master, Admin, Editor, Cliente, Usuário)?
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsResetPermissionsModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 text-xs font-bold border border-[#1F293D]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetRolePermissions();
+                  setIsResetPermissionsModalOpen(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl font-black text-xs shadow-md"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }}
+              >
+                Restaurar Padrão
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

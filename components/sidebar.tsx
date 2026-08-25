@@ -20,55 +20,64 @@ import {
   X,
 } from 'lucide-react';
 import { DEFAULT_TENANT, hasFeature } from '@/lib/tenant';
+import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
+import { ROLE_HIERARCHIES, RolePermissions } from '@/lib/permissions';
 
-export const NAVIGATION_ITEMS = [
+export const NAVIGATION_ITEMS: {
+  name: string;
+  href: string;
+  icon: any;
+  feature?: string;
+  permissionKey: keyof RolePermissions;
+}[] = [
   {
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    feature: 'dashboard' as const,
+    permissionKey: 'viewDashboard',
   },
   {
     name: 'CRM (Novos Leads)',
     href: '/crm',
     icon: Target,
-    feature: 'crm' as any,
+    permissionKey: 'viewCRM',
   },
   {
     name: 'Mentorados',
     href: '/mentorados',
     icon: Users,
-    feature: 'mentorados' as any,
+    permissionKey: 'viewMembers',
   },
   {
     name: 'Rocket Academy',
     href: '/academy',
     icon: GraduationCap,
-    feature: 'academy' as const,
+    permissionKey: 'viewAcademy',
   },
   {
     name: 'Wiki & Conhecimento',
     href: '/wiki',
     icon: BookOpen,
-    feature: 'wiki' as const,
+    permissionKey: 'viewWiki',
   },
   {
     name: 'Financeiro',
     href: '/financial',
     icon: TrendingUp,
-    feature: 'financial' as const,
+    permissionKey: 'viewFinancial',
   },
   {
     name: 'Eventos & Imersões',
     href: '/events',
     icon: Calendar,
-    feature: 'events' as const,
+    permissionKey: 'viewEvents',
   },
   {
     name: 'Configurações',
     href: '/settings',
     icon: Settings,
-    feature: 'settings' as any,
+    permissionKey: 'viewSettings',
   },
 ];
 
@@ -86,6 +95,9 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { currentUser, currentRole, canAccessModule, isMaster } = useAuth();
+  const { isLightMode, activePalette } = useTheme();
+
   const [logoUrl, setLogoUrl] = useState(DEFAULT_TENANT.company?.logoUrl || DEFAULT_TENANT.logoUrl || '');
   const [iconUrl, setIconUrl] = useState(DEFAULT_TENANT.company?.iconUrl || DEFAULT_TENANT.iconUrl || '');
   const [tradeName, setTradeName] = useState(DEFAULT_TENANT.company?.tradeName || DEFAULT_TENANT.name);
@@ -102,6 +114,8 @@ export function Sidebar({
     } catch (e) {}
   }, []);
 
+  const roleInfo = ROLE_HIERARCHIES[currentRole] || ROLE_HIERARCHIES['Usuário'];
+
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -113,9 +127,13 @@ export function Sidebar({
         />
       )}
 
-      {/* Main Sidebar (Desktop fixed + Mobile Slide-over Drawer) */}
+      {/* Main Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen bg-[#131926]/95 backdrop-blur-2xl border-r border-[#1F293D] transition-all duration-300 flex flex-col justify-between ${
+        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 flex flex-col justify-between border-r ${
+          isLightMode
+            ? 'bg-white/95 text-slate-800 border-slate-200'
+            : 'bg-[#131926]/95 text-slate-100 border-[#1F293D]'
+        } backdrop-blur-2xl ${
           // Mobile state
           mobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${
@@ -125,7 +143,11 @@ export function Sidebar({
       >
         {/* Brand Header */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between h-20 px-4 border-b border-[#1F293D]">
+          <div
+            className={`flex items-center justify-between h-20 px-4 border-b ${
+              isLightMode ? 'border-slate-200' : 'border-[#1F293D]'
+            }`}
+          >
             <Link
               href="/dashboard"
               onClick={onCloseMobile}
@@ -137,10 +159,18 @@ export function Sidebar({
                   <img
                     src={iconUrl}
                     alt="Ícone Marca"
-                    className="w-10 h-10 object-contain rounded-xl shadow shrink-0 p-1 bg-slate-900 border border-yellow-500/20"
+                    className="w-10 h-10 object-contain rounded-xl shadow shrink-0 p-1 bg-slate-900 border"
+                    style={{ borderColor: activePalette.tokens.primary + '40' }}
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-yellow-500/20 shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg shrink-0"
+                    style={{
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                      boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                    }}
+                  >
                     🚀
                   </div>
                 )
@@ -156,15 +186,25 @@ export function Sidebar({
                   </div>
                 ) : (
                   <>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-yellow-500/20 shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg shrink-0"
+                      style={{
+                        backgroundColor: activePalette.tokens.primary,
+                        color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                        boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                      }}
+                    >
                       🚀
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="font-bold text-base leading-tight tracking-tight text-slate-100 gold-gradient-text truncate">
+                      <span className="font-bold text-base leading-tight tracking-tight theme-gradient-text truncate">
                         {tradeName}
                       </span>
-                      <span className="text-[10px] text-yellow-500/80 uppercase font-semibold tracking-wider">
-                        Plano Enterprise
+                      <span
+                        className="text-[10px] uppercase font-bold tracking-wider"
+                        style={{ color: activePalette.tokens.primary }}
+                      >
+                        SaaS Enterprise
                       </span>
                     </div>
                   </>
@@ -175,7 +215,11 @@ export function Sidebar({
             {/* Desktop Collapse Toggle */}
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex w-7 h-7 rounded-lg bg-[#1F293D]/60 hover:bg-[#1F293D] text-slate-400 hover:text-slate-200 items-center justify-center transition-colors shrink-0 ml-1"
+              className={`hidden lg:flex w-7 h-7 rounded-lg items-center justify-center transition-colors shrink-0 ml-1 ${
+                isLightMode
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-500'
+                  : 'bg-[#1F293D]/60 hover:bg-[#1F293D] text-slate-400 hover:text-slate-200'
+              }`}
               title={collapsed ? 'Expandir Menu' : 'Recolher Menu'}
             >
               {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -184,7 +228,11 @@ export function Sidebar({
             {/* Mobile Close Drawer Button */}
             <button
               onClick={onCloseMobile}
-              className="lg:hidden p-2 rounded-xl bg-[#0B0F17] text-slate-400 hover:text-slate-100 border border-[#1F293D] transition-colors"
+              className={`lg:hidden p-2 rounded-xl border transition-colors ${
+                isLightMode
+                  ? 'bg-slate-100 text-slate-600 border-slate-200'
+                  : 'bg-[#0B0F17] text-slate-400 hover:text-slate-100 border-[#1F293D]'
+              }`}
               title="Fechar Menu"
             >
               <X size={18} />
@@ -194,8 +242,9 @@ export function Sidebar({
           {/* Navigation Menu Items */}
           <nav className="p-3 space-y-1.5 mt-2 overflow-y-auto max-h-[calc(100vh-160px)]">
             {NAVIGATION_ITEMS.map((item) => {
-              if (item.feature !== 'dashboard' && item.feature !== 'settings') {
-                if (!hasFeature(tenant, item.feature)) return null;
+              // Check RBAC permission for this role
+              if (!canAccessModule(item.permissionKey) && !isMaster) {
+                return null;
               }
 
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -208,12 +257,28 @@ export function Sidebar({
                   onClick={onCloseMobile}
                   className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/5 text-yellow-400 border border-yellow-500/30 shadow-md shadow-yellow-500/5 font-bold'
+                      ? 'font-bold shadow-md'
+                      : isLightMode
+                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-[#1F293D]/50'
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: activePalette.tokens.badgeBg,
+                          color: activePalette.tokens.primary,
+                          border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                          boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                        }
+                      : {}
+                  }
                   title={collapsed ? item.name : undefined}
                 >
-                  <Icon size={20} className={isActive ? 'text-yellow-400 shrink-0' : 'text-slate-400 shrink-0'} />
+                  <Icon
+                    size={20}
+                    className="shrink-0"
+                    style={isActive ? { color: activePalette.tokens.primary } : {}}
+                  />
                   {(!collapsed || mobileOpen) && <span className="truncate">{item.name}</span>}
                 </Link>
               );
@@ -222,20 +287,32 @@ export function Sidebar({
         </div>
 
         {/* Footer User Pill */}
-        <div className="p-3 border-t border-[#1F293D]">
+        <div className={`p-3 border-t ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
           <div
-            className={`flex items-center gap-3 p-2.5 rounded-xl bg-[#0B0F17]/60 border border-[#1F293D] ${
-              collapsed && !mobileOpen ? 'justify-center' : ''
-            }`}
+            className={`flex items-center gap-3 p-2.5 rounded-xl border ${
+              isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/60 border-[#1F293D]'
+            } ${collapsed && !mobileOpen ? 'justify-center' : ''}`}
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-sm shrink-0 shadow-md">
-              M
+            <div
+              className="w-9 h-9 rounded-full font-bold flex items-center justify-center text-sm shrink-0 shadow-md"
+              style={{
+                backgroundColor: roleInfo.color + '25',
+                color: roleInfo.color,
+                border: `1px solid ${roleInfo.color}60`,
+              }}
+            >
+              {currentUser.name.charAt(0)}
             </div>
             {(!collapsed || mobileOpen) && (
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-xs font-semibold text-slate-200 truncate">Comandante Master</span>
-                <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck size={12} /> ENTERPRISE
+                <span className={`text-xs font-semibold truncate ${isLightMode ? 'text-slate-900' : 'text-slate-200'}`}>
+                  {currentUser.name}
+                </span>
+                <span
+                  className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1"
+                  style={{ color: roleInfo.color }}
+                >
+                  <ShieldCheck size={12} /> {currentRole}
                 </span>
               </div>
             )}

@@ -42,3 +42,6 @@ scratch/
 vendor/
 .venv/
 __pycache__/
+
+.vercel
+.env*
