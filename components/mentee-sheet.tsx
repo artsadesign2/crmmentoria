@@ -42,11 +42,11 @@ import { Member, KANBAN_STAGES } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { maskCpf, maskCnpj, maskPhone, maskRg } from '@/lib/masks';
 import {
-  sendMenteeWelcomeMessage,
-  sendSessionReminderMessage,
-  sendPlanRenewalAlertMessage,
-  getStoredWhatsAppTemplates,
+  getAllWhatsAppTemplates,
+  sendWhatsAppWithTemplate,
+  WhatsAppCustomTemplate,
   interpolateWhatsAppTemplate,
+  INITIAL_DEFAULT_TEMPLATES,
 } from '@/lib/whatsapp-automations';
 
 interface MenteeSheetProps {
@@ -78,7 +78,8 @@ export function MenteeSheet({
 
   // WhatsApp Automation States
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
-  const [whatsAppType, setWhatsAppType] = useState<'welcome' | 'session' | 'renewal' | 'custom'>('welcome');
+  const [availableTemplates, setAvailableTemplates] = useState<WhatsAppCustomTemplate[]>(INITIAL_DEFAULT_TEMPLATES);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('welcome');
   const [customMsg, setCustomMsg] = useState('');
   const [sessionDate, setSessionDate] = useState('amanhã');
   const [sessionTime, setSessionTime] = useState('15:00');
@@ -157,6 +158,17 @@ export function MenteeSheet({
     }
   };
 
+  // Sync available templates when opening modal
+  useEffect(() => {
+    if (showWhatsAppModal) {
+      const list = getAllWhatsAppTemplates();
+      setAvailableTemplates(list);
+      if (list.length > 0 && (!selectedTemplateId || !list.some((t) => t.id === selectedTemplateId))) {
+        setSelectedTemplateId(list[0].id);
+      }
+    }
+  }, [showWhatsAppModal]);
+
   const handleSendWhatsAppAutomation = async () => {
     if (!formData.phone) {
       setWhatsAppFeedback({ success: false, message: 'Mentorado não possui número de WhatsApp informado.' });
@@ -166,28 +178,36 @@ export function MenteeSheet({
     setWhatsAppFeedback(null);
 
     try {
-      let result;
-      if (whatsAppType === 'welcome') {
-        result = await sendMenteeWelcomeMessage(
-          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName, specialty: formData.specialty },
-          customMsg.trim() ? customMsg : undefined
-        );
-      } else if (whatsAppType === 'session') {
-        result = await sendSessionReminderMessage(
-          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName },
-          { date: sessionDate, time: sessionTime, link: sessionMeetUrl },
-          customMsg.trim() ? customMsg : undefined
-        );
-      } else if (whatsAppType === 'renewal') {
-        result = await sendPlanRenewalAlertMessage(
-          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName },
-          { renewalDate: renewalPlanDate, daysLeft: renewalPlanDays },
-          customMsg.trim() ? customMsg : undefined
-        );
-      } else {
+      if (selectedTemplateId === 'custom_free') {
         const { sendEvolutionWhatsAppMessage } = await import('@/lib/evolution-api');
-        result = await sendEvolutionWhatsAppMessage(formData.phone, customMsg);
+        const res = await sendEvolutionWhatsAppMessage(formData.phone, customMsg);
+        if (res.success) {
+          setWhatsAppFeedback({ success: true, message: 'Mensagem disparada com sucesso pelo WhatsApp! 🚀' });
+        } else {
+          setWhatsAppFeedback({ success: false, message: res.error || 'Erro ao disparar mensagem.' });
+        }
+        return;
       }
+
+      const template = availableTemplates.find((t) => t.id === selectedTemplateId) || availableTemplates[0];
+      const templateContent = customMsg.trim() ? customMsg : template?.content || '';
+
+      const result = await sendWhatsAppWithTemplate(
+        formData.phone,
+        templateContent,
+        {
+          nome: formData.name || 'Mentorado',
+          empresa: formData.companyName || 'sua empresa',
+          especialidade: formData.specialty || 'Mentoria',
+          data: sessionDate,
+          horario: sessionTime,
+          link: sessionMeetUrl,
+          dataRenovacao: renewalPlanDate,
+          diasRestantes: renewalPlanDays,
+          tarefa: 'Meta Estratégica de Escala',
+          status: 'Em andamento',
+        }
+      );
 
       if (result.success) {
         setWhatsAppFeedback({ success: true, message: 'Mensagem disparada com sucesso pelo WhatsApp! 🚀' });
@@ -202,38 +222,25 @@ export function MenteeSheet({
   };
 
   const getComputedPreview = () => {
-    const templates = getStoredWhatsAppTemplates();
-    if (whatsAppType === 'welcome') {
-      return customMsg.trim()
-        ? customMsg
-        : interpolateWhatsAppTemplate(templates.welcome, {
-            nome: formData.name || 'Mentorado',
-            empresa: formData.companyName || 'sua empresa',
-            especialidade: formData.specialty || 'Mentoria',
-          });
+    if (selectedTemplateId === 'custom_free') {
+      return customMsg || 'Digite sua mensagem personalizada abaixo...';
     }
-    if (whatsAppType === 'session') {
-      return customMsg.trim()
-        ? customMsg
-        : interpolateWhatsAppTemplate(templates.sessionReminder, {
-            nome: formData.name || 'Mentorado',
-            empresa: formData.companyName || 'sua empresa',
-            data: sessionDate,
-            horario: sessionTime,
-            link: sessionMeetUrl,
-          });
-    }
-    if (whatsAppType === 'renewal') {
-      return customMsg.trim()
-        ? customMsg
-        : interpolateWhatsAppTemplate(templates.renewalAlert, {
-            nome: formData.name || 'Mentorado',
-            empresa: formData.companyName || 'sua empresa',
-            dataRenovacao: renewalPlanDate,
-            diasRestantes: renewalPlanDays,
-          });
-    }
-    return customMsg || 'Digite sua mensagem personalizada...';
+    const template = availableTemplates.find((t) => t.id === selectedTemplateId) || availableTemplates[0];
+    if (!template) return customMsg || '';
+
+    const content = customMsg.trim() ? customMsg : template.content;
+    return interpolateWhatsAppTemplate(content, {
+      nome: formData.name || 'Mentorado',
+      empresa: formData.companyName || 'sua empresa',
+      especialidade: formData.specialty || 'Mentoria',
+      data: sessionDate,
+      horario: sessionTime,
+      link: sessionMeetUrl,
+      dataRenovacao: renewalPlanDate,
+      diasRestantes: renewalPlanDays,
+      tarefa: 'Meta Estratégica de Escala',
+      status: 'Em andamento',
+    });
   };
 
   if (!isMounted || !member) return null;
@@ -1083,139 +1090,136 @@ export function MenteeSheet({
 
               {/* Modal Body */}
               <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 text-xs">
-                {/* Automation Type Selector Tabs */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWhatsAppType('welcome');
-                      setCustomMsg('');
-                      setWhatsAppFeedback(null);
-                    }}
-                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
-                      whatsAppType === 'welcome'
-                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
-                    }`}
-                  >
-                    🚀 Boas-Vindas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWhatsAppType('session');
-                      setCustomMsg('');
-                      setWhatsAppFeedback(null);
-                    }}
-                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
-                      whatsAppType === 'session'
-                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
-                    }`}
-                  >
-                    ⏰ Sessão
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWhatsAppType('renewal');
-                      setCustomMsg('');
-                      setWhatsAppFeedback(null);
-                    }}
-                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
-                      whatsAppType === 'renewal'
-                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
-                    }`}
-                  >
-                    🎯 Renovação
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWhatsAppType('custom');
-                      setWhatsAppFeedback(null);
-                    }}
-                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
-                      whatsAppType === 'custom'
-                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
-                    }`}
-                  >
-                    💬 Livre
-                  </button>
+                {/* Dynamic Templates Selector Grid */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Selecione o Template ou Ação:
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-1 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                    {availableTemplates.map((tmpl) => {
+                      const isSelected = selectedTemplateId === tmpl.id;
+                      return (
+                        <button
+                          key={tmpl.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTemplateId(tmpl.id);
+                            setCustomMsg('');
+                            setWhatsAppFeedback(null);
+                          }}
+                          className={`p-2 rounded-lg text-left transition-all flex items-center gap-2 ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold shadow-md'
+                              : 'text-slate-300 hover:text-slate-100 hover:bg-[#131A2B]'
+                          }`}
+                        >
+                          <span className="text-sm shrink-0">{tmpl.icon || '💬'}</span>
+                          <span className="text-[11px] truncate leading-tight">{tmpl.title}</span>
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTemplateId('custom_free');
+                        setWhatsAppFeedback(null);
+                      }}
+                      className={`p-2 rounded-lg text-left transition-all flex items-center gap-2 ${
+                        selectedTemplateId === 'custom_free'
+                          ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-bold shadow-md'
+                          : 'text-slate-300 hover:text-slate-100 hover:bg-[#131A2B]'
+                      }`}
+                    >
+                      <span className="text-sm shrink-0">✍️</span>
+                      <span className="text-[11px] truncate leading-tight">Texto Livre</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* Automation Variables Form */}
-                {whatsAppType === 'session' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Data da Sessão
-                      </label>
-                      <input
-                        type="text"
-                        value={sessionDate}
-                        onChange={(e) => setSessionDate(e.target.value)}
-                        placeholder="Ex: 28/08 (Quinta)"
-                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Horário
-                      </label>
-                      <input
-                        type="text"
-                        value={sessionTime}
-                        onChange={(e) => setSessionTime(e.target.value)}
-                        placeholder="Ex: 15:00"
-                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Link da Call
-                      </label>
-                      <input
-                        type="text"
-                        value={sessionMeetUrl}
-                        onChange={(e) => setSessionMeetUrl(e.target.value)}
-                        placeholder="https://meet.google.com/..."
-                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* Conditional Parameter Inputs based on template tags */}
+                {(() => {
+                  const currentTmpl = availableTemplates.find((t) => t.id === selectedTemplateId);
+                  const content = currentTmpl?.content || '';
+                  const hasSessionTags = content.includes('{data}') || content.includes('{horario}') || content.includes('{link}');
+                  const hasRenewalTags = content.includes('{dataRenovacao}') || content.includes('{diasRestantes}');
 
-                {whatsAppType === 'renewal' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Data de Término
-                      </label>
-                      <input
-                        type="text"
-                        value={renewalPlanDate}
-                        onChange={(e) => setRenewalPlanDate(e.target.value)}
-                        placeholder="Ex: 30/09/2026"
-                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                      />
+                  if (!hasSessionTags && !hasRenewalTags) return null;
+
+                  return (
+                    <div className="space-y-2 p-3 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                      {hasSessionTags && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Data da Sessão
+                            </label>
+                            <input
+                              type="text"
+                              value={sessionDate}
+                              onChange={(e) => setSessionDate(e.target.value)}
+                              placeholder="Ex: 28/08 (Quinta)"
+                              className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Horário
+                            </label>
+                            <input
+                              type="text"
+                              value={sessionTime}
+                              onChange={(e) => setSessionTime(e.target.value)}
+                              placeholder="Ex: 15:00"
+                              className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Link da Call
+                            </label>
+                            <input
+                              type="text"
+                              value={sessionMeetUrl}
+                              onChange={(e) => setSessionMeetUrl(e.target.value)}
+                              placeholder="https://meet.google.com/..."
+                              className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {hasRenewalTags && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Data de Término
+                            </label>
+                            <input
+                              type="text"
+                              value={renewalPlanDate}
+                              onChange={(e) => setRenewalPlanDate(e.target.value)}
+                              placeholder="Ex: 30/09/2026"
+                              className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Dias Restantes
+                            </label>
+                            <input
+                              type="text"
+                              value={renewalPlanDays}
+                              onChange={(e) => setRenewalPlanDays(e.target.value)}
+                              placeholder="Ex: 15"
+                              className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Dias Restantes
-                      </label>
-                      <input
-                        type="text"
-                        value={renewalPlanDays}
-                        onChange={(e) => setRenewalPlanDays(e.target.value)}
-                        placeholder="Ex: 15"
-                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                      />
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Message Preview / Live Editor */}
                 <div>
