@@ -72,7 +72,55 @@ export function formatWhatsAppNumber(phone: string): string {
 }
 
 /**
- * Checks connection status of the instance on Evolution API
+ * Universal Proxy Helper - Makes server-to-server requests to eliminate Browser CORS restrictions
+ */
+async function callEvolutionProxy(
+  config: EvolutionApiConfig,
+  endpoint: string,
+  method: 'GET' | 'POST' | 'DELETE' = 'GET',
+  body?: any
+): Promise<{ ok: boolean; status: number; data?: any; error?: string }> {
+  try {
+    const res = await fetch('/api/evolution/proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        serverUrl: config.serverUrl,
+        apiKey: config.apiKey,
+        endpoint,
+        method,
+        body,
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        status: res.status,
+        error: json.error || `Erro HTTP ${res.status} no proxy do servidor.`,
+      };
+    }
+
+    return {
+      ok: json.ok ?? true,
+      status: json.status ?? 200,
+      data: json.data,
+      error: json.error,
+    };
+  } catch (err: any) {
+    return {
+      ok: false,
+      status: 500,
+      error: err.message || 'Falha ao conectar com o proxy do servidor.',
+    };
+  }
+}
+
+/**
+ * Checks connection status of the instance on Evolution API (CORS-free)
  */
 export async function checkEvolutionConnection(
   configOverride?: EvolutionApiConfig
@@ -87,56 +135,41 @@ export async function checkEvolutionConnection(
     };
   }
 
-  const cleanUrl = config.serverUrl.replace(/\/+$/, '');
+  const endpoint = `/instance/connectionState/${config.instanceName}`;
+  const res = await callEvolutionProxy(config, endpoint, 'GET');
 
-  try {
-    const res = await fetch(`${cleanUrl}/instance/connectionState/${config.instanceName}`, {
-      method: 'GET',
-      headers: {
-        apikey: config.apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!res.ok) {
-      if (res.status === 404) {
-        return {
-          success: true,
-          state: { state: 'close' },
-          error: 'Instância não encontrada no servidor.',
-        };
-      }
+  if (!res.ok) {
+    if (res.status === 404) {
       return {
-        success: false,
-        state: { state: 'unknown' },
-        error: `Erro HTTP ${res.status} ao consultar status.`,
+        success: true,
+        state: { state: 'close' },
+        error: 'Instância não criada ainda no servidor. Clique em "Conectar / Gerar QR Code".',
       };
     }
-
-    const data = await res.json();
-    const rawState = data?.instance?.state || data?.state || 'close';
-
-    return {
-      success: true,
-      state: {
-        state: rawState === 'open' ? 'open' : rawState === 'connecting' ? 'connecting' : 'close',
-        instanceName: config.instanceName,
-        ownerJid: data?.instance?.owner || data?.ownerJid,
-        profileName: data?.instance?.profileName,
-        profilePictureUrl: data?.instance?.profilePictureUrl,
-      },
-    };
-  } catch (err: any) {
     return {
       success: false,
-      state: { state: 'refused' },
-      error: err.message || 'Falha de conexão com o servidor Evolution API.',
+      state: { state: 'unknown' },
+      error: res.error || `Erro ao consultar status da instância (${res.status}).`,
     };
   }
+
+  const data = res.data;
+  const rawState = data?.instance?.state || data?.state || 'close';
+
+  return {
+    success: true,
+    state: {
+      state: rawState === 'open' ? 'open' : rawState === 'connecting' ? 'connecting' : 'close',
+      instanceName: config.instanceName,
+      ownerJid: data?.instance?.owner || data?.ownerJid,
+      profileName: data?.instance?.profileName,
+      profilePictureUrl: data?.instance?.profilePictureUrl,
+    },
+  };
 }
 
 /**
- * Creates or connects instance and fetches QR Code
+ * Creates or connects instance and fetches QR Code (CORS-free)
  */
 export async function fetchEvolutionQRCode(
   configOverride?: EvolutionApiConfig
@@ -147,92 +180,62 @@ export async function fetchEvolutionQRCode(
     return { success: false, error: 'Configure a URL, Chave API e Nome da Instância.' };
   }
 
-  const cleanUrl = config.serverUrl.replace(/\/+$/, '');
+  // 1. Try to fetch existing connection / QR Code
+  let res = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
 
-  try {
-    // 1. Try to fetch existing connection / QR Code
-    let res = await fetch(`${cleanUrl}/instance/connect/${config.instanceName}`, {
-      method: 'GET',
-      headers: {
-        apikey: config.apiKey,
-        'Content-Type': 'application/json',
-      },
+  // 2. If instance does not exist (404), create it automatically on Evolution API
+  if (res.status === 404 || (res.data && res.data.status === 404)) {
+    const createRes = await callEvolutionProxy(config, '/instance/create', 'POST', {
+      instanceName: config.instanceName,
+      token: config.apiKey,
+      qrcode: true,
+      integration: 'WHATSAPP-BAILEYS',
     });
 
-    // 2. If instance does not exist (404), create it automatically
-    if (res.status === 404) {
-      const createRes = await fetch(`${cleanUrl}/instance/create`, {
-        method: 'POST',
-        headers: {
-          apikey: config.apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          instanceName: config.instanceName,
-          token: config.apiKey,
-          qrcode: true,
-          integration: 'WHATSAPP-BAILEYS',
-        }),
-      });
-
-      if (!createRes.ok) {
-        const createErr = await createRes.json().catch(() => ({}));
-        return {
-          success: false,
-          error: createErr?.message || `Erro ${createRes.status} ao criar instância.`,
-        };
-      }
-
-      const createData = await createRes.json();
-      if (createData?.qrcode?.base64) {
-        return {
-          success: true,
-          qrcode: {
-            base64: createData.qrcode.base64,
-            code: createData.qrcode.code,
-            pairingCode: createData.qrcode.pairingCode,
-          },
-        };
-      }
-
-      // Try connect once more
-      res = await fetch(`${cleanUrl}/instance/connect/${config.instanceName}`, {
-        method: 'GET',
-        headers: {
-          apikey: config.apiKey,
-          'Content-Type': 'application/json',
-        },
-      });
-    }
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
+    if (!createRes.ok) {
       return {
         success: false,
-        error: errData?.message || `Erro ${res.status} ao buscar QR Code.`,
+        error: createRes.data?.message || createRes.error || `Erro ${createRes.status} ao criar instância.`,
       };
     }
 
-    const data = await res.json();
-    return {
-      success: true,
-      qrcode: {
-        base64: data?.base64 || data?.qrcode?.base64,
-        code: data?.code || data?.qrcode?.code,
-        pairingCode: data?.pairingCode || data?.qrcode?.pairingCode,
-        count: data?.count,
-      },
-    };
-  } catch (err: any) {
+    const createData = createRes.data;
+    if (createData?.qrcode?.base64) {
+      return {
+        success: true,
+        qrcode: {
+          base64: createData.qrcode.base64,
+          code: createData.qrcode.code,
+          pairingCode: createData.qrcode.pairingCode,
+        },
+      };
+    }
+
+    // Try connect once more
+    res = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
+  }
+
+  if (!res.ok) {
     return {
       success: false,
-      error: err.message || 'Falha de comunicação com a Evolution API.',
+      error: res.data?.message || res.error || `Erro ${res.status} ao buscar QR Code.`,
     };
   }
+
+  const data = res.data;
+  return {
+    success: true,
+    qrcode: {
+      base64: data?.base64 || data?.qrcode?.base64,
+      code: data?.code || data?.qrcode?.code,
+      pairingCode: data?.pairingCode || data?.qrcode?.pairingCode,
+      count: data?.count,
+    },
+  };
 }
 
 /**
- * Sends a real text message via Evolution API to a WhatsApp contact
+ * Sends a real text message via Evolution API to a WhatsApp contact (CORS-free)
  */
 export async function sendEvolutionWhatsAppMessage(
   phone: string,
@@ -253,51 +256,38 @@ export async function sendEvolutionWhatsAppMessage(
     return { success: false, error: 'Número de telefone inválido para envio de WhatsApp.' };
   }
 
-  const cleanUrl = config.serverUrl.replace(/\/+$/, '');
-
-  try {
-    const res = await fetch(`${cleanUrl}/message/sendText/${config.instanceName}`, {
-      method: 'POST',
-      headers: {
-        apikey: config.apiKey,
-        'Content-Type': 'application/json',
+  const res = await callEvolutionProxy(
+    config,
+    `/message/sendText/${config.instanceName}`,
+    'POST',
+    {
+      number: cleanPhone,
+      text: message,
+      options: {
+        delay: 1200,
+        presence: 'composing',
+        linkPreview: true,
       },
-      body: JSON.stringify({
-        number: cleanPhone,
-        text: message,
-        options: {
-          delay: 1200,
-          presence: 'composing',
-          linkPreview: true,
-        },
-      }),
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      return {
-        success: false,
-        error: errData?.response?.message?.[0] || errData?.message || `Erro ${res.status} no envio.`,
-      };
     }
+  );
 
-    const data = await res.json();
-    const messageId = data?.key?.id || data?.id || `msg-${Date.now()}`;
-
-    return {
-      success: true,
-      messageId,
-    };
-  } catch (err: any) {
+  if (!res.ok) {
+    const errData = res.data;
     return {
       success: false,
-      error: err.message || 'Falha ao conectar com o servidor da Evolution API.',
+      error: errData?.response?.message?.[0] || errData?.message || res.error || `Erro ${res.status} no envio.`,
     };
   }
+
+  const messageId = res.data?.key?.id || res.data?.id || `msg-${Date.now()}`;
+  return {
+    success: true,
+    messageId,
+  };
 }
 
 /**
- * Logs out / disconnects instance from WhatsApp
+ * Logs out / disconnects instance from WhatsApp (CORS-free)
  */
 export async function logoutEvolutionInstance(
   configOverride?: EvolutionApiConfig
@@ -307,23 +297,10 @@ export async function logoutEvolutionInstance(
     return { success: false, error: 'Credenciais ausentes.' };
   }
 
-  const cleanUrl = config.serverUrl.replace(/\/+$/, '');
-
-  try {
-    const res = await fetch(`${cleanUrl}/instance/logout/${config.instanceName}`, {
-      method: 'DELETE',
-      headers: {
-        apikey: config.apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!res.ok) {
-      return { success: false, error: `Erro ${res.status} ao desconectar instância.` };
-    }
-
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || 'Erro ao desconectar.' };
+  const res = await callEvolutionProxy(config, `/instance/logout/${config.instanceName}`, 'DELETE');
+  if (!res.ok) {
+    return { success: false, error: `Erro ${res.status} ao desconectar instância.` };
   }
+
+  return { success: true };
 }
