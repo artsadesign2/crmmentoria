@@ -139,17 +139,17 @@ export async function checkEvolutionConnection(
   const res = await callEvolutionProxy(config, endpoint, 'GET');
 
   if (!res.ok) {
-    if (res.status === 404) {
+    if (res.status === 404 || res.data?.status === 404) {
       return {
         success: true,
         state: { state: 'close' },
-        error: 'Instância não criada ainda no servidor. Clique em "Conectar / Gerar QR Code".',
+        error: 'Instância ainda não criada no servidor. Clique no botão "Conectar / Gerar QR Code" para criá-la.',
       };
     }
     return {
       success: false,
       state: { state: 'unknown' },
-      error: res.error || `Erro ao consultar status da instância (${res.status}).`,
+      error: res.data?.message || res.error || `Erro ao consultar status da instância (${res.status}).`,
     };
   }
 
@@ -161,11 +161,37 @@ export async function checkEvolutionConnection(
     state: {
       state: rawState === 'open' ? 'open' : rawState === 'connecting' ? 'connecting' : 'close',
       instanceName: config.instanceName,
-      ownerJid: data?.instance?.owner || data?.ownerJid,
-      profileName: data?.instance?.profileName,
-      profilePictureUrl: data?.instance?.profilePictureUrl,
+      ownerJid: data?.instance?.owner || data?.ownerJid || data?.instance?.ownerJid,
+      profileName: data?.instance?.profileName || data?.profileName,
+      profilePictureUrl: data?.instance?.profilePictureUrl || data?.profilePictureUrl,
     },
   };
+}
+
+/**
+ * Helper to extract base64 QR Code string from various Evolution API payload structures
+ */
+function extractQRCodeFromData(data: any): EvolutionQRCodeResponse | null {
+  if (!data) return null;
+
+  let base64 =
+    data?.base64 ||
+    data?.qrcode?.base64 ||
+    (typeof data?.qrcode === 'string' && data.qrcode.startsWith('data:') ? data.qrcode : undefined);
+
+  let code = data?.code || data?.qrcode?.code || (typeof data?.code === 'string' ? data.code : undefined);
+  let pairingCode = data?.pairingCode || data?.qrcode?.pairingCode;
+
+  if (base64 || code || pairingCode) {
+    return {
+      base64,
+      code,
+      pairingCode,
+      count: data?.count,
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -180,11 +206,20 @@ export async function fetchEvolutionQRCode(
     return { success: false, error: 'Configure a URL, Chave API e Nome da Instância.' };
   }
 
-  // 1. Try to fetch existing connection / QR Code
-  let res = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
+  // 1. Try to connect to existing instance first
+  let connectRes = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
 
-  // 2. If instance does not exist (404), create it automatically on Evolution API
-  if (res.status === 404 || (res.data && res.data.status === 404)) {
+  // Check if QR Code is returned directly
+  let qrFound = extractQRCodeFromData(connectRes.data);
+  if (connectRes.ok && qrFound) {
+    return {
+      success: true,
+      qrcode: qrFound,
+    };
+  }
+
+  // 2. If instance does not exist (404), or connect failed, attempt to create it
+  if (!connectRes.ok || !qrFound) {
     const createRes = await callEvolutionProxy(config, '/instance/create', 'POST', {
       instanceName: config.instanceName,
       token: config.apiKey,
@@ -192,45 +227,50 @@ export async function fetchEvolutionQRCode(
       integration: 'WHATSAPP-BAILEYS',
     });
 
-    if (!createRes.ok) {
-      return {
-        success: false,
-        error: createRes.data?.message || createRes.error || `Erro ${createRes.status} ao criar instância.`,
-      };
-    }
-
-    const createData = createRes.data;
-    if (createData?.qrcode?.base64) {
+    const createQr = extractQRCodeFromData(createRes.data);
+    if (createRes.ok && createQr) {
       return {
         success: true,
-        qrcode: {
-          base64: createData.qrcode.base64,
-          code: createData.qrcode.code,
-          pairingCode: createData.qrcode.pairingCode,
-        },
+        qrcode: createQr,
       };
     }
 
-    // Try connect once more
-    res = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
-  }
+    // 3. If instance already existed or was created without QR in payload, call connect one more time
+    const retryConnect = await callEvolutionProxy(config, `/instance/connect/${config.instanceName}`, 'GET');
+    const retryQr = extractQRCodeFromData(retryConnect.data);
+    if (retryConnect.ok && retryQr) {
+      return {
+        success: true,
+        qrcode: retryQr,
+      };
+    }
 
-  if (!res.ok) {
+    // If connected already (state: open)
+    const stateRes = await checkEvolutionConnection(config);
+    if (stateRes.success && stateRes.state.state === 'open') {
+      return {
+        success: true,
+        error: 'WhatsApp já está conectado e online nesta instância!',
+      };
+    }
+
+    const errMsg =
+      createRes.data?.response?.message?.[0] ||
+      createRes.data?.message ||
+      connectRes.data?.message ||
+      createRes.error ||
+      connectRes.error ||
+      'Não foi possível obter o QR Code. Verifique a URL e a API Key no Railway.';
+
     return {
       success: false,
-      error: res.data?.message || res.error || `Erro ${res.status} ao buscar QR Code.`,
+      error: errMsg,
     };
   }
 
-  const data = res.data;
   return {
-    success: true,
-    qrcode: {
-      base64: data?.base64 || data?.qrcode?.base64,
-      code: data?.code || data?.qrcode?.code,
-      pairingCode: data?.pairingCode || data?.qrcode?.pairingCode,
-      count: data?.count,
-    },
+    success: false,
+    error: 'Falha inesperada ao solicitar QR Code.',
   };
 }
 
