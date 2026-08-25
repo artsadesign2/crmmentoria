@@ -81,6 +81,12 @@ import {
   EvolutionConnectionState,
   EvolutionQRCodeResponse,
 } from '@/lib/evolution-api';
+import {
+  getStoredWhatsAppTemplates,
+  saveStoredWhatsAppTemplates,
+  DEFAULT_WHATSAPP_TEMPLATES,
+  AutomationTemplates,
+} from '@/lib/whatsapp-automations';
 
 export default function SettingsPage() {
   const { activePaletteId, activePalette, isLightMode, setPalette, resetToDefault: resetTheme } =
@@ -179,10 +185,16 @@ export default function SettingsPage() {
   const [copiedWebhookUrl, setCopiedWebhookUrl] = useState(false);
   const [evolutionSavedSuccess, setEvolutionSavedSuccess] = useState(false);
 
-  // Load Evolution config on mount
+  // WhatsApp Automation Templates States
+  const [waTemplates, setWaTemplates] = useState<AutomationTemplates>(DEFAULT_WHATSAPP_TEMPLATES);
+  const [activeTemplateTab, setActiveTemplateTab] = useState<'welcome' | 'sessionReminder' | 'renewalAlert' | 'taskStatus'>('welcome');
+  const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false);
+
+  // Load Evolution config and templates on mount
   useEffect(() => {
     const cfg = getEvolutionConfig();
     setEvolutionConfig(cfg);
+    setWaTemplates(getStoredWhatsAppTemplates());
     if (cfg.serverUrl && cfg.apiKey && cfg.instanceName) {
       checkEvolutionConnection(cfg).then((res) => {
         if (res.success) {
@@ -191,6 +203,19 @@ export default function SettingsPage() {
       });
     }
   }, []);
+
+  const handleSaveTemplates = () => {
+    saveStoredWhatsAppTemplates(waTemplates);
+    setTemplateSavedFeedback(true);
+    setTimeout(() => setTemplateSavedFeedback(false), 3000);
+  };
+
+  const handleResetTemplates = () => {
+    setWaTemplates(DEFAULT_WHATSAPP_TEMPLATES);
+    saveStoredWhatsAppTemplates(DEFAULT_WHATSAPP_TEMPLATES);
+    setTemplateSavedFeedback(true);
+    setTimeout(() => setTemplateSavedFeedback(false), 3000);
+  };
 
   const handleSaveEvolutionConfig = () => {
     saveEvolutionConfig(evolutionConfig);
@@ -1815,6 +1840,191 @@ export default function SettingsPage() {
                       </div>
                     )}
                   </form>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* WhatsApp Automation Templates & Triggers Editor */}
+          <Card className="p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1F293D]">
+              <div>
+                <h3 className={`text-lg font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+                  <MessageCircle size={20} className="text-emerald-400" />
+                  <span>4. Templates & Automações do WhatsApp</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Personalize os textos automáticos disparados para mentorados (Boas-vindas, Lembretes de Sessão, Renovações e Tarefas).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetTemplates}
+                  className="px-3 py-1.5 rounded-xl bg-[#131926] hover:bg-[#1E293B] text-slate-400 hover:text-slate-200 text-xs font-semibold border border-[#1F293D] transition-colors"
+                >
+                  Restaurar Padrão
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveTemplates}
+                  className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-extrabold shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
+                >
+                  <Save size={13} />
+                  <span>Salvar Templates</span>
+                </button>
+              </div>
+            </div>
+
+            {templateSavedFeedback && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                <Check size={16} />
+                <span>Templates de WhatsApp salvos com sucesso!</span>
+              </div>
+            )}
+
+            {/* Template Selector Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTemplateTab('welcome')}
+                className={`p-3 rounded-2xl border text-left transition-all ${
+                  activeTemplateTab === 'welcome'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/40 text-emerald-300 shadow-lg'
+                    : 'bg-[#131926]/60 border-[#1F293D] text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <span>🚀</span>
+                  <span>Boas-Vindas</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Ao cadastrar novo mentorado</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTemplateTab('sessionReminder')}
+                className={`p-3 rounded-2xl border text-left transition-all ${
+                  activeTemplateTab === 'sessionReminder'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/40 text-emerald-300 shadow-lg'
+                    : 'bg-[#131926]/60 border-[#1F293D] text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <span>⏰</span>
+                  <span>Lembrete de Sessão</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">24h / 1h antes da mentoria</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTemplateTab('renewalAlert')}
+                className={`p-3 rounded-2xl border text-left transition-all ${
+                  activeTemplateTab === 'renewalAlert'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/40 text-emerald-300 shadow-lg'
+                    : 'bg-[#131926]/60 border-[#1F293D] text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <span>🎯</span>
+                  <span>Alerta de Renovação</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">15/30 dias antes do fim</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTemplateTab('taskStatus')}
+                className={`p-3 rounded-2xl border text-left transition-all ${
+                  activeTemplateTab === 'taskStatus'
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/40 text-emerald-300 shadow-lg'
+                    : 'bg-[#131926]/60 border-[#1F293D] text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <span>📋</span>
+                  <span>Status de Tarefas</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Ao atualizar entregáveis</p>
+              </button>
+            </div>
+
+            {/* Template Textarea and Variables Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-8 space-y-2">
+                <label className="text-xs font-bold text-slate-300 block">
+                  Conteúdo do Template:
+                </label>
+                <textarea
+                  rows={8}
+                  value={waTemplates[activeTemplateTab]}
+                  onChange={(e) =>
+                    setWaTemplates((prev) => ({
+                      ...prev,
+                      [activeTemplateTab]: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-2xl p-4 text-xs text-slate-100 font-sans focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 leading-relaxed"
+                />
+              </div>
+
+              <div className="lg:col-span-4 p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Tags & Variáveis Disponíveis
+                </span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Insira as tags abaixo no texto. Elas serão substituídas automaticamente pelos dados reais do mentorado:
+                </p>
+                <div className="space-y-1.5 text-[11px] font-mono">
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                    <span className="text-yellow-400">{'{nome}'}</span>
+                    <span className="text-slate-400 font-sans text-[10px]">Nome do mentorado</span>
+                  </div>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                    <span className="text-yellow-400">{'{empresa}'}</span>
+                    <span className="text-slate-400 font-sans text-[10px]">Nome da empresa</span>
+                  </div>
+                  {activeTemplateTab === 'sessionReminder' && (
+                    <>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-emerald-400">{'{data}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Data da sessão</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-emerald-400">{'{horario}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Horário da call</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-emerald-400">{'{link}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Link Meet/Zoom</span>
+                      </div>
+                    </>
+                  )}
+                  {activeTemplateTab === 'renewalAlert' && (
+                    <>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-amber-400">{'{dataRenovacao}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Data de término</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-amber-400">{'{diasRestantes}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Dias restantes</span>
+                      </div>
+                    </>
+                  )}
+                  {activeTemplateTab === 'taskStatus' && (
+                    <>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-blue-400">{'{tarefa}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Título da tarefa</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#131926] border border-[#1F293D]/60">
+                        <span className="text-blue-400">{'{status}'}</span>
+                        <span className="text-slate-400 font-sans text-[10px]">Status da entrega</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

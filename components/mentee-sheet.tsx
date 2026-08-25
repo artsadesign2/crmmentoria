@@ -33,10 +33,21 @@ import {
   Activity,
   Award,
   Users,
+  Send,
+  Check,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { Member, KANBAN_STAGES } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { maskCpf, maskCnpj, maskPhone, maskRg } from '@/lib/masks';
+import {
+  sendMenteeWelcomeMessage,
+  sendSessionReminderMessage,
+  sendPlanRenewalAlertMessage,
+  getStoredWhatsAppTemplates,
+  interpolateWhatsAppTemplate,
+} from '@/lib/whatsapp-automations';
 
 interface MenteeSheetProps {
   member: (Member & { excludeFromBook?: boolean }) | null;
@@ -64,6 +75,18 @@ export function MenteeSheet({
   const [isDirty, setIsDirty] = useState(false);
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
+
+  // WhatsApp Automation States
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [whatsAppType, setWhatsAppType] = useState<'welcome' | 'session' | 'renewal' | 'custom'>('welcome');
+  const [customMsg, setCustomMsg] = useState('');
+  const [sessionDate, setSessionDate] = useState('amanhã');
+  const [sessionTime, setSessionTime] = useState('15:00');
+  const [sessionMeetUrl, setSessionMeetUrl] = useState('https://meet.google.com/rocket-club');
+  const [renewalPlanDate, setRenewalPlanDate] = useState('no fim deste ciclo');
+  const [renewalPlanDays, setRenewalPlanDays] = useState('15');
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
+  const [whatsAppFeedback, setWhatsAppFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // Animation States for Smooth Enter & Exit
   const [isMounted, setIsMounted] = useState(false);
@@ -132,6 +155,85 @@ export function MenteeSheet({
         }
       }
     }
+  };
+
+  const handleSendWhatsAppAutomation = async () => {
+    if (!formData.phone) {
+      setWhatsAppFeedback({ success: false, message: 'Mentorado não possui número de WhatsApp informado.' });
+      return;
+    }
+    setIsSendingWhatsApp(true);
+    setWhatsAppFeedback(null);
+
+    try {
+      let result;
+      if (whatsAppType === 'welcome') {
+        result = await sendMenteeWelcomeMessage(
+          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName, specialty: formData.specialty },
+          customMsg.trim() ? customMsg : undefined
+        );
+      } else if (whatsAppType === 'session') {
+        result = await sendSessionReminderMessage(
+          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName },
+          { date: sessionDate, time: sessionTime, link: sessionMeetUrl },
+          customMsg.trim() ? customMsg : undefined
+        );
+      } else if (whatsAppType === 'renewal') {
+        result = await sendPlanRenewalAlertMessage(
+          { name: formData.name || 'Mentorado', phone: formData.phone, company: formData.companyName },
+          { renewalDate: renewalPlanDate, daysLeft: renewalPlanDays },
+          customMsg.trim() ? customMsg : undefined
+        );
+      } else {
+        const { sendEvolutionWhatsAppMessage } = await import('@/lib/evolution-api');
+        result = await sendEvolutionWhatsAppMessage(formData.phone, customMsg);
+      }
+
+      if (result.success) {
+        setWhatsAppFeedback({ success: true, message: 'Mensagem disparada com sucesso pelo WhatsApp! 🚀' });
+      } else {
+        setWhatsAppFeedback({ success: false, message: result.error || 'Erro ao disparar mensagem.' });
+      }
+    } catch (err: any) {
+      setWhatsAppFeedback({ success: false, message: err.message || 'Erro inesperado no envio.' });
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
+  };
+
+  const getComputedPreview = () => {
+    const templates = getStoredWhatsAppTemplates();
+    if (whatsAppType === 'welcome') {
+      return customMsg.trim()
+        ? customMsg
+        : interpolateWhatsAppTemplate(templates.welcome, {
+            nome: formData.name || 'Mentorado',
+            empresa: formData.companyName || 'sua empresa',
+            especialidade: formData.specialty || 'Mentoria',
+          });
+    }
+    if (whatsAppType === 'session') {
+      return customMsg.trim()
+        ? customMsg
+        : interpolateWhatsAppTemplate(templates.sessionReminder, {
+            nome: formData.name || 'Mentorado',
+            empresa: formData.companyName || 'sua empresa',
+            data: sessionDate,
+            horario: sessionTime,
+            link: sessionMeetUrl,
+          });
+    }
+    if (whatsAppType === 'renewal') {
+      return customMsg.trim()
+        ? customMsg
+        : interpolateWhatsAppTemplate(templates.renewalAlert, {
+            nome: formData.name || 'Mentorado',
+            empresa: formData.companyName || 'sua empresa',
+            dataRenovacao: renewalPlanDate,
+            diasRestantes: renewalPlanDays,
+          });
+    }
+    return customMsg || 'Digite sua mensagem personalizada...';
   };
 
   if (!isMounted || !member) return null;
@@ -255,11 +357,15 @@ export function MenteeSheet({
             {formData.phone && (
               <button
                 type="button"
-                onClick={() => openWhatsApp(formData.phone, formData.name)}
-                className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
-                title="Chamar no WhatsApp"
+                onClick={() => {
+                  setWhatsAppFeedback(null);
+                  setShowWhatsAppModal(true);
+                }}
+                className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all hover:scale-105 flex items-center gap-1.5"
+                title="Disparar Automação no WhatsApp"
               >
                 <MessageCircle size={15} />
+                <span className="text-[11px] font-bold hidden sm:inline">WhatsApp</span>
               </button>
             )}
 
@@ -938,6 +1044,264 @@ export function MenteeSheet({
             </button>
           </div>
         </div>
+        {/* WhatsApp Automation Dispatch Modal */}
+        {showWhatsAppModal && (
+          <div
+            className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowWhatsAppModal(false)}
+          >
+            <div
+              className="bg-[#0F1626] border border-[#1F293D] rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 border-b border-[#1F293D] bg-[#141C30] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <MessageCircle size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-100 flex items-center gap-2">
+                      Automações de WhatsApp
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                        Evolution API
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Disparando para <strong className="text-slate-200">{formData.name}</strong> ({formData.phone})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWhatsAppModal(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1E293B] transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+                {/* Automation Type Selector Tabs */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsAppType('welcome');
+                      setCustomMsg('');
+                      setWhatsAppFeedback(null);
+                    }}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                      whatsAppType === 'welcome'
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                    }`}
+                  >
+                    🚀 Boas-Vindas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsAppType('session');
+                      setCustomMsg('');
+                      setWhatsAppFeedback(null);
+                    }}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                      whatsAppType === 'session'
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                    }`}
+                  >
+                    ⏰ Sessão
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsAppType('renewal');
+                      setCustomMsg('');
+                      setWhatsAppFeedback(null);
+                    }}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                      whatsAppType === 'renewal'
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                    }`}
+                  >
+                    🎯 Renovação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsAppType('custom');
+                      setWhatsAppFeedback(null);
+                    }}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                      whatsAppType === 'custom'
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                    }`}
+                  >
+                    💬 Livre
+                  </button>
+                </div>
+
+                {/* Automation Variables Form */}
+                {whatsAppType === 'session' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Data da Sessão
+                      </label>
+                      <input
+                        type="text"
+                        value={sessionDate}
+                        onChange={(e) => setSessionDate(e.target.value)}
+                        placeholder="Ex: 28/08 (Quinta)"
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Horário
+                      </label>
+                      <input
+                        type="text"
+                        value={sessionTime}
+                        onChange={(e) => setSessionTime(e.target.value)}
+                        placeholder="Ex: 15:00"
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Link da Call
+                      </label>
+                      <input
+                        type="text"
+                        value={sessionMeetUrl}
+                        onChange={(e) => setSessionMeetUrl(e.target.value)}
+                        placeholder="https://meet.google.com/..."
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {whatsAppType === 'renewal' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Data de Término
+                      </label>
+                      <input
+                        type="text"
+                        value={renewalPlanDate}
+                        onChange={(e) => setRenewalPlanDate(e.target.value)}
+                        placeholder="Ex: 30/09/2026"
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Dias Restantes
+                      </label>
+                      <input
+                        type="text"
+                        value={renewalPlanDays}
+                        onChange={(e) => setRenewalPlanDays(e.target.value)}
+                        placeholder="Ex: 15"
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Message Preview / Live Editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Prévia da Mensagem (WhatsApp)
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">Variáveis aplicadas automaticamente</span>
+                  </div>
+                  <div className="p-3.5 bg-[#070A12] border border-emerald-500/20 rounded-xl relative">
+                    <div className="bg-[#1F2C34] text-slate-100 p-3 rounded-lg rounded-tl-none max-w-full text-xs font-sans whitespace-pre-line leading-relaxed shadow-md border-l-4 border-emerald-500">
+                      {getComputedPreview()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom Edit Option */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Personalizar texto antes de enviar (Opcional):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customMsg}
+                    onChange={(e) => setCustomMsg(e.target.value)}
+                    placeholder="Se preencher aqui, este texto exato será enviado em vez do template padrão..."
+                    className="w-full bg-[#0A0E1A] border border-[#1F293D] rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-yellow-500"
+                  />
+                </div>
+
+                {/* Feedback Notification */}
+                {whatsAppFeedback && (
+                  <div
+                    className={`p-3 rounded-xl border flex items-center gap-2.5 text-xs font-semibold ${
+                      whatsAppFeedback.success
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-300 border-red-500/30'
+                    }`}
+                  >
+                    {whatsAppFeedback.success ? <Check size={16} /> : <AlertCircle size={16} />}
+                    <span>{whatsAppFeedback.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-[#1F293D] bg-[#141C30] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => openWhatsApp(formData.phone, formData.name)}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] text-slate-400 hover:text-slate-200 border border-[#1F293D] text-xs font-bold transition-colors"
+                >
+                  Abrir no WhatsApp Web
+                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowWhatsAppModal(false)}
+                    className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 text-xs font-semibold"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendWhatsAppAutomation}
+                    disabled={isSendingWhatsApp}
+                    className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isSendingWhatsApp ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Disparando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        <span>Disparar Mensagem Agora</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
