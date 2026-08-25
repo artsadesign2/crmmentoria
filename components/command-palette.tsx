@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -105,9 +106,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-start justify-center pt-20 px-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-[#131926] border border-[#1F293D] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+  const paletteNode = (
+    <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-start justify-center pt-16 sm:pt-20 px-4 modal-backdrop-animate">
+      <div className="w-full max-w-2xl bg-[#131926] border border-[#1F293D] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] modal-card-animate">
         {/* Search Input Header */}
         <div className="flex items-center px-5 py-4 border-b border-[#1F293D] gap-3 bg-[#0B0F17]/80">
           <Search size={20} className="text-yellow-400 shrink-0" />
@@ -323,4 +324,6 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(paletteNode, document.body) : null;
 }

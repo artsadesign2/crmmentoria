@@ -117,3 +117,32 @@ body.theme-light .glass-card:hover {
     font-size: 16px !important;
   }
 }
+
+/* Universal Modal Animations: Fade-in Ease-in */
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalCardFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop-animate {
+  animation: modalBackdropFadeIn 0.22s ease-in forwards;
+}
+
+.modal-card-animate {
+  animation: modalCardFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

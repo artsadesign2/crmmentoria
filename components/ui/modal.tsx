@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 
@@ -50,7 +51,12 @@ export function Modal({
   hideHeader = false,
   hideCloseButton = false,
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
   const { isLightMode, activePalette } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Handle ESC key press
   useEffect(() => {
@@ -78,11 +84,11 @@ export function Modal({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
-  return (
+  const modalNode = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-black/80 backdrop-blur-md modal-backdrop-animate"
       onClick={(e) => {
         if (closeOnBackdrop && e.target === e.currentTarget) {
           onClose();
@@ -92,10 +98,10 @@ export function Modal({
       aria-modal="true"
     >
       <div
-        className={`w-full ${SIZE_CLASSES[size]} rounded-3xl shadow-2xl border transition-all animate-in zoom-in-95 duration-200 relative overflow-hidden flex flex-col max-h-[92vh] ${
+        className={`w-full ${SIZE_CLASSES[size]} rounded-3xl shadow-2xl border transition-all modal-card-animate relative overflow-hidden flex flex-col max-h-[92vh] ${
           isLightMode
-            ? 'bg-white/95 text-slate-900 border-slate-200 shadow-slate-900/10'
-            : 'bg-[#131926]/95 text-slate-100 border-[#1F293D] shadow-black/80'
+            ? 'bg-white text-slate-900 border-slate-200 shadow-slate-900/20'
+            : 'bg-[#131926] text-slate-100 border-[#1F293D] shadow-2xl shadow-black'
         } ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -113,7 +119,7 @@ export function Modal({
         {!hideHeader && (title || icon || badge) && (
           <div
             className={`p-5 sm:p-6 border-b flex items-start justify-between gap-4 shrink-0 relative z-10 ${
-              isLightMode ? 'bg-slate-50/80 border-slate-200' : 'bg-[#0B0F17]/80 border-[#1F293D]'
+              isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/90 border-[#1F293D]'
             }`}
           >
             <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
@@ -184,7 +190,7 @@ export function Modal({
         {footer && (
           <div
             className={`p-4 sm:p-5 border-t flex items-center justify-end gap-3 shrink-0 relative z-10 ${
-              isLightMode ? 'bg-slate-50/80 border-slate-200' : 'bg-[#0B0F17]/80 border-[#1F293D]'
+              isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/90 border-[#1F293D]'
             }`}
           >
             {footer}
@@ -193,4 +199,6 @@ export function Modal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : null;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Save,
@@ -160,10 +161,10 @@ export function MenteeSheet({
 
   const currentStage = KANBAN_STAGES.find((s) => s.id === formData.status) || KANBAN_STAGES[0];
 
-  return (
+  const sheetNode = (
     <div
       onClick={handleClose}
-      className={`fixed inset-0 z-50 overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
+      className={`fixed inset-0 z-[9999] overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
@@ -940,4 +941,6 @@ export function MenteeSheet({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(sheetNode, document.body) : null;
 }
