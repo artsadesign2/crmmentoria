@@ -1,0 +1,44 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Next.js build output
+/.next/
+/out/
+/build/
+/dist/
+
+# TypeScript cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env*.local
+.env.production
+.env.development
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+access.log
+error.log
+
+# Editor / OS
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# Agent / Temp folders
+.temp_ag_kit/
+scratch/
+
+# PHP / Python dependencies
+vendor/
+.venv/
+__pycache__/

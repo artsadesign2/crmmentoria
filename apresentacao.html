@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#07080c"/>
+<title>Plataforma de Gestão 360° — Apresentação Executiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<style>
+/* ==========================================================================
+   DESIGN SYSTEM & TOKENS (MOBILE FIRST & OTIMIZADO PARA UX / LEGIBILIDADE)
+   ========================================================================== */
+:root {
+  --bg: #07080c;
+  --bg-card: #0f111a;
+  --bg-card-hover: #161926;
+  --bg-input: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-gold: rgba(223, 178, 108, 0.3);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --gold: #dfb26c;
+  --gold-hover: #f5d39b;
+  --gold-glow: rgba(223, 178, 108, 0.18);
+  --green: #10b981;
+  --green-glow: rgba(16, 185, 129, 0.18);
+  --blue: #3b82f6;
+  --blue-glow: rgba(59, 130, 246, 0.18);
+  --yellow: #f59e0b;
+  --yellow-glow: rgba(245, 158, 11, 0.18);
+  --red: #ef4444;
+  --red-glow: rgba(239, 68, 68, 0.18);
+  --purple: #a855f7;
+  --purple-glow: rgba(168, 85, 247, 0.18);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-main: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+  position: fixed;
+}
+
+/* ==========================================================================
+   DESKTOP ADAPTATION & SMARTPHONE FRAME SIMULATION
+   ========================================================================== */
+.stage-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: radial-gradient(circle at 50% 20%, #161926 0%, #07080c 80%);
+}
+
+.mobile-frame {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+}
+
+/* Modalidade Desktop: Enquadra como celular centralizado se tela grande */
+@media (min-width: 800px) {
+  body:not(.mode-desktop-full) .mobile-frame {
+    width: 420px;
+    height: 870px;
+    border-radius: 44px;
+    border: 10px solid #1c2030;
+    box-shadow: 0 0 0 2px rgba(223, 178, 108, 0.25), 0 30px 80px rgba(0, 0, 0, 0.85);
+  }
+}
+
+/* ==========================================================================
+   HEADER MOBILE & PROGRESS BAR
+   ========================================================================== */
+.header-bar {
+  height: 68px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 17, 26, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-title span {
+  color: var(--gold);
+  font-size: 12px;
+  background: var(--gold-glow);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+  background: var(--bg-card-hover);
+}
+
+.progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-card-hover);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 101;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-hover));
+  width: 8%;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px var(--gold);
+}
+
+/* ==========================================================================
+   SLIDER & LATERAL SLIDE NAVIGATION ENGINE
+   ========================================================================== */
+.viewport-slides {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  height: calc(100% - 138px);
+  position: relative;
+  overflow: hidden;
+}
+
+.slides-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.slide {
+  min-width: 100%;
+  height: 100%;
+  padding: 22px 20px 85px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  opacity: 0.3;
+  transform: scale(0.96);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  -webkit-overflow-scrolling: touch;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger animation inside active slide */
+.slide.active .anim-item {
+  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.slide.active .anim-delay-1 { animation-delay: 0.1s; }
+.slide.active .anim-delay-2 { animation-delay: 0.2s; }
+.slide.active .anim-delay-3 { animation-delay: 0.3s; }
+.slide.active .anim-delay-4 { animation-delay: 0.4s; }
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   SLIDE COMPONENTS & CARDS (AMPLIADOS PARA MÁXIMA LEGIBILIDADE E UX)
+   ========================================================================== */
+.slide-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: fit-content;
+}
+
+.badge-tag-current {
+  background: var(--gold-glow);
+  color: var(--gold);
+  border: 1px solid var(--border-gold);
+}
+
+.badge-tag-future {
+  background: var(--purple-glow);
+  color: var(--purple);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.slide-title {
+  font-size: 27px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.slide-title span {
+  color: var(--gold);
+  display: inline-block;
+}
+
+.slide-subtitle {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.card-glass {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-main);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glass-gold {
+  border-color: var(--border-gold);
+  background: linear-gradient(135deg, rgba(223, 178, 108, 0.05) 0%, var(--bg-card) 100%);
+}
+
+.card-glass-future {
+  border-color: rgba(168, 85, 247, 0.3);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.06) 0%, var(--bg-card) 100%);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card-title-sm {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-sm i {
+  color: var(--gold);
+  font-size: 20px;
+}
+
+/* Metric Pill Grid */
+.metrics-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.metric-lbl {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Feature List */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14.5px;
+  color: var(--text);
+  line-height: 1.48;
+}
+
+.feature-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--gold-glow);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.feature-icon.purple {
+  background: var(--purple-glow);
+  color: var(--purple);
+}
+
+.feature-icon.green {
+  background: var(--green-glow);
+  color: var(--green);
+}
+
+.feature-icon.blue {
+  background: var(--blue-glow);
+  color: var(--blue);
+}
+
+/* Mockup Canvas / Interactive UI Previews inside slides */
+.mockup-frame {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.mockup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mockup-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.mockup-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+
+/* Interactive Widgets */
+.temp-bar-container {
+  display: flex;
+  gap: 4px;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.temp-seg {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.kanban-preview-cols {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.kanban-col-preview {
+  min-width: 125px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-col-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.kanban-card-mini {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Chat Simulator Widget */
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.chat-msg {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.chat-incoming {
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border);
+  color: var(--text);
+  align-self: flex-start;
+  border-bottom-left-radius: 3px;
+}
+
+.chat-outgoing {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 3px;
+}
+
+.chat-ai-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+/* Interactive Accordion & Tabs inside slides */
+.tab-group {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.tab-btn.active {
+  background: var(--gold);
+  color: #07080c;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   FOOTER NAVIGATION FLOATING BAR
+   ========================================================================== */
+.footer-nav {
+  height: 70px;
+  padding: 0 18px;
+  background: rgba(15, 17, 26, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+
+.nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px;
+}
+
+.nav-pill-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-pill-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-pill-btn:active:not(:disabled) {
+  background: var(--gold);
+  color: #07080c;
+}
+
+.slide-counter {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--gold);
+  padding: 0 10px;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary-action {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-hover) 100%);
+  color: #07080c;
+  font-weight: 700;
+  font-size: 14.5px;
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--gold-glow);
+  transition: var(--transition);
+}
+
+.btn-primary-action:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   LATERAL DRAWER / MENU SIDEBAR
+   ========================================================================== */
+.drawer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(7, 8, 12, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 85%;
+  max-width: 330px;
+  height: 100%;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  z-index: 201;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 18px;
+  gap: 18px;
+}
+
+.drawer-overlay.open .drawer-menu {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.drawer-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-item {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.drawer-item:hover, .drawer-item.active {
+  background: var(--bg-card-hover);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.drawer-item.active {
+  border-color: var(--border-gold);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.drawer-item-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.tag-cur { background: var(--gold-glow); color: var(--gold); }
+.tag-fut { background: var(--purple-glow); color: var(--purple); }
+
+/* Switch View Desktop / Mobile Floating Button */
+.desktop-toggle-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(15, 17, 26, 0.9);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+@media (min-width: 800px) {
+  .desktop-toggle-btn {
+    display: flex;
+  }
+}
+
+/* Animations for stats counter */
+.pulse-gold {
+  animation: pulseGold 2s infinite;
+}
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 0 rgba(223, 178, 108, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(223, 178, 108, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(223, 178, 108, 0); }
+}
+</style>
+</head>
+<body>
+
+<button class="desktop-toggle-btn" id="toggleDesktopModeBtn" onclick="toggleDesktopFullscreenMode()">
+  <i class="ti ti-device-desktop"></i> <span id="desktopModeText">Modo Tela Cheia (Desktop)</span>
+</button>
+
+<div class="stage-container">
+  <div class="mobile-frame" id="mobileFrame">
+    
+    <!-- HEADER BAR -->
+    <header class="header-bar">
+      <div class="brand-wrapper">
+        <button class="icon-btn" onclick="toggleDrawer()" title="Menu de Navegação">
+          <i class="ti ti-menu-2"></i>
+        </button>
+        <div class="brand-title">
+          ECOSSISTEMA <span>360°</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="btnAutoplay" onclick="toggleAutoplay()" title="Apresentação Automática">
+          <i class="ti ti-player-play" id="iconAutoplay"></i>
+        </button>
+        <button class="icon-btn" onclick="toggleFullscreen()" title="Tela Cheia">
+          <i class="ti ti-maximize"></i>
+        </button>
+      </div>
+
+      <!-- PROGRESS TRACK -->
+      <div class="progress-track">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+    </header>
+
+    <!-- DRAWER OVERLAY & MENU LATERAL -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()">
+      <div class="drawer-menu" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <i class="ti ti-layout-grid" style="color:var(--gold)"></i> Navegação do Sistema
+          </div>
+          <button class="icon-btn" onclick="toggleDrawer()">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        
+        <div class="drawer-list" id="drawerList">
+          <!-- Renderizado Dinamicamente pelo JS -->
+        </div>
+
+        <div style="padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); text-align:center;">
+          Plataforma 360° &copy; 2026 • Gestão de Alta Performance
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEWPORT SLIDES -->
+    <main class="viewport-slides" id="viewportSlides">
+      <div class="slides-wrapper" id="slidesWrapper">
+
+        <!-- ===================================================================
+             SLIDE 1: CAPA & VISÃO GERAL DE APRESENTAÇÃO
+             =================================================================== -->
+        <section class="slide active" id="slide-0">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-sparkles"></i> Apresentação Executiva
+          </div>
+          
+          <h1 class="slide-title anim-item anim-delay-1">
+            Ecossistema de <span>Gestão 360°</span> & Alta Performance
+          </h1>
+          
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Conheça a plataforma completa de controle de clientes, mentorados, faturamento e automação inteligente.
+          </p>
+
+          <div class="card-glass card-glass-gold anim-item anim-delay-2">
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px">
+              <div style="width:48px; height:48px; border-radius:14px; background:var(--gold-glow); border:1px solid var(--border-gold); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--gold)">
+                <i class="ti ti-layers-intersect"></i>
+              </div>
+              <div>
+                <div style="font-size:17px; font-weight:800; color:var(--text)">Plataforma OS</div>
+                <div style="font-size:13px; color:var(--muted)">Tecnologia de Alta Performance</div>
+              </div>
+            </div>
+
+            <div class="metrics-grid-2">
+              <div class="metric-box">
+                <span class="metric-val" style="color:var(--gold)">7+</span>
+                <span class="metric-lbl">Módulos Atuais</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-val" style="color:var(--purple)">4+</span>
+                <span class="metric-lbl">Propostas IA/CRM</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glass anim-item anim-delay-3">
+            <div class="card-title-sm" style="margin-bottom:10px">
+              <i class="ti ti-shield-check"></i> O que você verá nesta apresentação:
+            </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-check"></i></div>
+                <div><strong>Operação Atual:</strong> Kanban, Health Score, Financeiro, Eventos, Academy e Wiki.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-sparkles"></i></div>
+                <div><strong>Inovações Futuras:</strong> CRM de Mentorados, CRM de Clínicas, IA Copilot e Follow-up.</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary-action pulse-gold anim-item anim-delay-4" style="width:100%; justify-content:center; margin-top: auto;" onclick="nextSlide()">
+            <span>Explorar Ecossistema</span> <i class="ti ti-arrow-right"></i>
+          </button>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 2: PROPOSTA DE VALOR & ARQUITETURA
+             =================================================================== -->
+        <section class="slide" id="slide-1">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-target-arrow"></i> Proposta de Valor
+          </div>
+          
+          <h2 class="slide-title anim-item anim-delay-1">
+            Centralização <span>Sem Arestas</span> para o seu Negócio
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Elimine planilhas desconectadas e acompanhe a saúde da sua comunidade e clientes em tempo real.
+          </p>
+
+          <div class="card-glass anim-item anim-delay-2">
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-activity-heartbeat"></i></div>
+                <div><strong>Health Score Preditivo:</strong> Identificação imediata de membros em risco de evasão (Churn Guard).</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon green"><i class="ti ti-currency-dollar"></i></div>
+                <div><strong>Previsibilidade Financeira:</strong> Controle completo de mensalidades, MRR e inadimplência.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon blue"><i class="ti ti-layout-kanban"></i></div>
+                <div><strong>Gestão Visual Avançada:</strong> Fluxos customizáveis por estágio e responsável.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mockup-frame anim-item anim-delay-3">
+            <div class="mockup-header">
+              <div class="mockup-dots"><span class="mockup-dot dot-red"></span><span class="mockup-dot dot-yellow"></span><span class="mockup-dot dot-green"></span></div>
+              <span>PLATAFORMA • VISÃO 360</span>
+            </div>
+            <div style="display:flex; justify-content:space-around; text-align:center; padding:8px 0;">
+              <div>
+                <div style="font-size:20px; font-weight:800; color:var(--green)">94%</div>
+                <div style="font-size:11.5px; color:var(--muted)">Retenção Média</div>
+              </div>
+              <div style="width:1px; background:var(--border)"></div>
+              <div>
+                <div style="font-size:20px; font-weight:800; color:var(--gold)">3.8x</div>
+                <div style="font-size:11.5px; color:var(--muted)">Agilidade Operacional</div>
+              </div>
+              <div style="width:1px; background:var(--border)"></div>
+              <div>
+                <div style="font-size:20px; font-weight:800; color:var(--blue)">100%</div>
+                <div style="font-size:11.5px; color:var(--muted)">Nuvem & Seguro</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 3: MÓDULO ATUAL — DASHBOARD & HEALTH SCORE
+             =================================================================== -->
+        <section class="slide" id="slide-2">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-dashboard"></i> Módulo Atual
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Dashboard & <span>Health Score</span> da Operação
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Monitoramento de temperatura dos membros em tempo real para ações preventivas instantâneas.
+          </p>
+
+          <!-- Mockup Interativo do Dashboard -->
+          <div class="card-glass card-glass-gold anim-item anim-delay-2">
+            <div class="card-header-row">
+              <div class="card-title-sm"><i class="ti ti-heart-rate-monitor"></i> Health Score do Ecossistema</div>
+              <span style="font-size:12px; background:var(--green-glow); color:var(--green); padding:3px 10px; border-radius:12px; font-weight:700">EM ALTA</span>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:12px 0;">
+              <div>
+                <div style="font-size:32px; font-weight:800; color:var(--gold)">88.4%</div>
+                <div style="font-size:12.5px; color:var(--muted); font-weight:500">Engajamento Geral da Base</div>
+              </div>
+              <div style="width:60px; height:60px; border-radius:50%; border:3px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; background:var(--gold-glow); color:var(--gold)">
+                88%
+              </div>
+            </div>
+
+            <div class="temp-bar-container" style="margin-top:12px;">
+              <div class="temp-seg" style="width:10%; background:var(--muted)" title="Não Alocados"></div>
+              <div class="temp-seg" style="width:25%; background:var(--blue)" title="Iniciantes"></div>
+              <div class="temp-seg" style="width:45%; background:var(--green)" title="Engajados"></div>
+              <div class="temp-seg" style="width:12%; background:var(--yellow)" title="Mornos"></div>
+              <div class="temp-seg" style="width:8%; background:var(--red)" title="Atenção"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:8px; font-weight:500;">
+              <span style="color:var(--green)">● Engajados (45%)</span>
+              <span style="color:var(--yellow)">● Mornos (12%)</span>
+              <span style="color:var(--red)">● Atenção (8%)</span>
+            </div>
+          </div>
+
+          <div class="metrics-grid-2 anim-item anim-delay-3">
+            <div class="metric-box">
+              <div style="display:flex; align-items:center; justify-content:space-between">
+                <span class="metric-val">142</span>
+                <i class="ti ti-users" style="color:var(--gold); font-size:22px"></i>
+              </div>
+              <span class="metric-lbl">Clientes/Mentorados Ativos</span>
+            </div>
+
+            <div class="metric-box">
+              <div style="display:flex; align-items:center; justify-content:space-between">
+                <span class="metric-val" style="color:var(--red)">5</span>
+                <i class="ti ti-alert-circle" style="color:var(--red); font-size:22px"></i>
+              </div>
+              <span class="metric-lbl">Alerta de Atenção</span>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 4: MÓDULO ATUAL — QUADRO KANBAN
+             =================================================================== -->
+        <section class="slide" id="slide-3">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-layout-kanban"></i> Módulo Atual
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Gestão Operacional no <span>Quadro Kanban</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Acompanhamento fluido dos estatuses dos clientes com movimentação ágil e histórico integrado.
+          </p>
+
+          <div class="mockup-frame anim-item anim-delay-2">
+            <div class="mockup-header">
+              <span>KANBAN • PIPELINE DE ATENDIMENTO</span>
+              <i class="ti ti-filter" style="color:var(--gold); font-size:16px"></i>
+            </div>
+
+            <div class="kanban-preview-cols">
+              <div class="kanban-col-preview">
+                <div class="kanban-col-title">Iniciantes (4)</div>
+                <div class="kanban-card-mini">
+                  <strong style="color:var(--text); font-size:12.5px">Dr. Lucas M.</strong>
+                  <span style="color:var(--blue); font-size:10px; font-weight:600">● Onboarding</span>
+                </div>
+                <div class="kanban-card-mini">
+                  <strong style="color:var(--text); font-size:12.5px">Dra. Camila S.</strong>
+                  <span style="color:var(--blue); font-size:10px; font-weight:600">● Diagnóstico</span>
+                </div>
+              </div>
+
+              <div class="kanban-col-preview">
+                <div class="kanban-col-title" style="color:var(--green)">Engajados (12)</div>
+                <div class="kanban-card-mini" style="border-left:3px solid var(--green)">
+                  <strong style="color:var(--text); font-size:12.5px">Rafael Torres</strong>
+                  <span style="color:var(--green); font-size:10px; font-weight:600">● Meta Batida 🚀</span>
+                </div>
+              </div>
+
+              <div class="kanban-col-preview">
+                <div class="kanban-col-title" style="color:var(--red)">Atenção (2)</div>
+                <div class="kanban-card-mini" style="border-left:3px solid var(--red)">
+                  <strong style="color:var(--text); font-size:12.5px">Marcos Lima</strong>
+                  <span style="color:var(--red); font-size:10px; font-weight:600">● Sem contato 15d</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glass anim-item anim-delay-3">
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-tags"></i></div>
+                <div>Filtros rápidos por Gestor, Pilar, Estágio e Alerta de Risco.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon green"><i class="ti ti-notes"></i></div>
+                <div>Registro de reuniões, alinhamentos e envio direto para WhatsApp.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 5: MÓDULO ATUAL — FINANCEIRO & RECORRÊNCIA
+             =================================================================== -->
+        <section class="slide" id="slide-4">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-report-money"></i> Módulo Atual
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Gestão Financeira & <span>Controle de MRR</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Visibilidade total de contratos, faturamento recorrente e controle de repasses em um único lugar.
+          </p>
+
+          <div class="card-glass card-glass-gold anim-item anim-delay-2">
+            <div class="card-header-row">
+              <div class="card-title-sm"><i class="ti ti-chart-bar"></i> Faturamento Mensal</div>
+              <span style="font-size:13px; color:var(--gold); font-weight:800">R$ 184.500/mês</span>
+            </div>
+
+            <!-- Gráfico SVG Simplificado de Barras Financeiro -->
+            <div style="height:110px; display:flex; align-items:flex-end; gap:10px; padding-top:12px;">
+              <div style="flex:1; background:var(--bg-card-hover); height:40%; border-radius:6px; position:relative" title="Jan"><span style="position:absolute; top:-18px; width:100%; text-align:center; font-size:10px; color:var(--muted)">120k</span></div>
+              <div style="flex:1; background:var(--bg-card-hover); height:60%; border-radius:6px; position:relative" title="Fev"><span style="position:absolute; top:-18px; width:100%; text-align:center; font-size:10px; color:var(--muted)">145k</span></div>
+              <div style="flex:1; background:var(--bg-card-hover); height:75%; border-radius:6px; position:relative" title="Mar"><span style="position:absolute; top:-18px; width:100%; text-align:center; font-size:10px; color:var(--muted)">160k</span></div>
+              <div style="flex:1; background:linear-gradient(180deg, var(--gold) 0%, rgba(223,178,108,0.4) 100%); height:90%; border-radius:6px; position:relative" title="Abr"><span style="position:absolute; top:-18px; width:100%; text-align:center; font-size:11px; font-weight:800; color:var(--gold)">184k</span></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:10px; text-align:center;">
+              <span>Jan</span><span>Fev</span><span>Mar</span><span style="color:var(--gold); font-weight:700">Abril</span>
+            </div>
+          </div>
+
+          <div class="metrics-grid-2 anim-item anim-delay-3">
+            <div class="metric-box">
+              <span class="metric-val" style="color:var(--green)">96.2%</span>
+              <span class="metric-lbl">Adimplência Geral</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-val" style="color:var(--blue)">R$ 12.5k</span>
+              <span class="metric-lbl">Ticket Médio</span>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 6: MÓDULO ATUAL — EVENTOS & ACADEMY & WIKI
+             =================================================================== -->
+        <section class="slide" id="slide-5">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-books"></i> Módulos Atuais
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Eventos, <span>Academy</span> & Central Wiki
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Capacitação contínua, gestão de eventos presenciais e documentação de processos (SOPs).
+          </p>
+
+          <div class="card-glass anim-item anim-delay-2">
+            <div class="card-title-sm" style="margin-bottom:12px">
+              <i class="ti ti-calendar-event"></i> Eventos & Imersões Presenciais
+            </div>
+            <div style="background:var(--bg-input); border-radius:10px; padding:12px; font-size:13.5px; display:flex; align-items:center; justify-content:space-between">
+              <div>
+                <strong style="display:block; color:var(--text); font-size:14px">Imersão Executive Master 2026</strong>
+                <span style="color:var(--muted); font-size:12px">24 e 25 de Setembro • São Paulo</span>
+              </div>
+              <span style="background:var(--green-glow); color:var(--green); font-size:11px; padding:4px 10px; border-radius:8px; font-weight:700">88 Confirmados</span>
+            </div>
+          </div>
+
+          <div class="card-glass anim-item anim-delay-3">
+            <div class="card-title-sm" style="margin-bottom:12px">
+              <i class="ti ti-school"></i> Academy & Wiki de SOPs
+            </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon blue"><i class="ti ti-video"></i></div>
+                <div>Aulas gravadas, materiais de apoio e trilhas de formação.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-file-text"></i></div>
+                <div>Central de Manuais e Procedimentos Operacionais Padrão (SOPs).</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 7: VISÃO DE FUTURO & INOVAÇÃO (DIVISOR ROADMAP)
+             =================================================================== -->
+        <section class="slide" id="slide-6">
+          <div class="slide-badge badge-tag-future anim-item">
+            <i class="ti ti-sparkles"></i> Próximo Nível • Roadmap
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            O Futuro da Plataforma: <span>IA & CRMs Dedicados</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Apresentamos os novos módulos estratégicos em desenvolvimento para multiplicar os resultados do seu ecossistema.
+          </p>
+
+          <div class="card-glass card-glass-future anim-item anim-delay-2">
+            <div class="card-title-sm" style="color:var(--purple); margin-bottom:14px">
+              <i class="ti ti-sparkles"></i> 4 Novas Propostas de Valor
+            </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-user-check"></i></div>
+                <div><strong>CRM de Mentorados/Clientes:</strong> Acompanhamento 360° com OKRs e metas de evolução.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-building-hospital"></i></div>
+                <div><strong>CRM de Clínicas/Unidades:</strong> Gestão de unidades de atendimento, leitos e repasses.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-bot"></i></div>
+                <div><strong>IA Copilot:</strong> Inteligência artificial para atendimentos e resumos automatizados.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-send"></i></div>
+                <div><strong>Automação de Follow-up:</strong> Réguas ativas de relacionamento multi-canal.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 8: FUTURO — CRM DE CONTROLE DOS MENTORADOS
+             =================================================================== -->
+        <section class="slide" id="slide-7">
+          <div class="slide-badge badge-tag-future anim-item">
+            <i class="ti ti-user-plus"></i> Proposta Futura #1
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            CRM de Controle de <span>Mentorados & Clientes</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Gestão individualizada de OKRs, planos de ação por pilar de negócio e acompanhamento contínuo de metas.
+          </p>
+
+          <div class="mockup-frame anim-item anim-delay-2">
+            <div class="mockup-header">
+              <span>CRM DE CLIENTES • FICHA 360°</span>
+              <span style="color:var(--gold); font-weight:700">OKRs ATIVOS</span>
+            </div>
+
+            <div style="background:var(--bg-card-hover); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <strong style="font-size:13.5px; color:var(--text)">Pilar Comercial (Meta Q3)</strong>
+                <span style="font-size:12px; color:var(--green); font-weight:700">75% Concluído</span>
+              </div>
+              <div style="height:8px; background:var(--bg); border-radius:4px; overflow:hidden">
+                <div style="width:75%; height:100%; background:var(--green)"></div>
+              </div>
+              <div style="font-size:11.5px; color:var(--muted)">Aumentar faturamento da unidade para R$ 150k/mês.</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
+              <div style="background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border)">
+                <span style="color:var(--muted); display:block; font-size:10px; font-weight:600">PRÓXIMO CHECK-IN</span>
+                <strong style="color:var(--gold); font-size:13px">Amanhã • 15:00</strong>
+              </div>
+              <div style="background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border)">
+                <span style="color:var(--muted); display:block; font-size:10px; font-weight:600">SCORE EVOLUÇÃO</span>
+                <strong style="color:var(--green); font-size:13px">9.4 / 10</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glass card-glass-future anim-item anim-delay-3">
+            <div class="card-title-sm" style="color:var(--purple); margin-bottom:10px">
+              <i class="ti ti-chart-arrows-vertical"></i> Diferenciais Estratégicos:
+            </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-check"></i></div>
+                <div>Matriz de evolução por pilar (Financeiro, Comercial, Pessoas e Operação).</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-check"></i></div>
+                <div>Histórico estruturado de reuniões de acompanhamento com atas automáticas.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 9: FUTURO — CRM DE CONTROLE DAS CLÍNICAS DE ATENDIMENTO
+             =================================================================== -->
+        <section class="slide" id="slide-8">
+          <div class="slide-badge badge-tag-future anim-item">
+            <i class="ti ti-building-hospital"></i> Proposta Futura #2
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            CRM de Controle de <span>Clínicas & Unidades</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Gestão completa da rede de clínicas parceiras, unidades de atendimento, ocupação e repasses.
+          </p>
+
+          <div class="card-glass card-glass-future anim-item anim-delay-2">
+            <div class="card-header-row">
+              <div class="card-title-sm"><i class="ti ti-hospital"></i> Unidades de Atendimento</div>
+              <span style="font-size:12px; background:var(--purple-glow); color:var(--purple); padding:3px 10px; border-radius:12px; font-weight:700">12 UNIDADES</span>
+            </div>
+
+            <div class="metrics-grid-2" style="margin:12px 0">
+              <div class="metric-box">
+                <span class="metric-val" style="color:var(--blue)">84%</span>
+                <span class="metric-lbl">Ocupação Leitos/Salas</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-val" style="color:var(--green)">R$ 420k</span>
+                <span class="metric-lbl">Faturamento da Rede</span>
+              </div>
+            </div>
+
+            <div style="background:var(--bg-input); padding:12px; border-radius:10px; border:1px solid var(--border); font-size:12.5px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between">
+                <span>Unidade Centro (Matriz)</span>
+                <strong style="color:var(--green)">92% Operativa</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span>Centro Médico Sul</span>
+                <strong style="color:var(--gold)">78% Operativa</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glass anim-item anim-delay-3">
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-stethoscope"></i></div>
+                <div>Controle de produtividade dos profissionais e comissionamento automatizado.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-report"></i></div>
+                <div>Relatórios em tempo real da performance clínica e convênios.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 10: FUTURO — INTEGRAÇÃO COM INTELIGÊNCIA ARTIFICIAL (IA COPILOT)
+             =================================================================== -->
+        <section class="slide" id="slide-9">
+          <div class="slide-badge badge-tag-future anim-item">
+            <i class="ti ti-bot"></i> Proposta Futura #3
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Integração com <span>Inteligência Artificial</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Copiloto inteligente no WhatsApp para respostas ativas, resumos de atendimento e suporte 24/7.
+          </p>
+
+          <!-- Simulação Interativa de Chat de IA -->
+          <div class="mockup-frame anim-item anim-delay-2">
+            <div class="mockup-header">
+              <span>IA COPILOT • WHATSAPP ATIVO</span>
+              <span style="color:var(--green); font-size:11px; font-weight:700">● ONLINE</span>
+            </div>
+
+            <div class="chat-window">
+              <div class="chat-msg chat-incoming">
+                <span style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px">Cliente (Dr. Gabriel)</span>
+                "Olá! Preciso da ata da nossa última reunião sobre planejamento estratégico."
+              </div>
+
+              <div class="chat-msg chat-outgoing">
+                <span class="chat-ai-tag">IA COPILOT</span>
+                "Olá Dr. Gabriel! Aqui está o resumo: 1) Definido perfil de metas; 2) Meta de postagem até 20/08. Posso agendar o follow-up?"
+              </div>
+
+              <div class="chat-msg chat-incoming">
+                "Excelente! Pode agendar para quinta-feira às 14h."
+              </div>
+            </div>
+          </div>
+
+          <div class="card-glass card-glass-future anim-item anim-delay-3">
+            <div class="card-title-sm" style="color:var(--purple); margin-bottom:10px">
+              <i class="ti ti-cpu"></i> Capacidades da IA Copilot:
+            </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-message-chatbot"></i></div>
+                <div>Atendimento automático e qualificação ativa no WhatsApp.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-notes"></i></div>
+                <div>Geração instantânea de resumos e minutas de reuniões com 1 clique.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 11: FUTURO — AUTOMATED FOLLOW-UP & RÉGUAS DE RELACIONAMENTO
+             =================================================================== -->
+        <section class="slide" id="slide-10">
+          <div class="slide-badge badge-tag-future anim-item">
+            <i class="ti ti-send"></i> Proposta Futura #4
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Sistema de <span>Follow-up Inteligente</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Réguas automatizadas de relacionamento baseadas na temperatura do cliente para engajamento contínuo.
+          </p>
+
+          <div class="card-glass card-glass-future anim-item anim-delay-2">
+            <div class="card-title-sm" style="color:var(--purple); margin-bottom:14px">
+              <i class="ti ti-route"></i> Fluxo de Régua Automática
+            </div>
+
+            <!-- Linha do Tempo da Régua de Follow-up -->
+            <div style="display:flex; flex-direction:column; gap:12px; position:relative; padding-left:18px;">
+              <div style="position:absolute; left:5px; top:10px; bottom:10px; width:2px; background:var(--purple-glow)"></div>
+
+              <div style="position:relative">
+                <div style="position:absolute; left:-18px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--purple)"></div>
+                <strong style="font-size:13.5px; color:var(--text)">Gatilho: Cliente com temperatura "Morno"</strong>
+                <p style="font-size:12px; color:var(--muted)">Sem interação há 7 dias.</p>
+              </div>
+
+              <div style="position:relative">
+                <div style="position:absolute; left:-18px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--green)"></div>
+                <strong style="font-size:13.5px; color:var(--green)">Ação 1 (WhatsApp Automático):</strong>
+                <p style="font-size:12px; color:var(--muted)">"Olá [Nome], notamos seu tempo sem acessar a plataforma. Precisa de suporte?"</p>
+              </div>
+
+              <div style="position:relative">
+                <div style="position:absolute; left:-18px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--gold)"></div>
+                <strong style="font-size:13.5px; color:var(--gold)">Ação 2 (Notificação para o Gestor):</strong>
+                <p style="font-size:12px; color:var(--muted)">Alerta gerado no Kanban para contato direto.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="metrics-grid-2 anim-item anim-delay-3">
+            <div class="metric-box">
+              <span class="metric-val" style="color:var(--green)">+38%</span>
+              <span class="metric-lbl">Re-engajamento</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-val" style="color:var(--purple)">Zero</span>
+              <span class="metric-lbl">Esquecimento</span>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 12: RESUMO EXECUTIVO & ROADMAP INTEGRADO
+             =================================================================== -->
+        <section class="slide" id="slide-11">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-map-2"></i> Visão Consolidada
+          </div>
+
+          <h2 class="slide-title anim-item anim-delay-1">
+            Matriz de <span>Funcionalidades 360°</span>
+          </h2>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Uma comparação clara do que já está operacional e o que estamos implementando.
+          </p>
+
+          <div class="card-glass anim-item anim-delay-2">
+            <div class="tab-group" style="margin-bottom:14px">
+              <button class="tab-btn active" onclick="switchMatrixTab('operacional', this)">Operacional (Atual)</button>
+              <button class="tab-btn" onclick="switchMatrixTab('futuro', this)">Em Breve (Futuro)</button>
+            </div>
+
+            <div id="matrix-operacional" class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-check"></i></div>
+                <div>Dashboard com Health Score & Métricas em tempo real.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-check"></i></div>
+                <div>Quadro Kanban com filtros de temperatura.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-check"></i></div>
+                <div>Controle Financeiro de mensalidades e MRR.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon"><i class="ti ti-check"></i></div>
+                <div>Gestão de Eventos, Academy LMS e Wiki de SOPs.</div>
+              </div>
+            </div>
+
+            <div id="matrix-futuro" class="feature-list" style="display:none">
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-sparkles"></i></div>
+                <div>CRM 360° para Controle Individual de Mentorados e Clientes.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-sparkles"></i></div>
+                <div>CRM de Clínicas Parceiras e Leitos de Atendimento.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-sparkles"></i></div>
+                <div>Copiloto de Inteligência Artificial via WhatsApp.</div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon purple"><i class="ti ti-sparkles"></i></div>
+                <div>Réguas Ativas e Automatizadas de Follow-up.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             SLIDE 13: CONCLUSÃO & CALL TO ACTION (CTA)
+             =================================================================== -->
+        <section class="slide" id="slide-12">
+          <div class="slide-badge badge-tag-current anim-item">
+            <i class="ti ti-star"></i> Próximos Passos
+          </div>
+
+          <h1 class="slide-title anim-item anim-delay-1">
+            Pronto para Elevar o <span>Seu Ecossistema</span>?
+          </h1>
+
+          <p class="slide-subtitle anim-item anim-delay-1">
+            Garanta uma estrutura previsível, escalável e alimentada pela tecnologia de ponta da nossa plataforma.
+          </p>
+
+          <div class="card-glass card-glass-gold anim-item anim-delay-2" style="text-align:center; padding:26px 18px;">
+            <div style="width:64px; height:64px; border-radius:50%; background:var(--gold-glow); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:30px; color:var(--gold); margin:0 auto 14px">
+              <i class="ti ti-sparkles"></i>
+            </div>
+            
+            <h3 style="font-size:20px; font-weight:800; color:var(--text)">Agende uma Demonstração Privada</h3>
+            <p style="font-size:13.5px; color:var(--muted); margin-top:8px; line-height:1.5">Veja a plataforma operando ao vivo com os dados da sua empresa.</p>
+          </div>
+
+          <div class="anim-item anim-delay-3" style="display:flex; flex-direction:column; gap:12px; margin-top:auto">
+            <button class="btn-primary-action pulse-gold" style="width:100%; justify-content:center; padding:15px;" onclick="alert('Solicitação de Demonstração registrada com sucesso! Entraremos em contato.')">
+              <i class="ti ti-brand-whatsapp" style="font-size:18px"></i> <span>Solicitar Demonstração</span>
+            </button>
+            <button class="btn-primary-action" style="width:100%; justify-content:center; background:var(--bg-input); border:1px solid var(--border); color:var(--text);" onclick="goToSlide(0)">
+              <i class="ti ti-rotate-clockwise" style="font-size:18px"></i> <span>Revisar Apresentação</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- FOOTER FLOATING NAVIGATION BAR -->
+    <footer class="footer-nav">
+      <div class="nav-pill">
+        <button class="nav-pill-btn" id="btnPrev" onclick="prevSlide()" title="Anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <span class="slide-counter" id="slideCounter">01 / 13</span>
+        <button class="nav-pill-btn" id="btnNext" onclick="nextSlide()" title="Próximo">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+
+      <button class="btn-primary-action" onclick="toggleDrawer()" style="padding:10px 16px; font-size:13.5px">
+        <i class="ti ti-list"></i> <span>Menu</span>
+      </button>
+    </footer>
+
+  </div>
+</div>
+
+<!-- ==========================================================================
+   INTERACTIVE JAVASCRIPT ENGINE (TOUCH, SWIPE, AUTOMATION)
+   ========================================================================== -->
+<script>
+// Lista de Slides com Títulos para o Menu Lateral
+const slidesData = [
+  { id: 0, title: "1. Capa & Visão Geral", tag: "Inicio", type: "cur" },
+  { id: 1, title: "2. Proposta de Valor", tag: "Visão", type: "cur" },
+  { id: 2, title: "3. Dashboard & Health Score", tag: "Atual", type: "cur" },
+  { id: 3, title: "4. Quadro Kanban", tag: "Atual", type: "cur" },
+  { id: 4, title: "5. Financeiro & MRR", tag: "Atual", type: "cur" },
+  { id: 5, title: "6. Eventos, Academy & Wiki", tag: "Atual", type: "cur" },
+  { id: 6, title: "7. Roadmap de Inovação", tag: "Futuro", type: "fut" },
+  { id: 7, title: "8. CRM de Mentorados", tag: "Futuro", type: "fut" },
+  { id: 8, title: "9. CRM de Clínicas", tag: "Futuro", type: "fut" },
+  { id: 9, title: "10. IA Copilot", tag: "Futuro", type: "fut" },
+  { id: 10, title: "11. Follow-up Automatizado", tag: "Futuro", type: "fut" },
+  { id: 11, title: "12. Matriz de Módulos", tag: "Resumo", type: "cur" },
+  { id: 12, title: "13. Demonstração & Contato", tag: "CTA", type: "cur" }
+];
+
+let currentSlide = 0;
+const totalSlides = slidesData.length;
+let autoplayTimer = null;
+let isAutoplay = false;
+
+// Elementos do DOM
+const slidesWrapper = document.getElementById('slidesWrapper');
+const slideCounter = document.getElementById('slideCounter');
+const progressBarFill = document.getElementById('progressBarFill');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const drawerOverlay = document.getElementById('drawerOverlay');
+const drawerList = document.getElementById('drawerList');
+const iconAutoplay = document.getElementById('iconAutoplay');
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  renderDrawerMenu();
+  updateSlidePosition();
+  initTouchEvents();
+  initKeyboardEvents();
+});
+
+// Renderizar Menu Lateral Drawer
+function renderDrawerMenu() {
+  drawerList.innerHTML = slidesData.map(item => `
+    <div class="drawer-item ${item.id === currentSlide ? 'active' : ''}" onclick="goToSlide(${item.id}); toggleDrawer();">
+      <span>${item.title}</span>
+      <span class="drawer-item-tag ${item.type === 'cur' ? 'tag-cur' : 'tag-fut'}">${item.tag}</span>
+    </div>
+  `).join('');
+}
+
+// Navegar para Slide Específico
+function goToSlide(index) {
+  if (index < 0) index = 0;
+  if (index >= totalSlides) index = totalSlides - 1;
+  
+  currentSlide = index;
+  updateSlidePosition();
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides - 1) {
+    currentSlide++;
+  } else if (isAutoplay) {
+    currentSlide = 0; // Loop no autoplay
+  }
+  updateSlidePosition();
+}
+
+function prevSlide() {
+  if (currentSlide > 0) {
+    currentSlide--;
+    updateSlidePosition();
+  }
+}
+
+// Atualizar Posição Visual dos Slides
+function updateSlidePosition() {
+  // Translação Horizontal
+  slidesWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+  // Atualizar classe Active para animações internas
+  const slideElements = document.querySelectorAll('.slide');
+  slideElements.forEach((el, idx) => {
+    if (idx === currentSlide) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  });
+
+  // Atualizar Contadores & Progresso
+  const formattedCur = String(currentSlide + 1).padStart(2, '0');
+  const formattedTot = String(totalSlides).padStart(2, '0');
+  slideCounter.innerText = `${formattedCur} / ${formattedTot}`;
+
+  const progressPercentage = ((currentSlide + 1) / totalSlides) * 100;
+  progressBarFill.style.width = `${progressPercentage}%`;
+
+  // Estados dos Botões
+  btnPrev.disabled = currentSlide === 0;
+  btnNext.disabled = currentSlide === totalSlides - 1 && !isAutoplay;
+
+  // Atualizar seleção no Drawer Menu
+  renderDrawerMenu();
+}
+
+// Toggle Drawer Lateral
+function toggleDrawer() {
+  drawerOverlay.classList.toggle('open');
+}
+
+// Toggle Apresentação Automática (Autoplay)
+function toggleAutoplay() {
+  isAutoplay = !isAutoplay;
+  if (isAutoplay) {
+    iconAutoplay.className = 'ti ti-player-pause';
+    iconAutoplay.style.color = 'var(--gold)';
+    autoplayTimer = setInterval(() => {
+      nextSlide();
+    }, 5000);
+  } else {
+    iconAutoplay.className = 'ti ti-player-play';
+    iconAutoplay.style.color = 'var(--text)';
+    clearInterval(autoplayTimer);
+  }
+}
+
+// Suporte a Gestos de Deslizar (Swipe Mobile)
+function initTouchEvents() {
+  const viewport = document.getElementById('viewportSlides');
+  let startX = 0;
+  let startY = 0;
+  let distX = 0;
+  let distY = 0;
+  const threshold = 40; // Sensibilidade de deslize
+
+  viewport.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    distX = 0;
+    distY = 0;
+  }, { passive: true });
+
+  viewport.addEventListener('touchmove', (e) => {
+    if (!startX || !startY) return;
+    const touch = e.touches[0];
+    distX = touch.clientX - startX;
+    distY = touch.clientY - startY;
+  }, { passive: true });
+
+  viewport.addEventListener('touchend', () => {
+    // Verifica se a intenção do usuário foi deslizar horizontalmente
+    if (Math.abs(distX) > Math.abs(distY) && Math.abs(distX) > threshold) {
+      if (distX < 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+    startX = 0;
+    startY = 0;
+  });
+}
+
+// Navegação por Teclado (Setas do Teclado & Espaço)
+function initKeyboardEvents() {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      prevSlide();
+    } else if (e.key === 'Escape') {
+      if (drawerOverlay.classList.contains('open')) toggleDrawer();
+    }
+  });
+}
+
+// Alternar entre Abas da Matriz
+function switchMatrixTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.getElementById('matrix-operacional').style.display = tab === 'operacional' ? 'flex' : 'none';
+  document.getElementById('matrix-futuro').style.display = tab === 'futuro' ? 'flex' : 'none';
+}
+
+// Alternar Modo de Visualização Tela Cheia Desktop
+function toggleDesktopFullscreenMode() {
+  document.body.classList.toggle('mode-desktop-full');
+  const isFull = document.body.classList.contains('mode-desktop-full');
+  document.getElementById('desktopModeText').innerText = isFull ? "Modo Enquadramento Celular" : "Modo Tela Cheia (Desktop)";
+}
+
+// Modo Fullscreen da Janela
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {});
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+</script>
+</body>
+</html>

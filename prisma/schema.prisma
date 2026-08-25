@@ -1,0 +1,328 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORG_ADMIN
+  MENTOR
+  MEMBER
+}
+
+enum Plan {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+model Organization {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  domain       String?
+  plan         Plan     @default(STARTER)
+  logoUrl      String?
+  primaryColor String   @default("#EAB308")
+  features     Json     @default("{\"kanban\":true,\"academy\":true,\"wiki\":true,\"financial\":true,\"events\":true}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users                  User[]
+  members                Member[]
+  departments            Department[]
+  wikiArticles           WikiArticle[]
+  academyCourses         AcademyCourse[]
+  financialTransactions FinancialTransaction[]
+  events                 Event[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String       @unique
+  passwordHash   String
+  name           String
+  role           Role         @default(MEMBER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  wikiArticles     WikiArticle[]
+  academyComments  AcademyComment[]
+
+  @@map("users")
+}
+
+model Member {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  specialty      String?
+  status         String       @default("cinza")
+  lastContact    DateTime?
+  notes          String?
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Extended Profile Info
+  age                    String?
+  birthdate              DateTime?
+  birthplace             String?
+  residence              String?
+  phone                  String?
+  instagram              String?
+  email                  String?
+  interests              String?
+  hobbies                String?
+  coverImage             String?
+  cpf                    String?
+  rg                     String?
+  professionalRegister   String?
+  maritalStatus          String?
+  registerPj             String?
+  cnpj                   String?
+  companyName            String?
+  tradeName              String?
+  municipalRegister      String?
+  commercialAddress      String?
+  nationality            String?
+  website                String?
+  linkedin               String?
+  monthlyRevenue         String?
+  mentorshipInterest     String?
+  mainGoal               String?
+  biggestChallenge       String?
+
+  contactLogs            ContactLog[]
+  milestones             Milestone[]
+  goals                  Goal[]
+  statusHistory          StatusHistory[]
+  academyProgresses      AcademyProgress[]
+  academyComments        AcademyComment[]
+  financialTransactions  FinancialTransaction[]
+
+  @@index([organizationId, status, position])
+  @@map("members")
+}
+
+model ContactLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  memberId       String
+  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type           String   @default("message")
+  note           String?
+  contactDate    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@map("contact_logs")
+}
+
+model Milestone {
+  id             String   @id @default(uuid())
+  organizationId String
+  memberId       String
+  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  pillar         Int
+  title          String
+  description    String?
+  achievedAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@map("milestones")
+}
+
+model Goal {
+  id             String    @id @default(uuid())
+  organizationId String
+  memberId       String
+  member         Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  pillar         Int
+  title          String
+  description    String?
+  status         String    @default("open")
+  dueDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@map("goals")
+}
+
+model StatusHistory {
+  id             String   @id @default(uuid())
+  organizationId String
+  memberId       String
+  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  fromStatus     String?
+  toStatus       String
+  reason         String?
+  changedAt      DateTime @default(now())
+
+  @@map("status_histories")
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  isFixed        Boolean      @default(false)
+
+  wikiArticles   WikiArticle[]
+
+  @@map("departments")
+}
+
+model WikiArticle {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  summary        String?
+  content        String
+  category       String       @default("Geral")
+  departmentId   String?
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  isPublic       Boolean      @default(false)
+  viewsCount     Int          @default(0)
+  createdByUserId String?
+  createdBy      User?        @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("wiki_articles")
+}
+
+model AcademyCourse {
+  id             String          @id @default(uuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  category       String          @default("Geral")
+  level          String          @default("Iniciante")
+  coverImage     String?
+  bannerImage    String?
+  status         String          @default("published")
+  position       Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  modules        AcademyModule[]
+
+  @@map("academy_courses")
+}
+
+model AcademyModule {
+  id             String          @id @default(uuid())
+  organizationId String
+  courseId       String
+  course         AcademyCourse   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  position       Int             @default(0)
+  createdAt      DateTime        @default(now())
+
+  lessons        AcademyLesson[]
+
+  @@map("academy_modules")
+}
+
+model AcademyLesson {
+  id              String            @id @default(uuid())
+  organizationId  String
+  moduleId        String
+  module          AcademyModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  videoProvider   String            @default("youtube")
+  videoUrl        String?
+  durationSeconds Int               @default(0)
+  attachments     String?
+  position        Int               @default(0)
+  isFreePreview   Boolean           @default(false)
+  coverImage      String?
+  createdAt       DateTime          @default(now())
+
+  progresses      AcademyProgress[]
+  comments        AcademyComment[]
+
+  @@map("academy_lessons")
+}
+
+model AcademyProgress {
+  id                String        @id @default(uuid())
+  organizationId    String
+  memberId          String
+  member            Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  lessonId          String
+  lesson            AcademyLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed         Boolean       @default(true)
+  lastWatchedSecond Int           @default(0)
+  notes             String?
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([memberId, lessonId])
+  @@map("academy_progresses")
+}
+
+model AcademyComment {
+  id             String         @id @default(uuid())
+  organizationId String
+  lessonId       String
+  lesson         AcademyLesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  memberId       String?
+  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  parentId       String?
+  parent         AcademyComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        AcademyComment[] @relation("CommentReplies")
+  content        String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("academy_comments")
+}
+
+model FinancialTransaction {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           String       // "INCOME" | "EXPENSE"
+  amount         Float
+  category       String
+  description    String
+  date           DateTime     @default(now())
+  status         String       @default("PAID") // "PAID" | "PENDING"
+  memberId       String?
+  member         Member?      @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@map("financial_transactions")
+}
+
+model Event {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  location       String?
+  eventDate      DateTime
+  maxAttendees   Int          @default(100)
+  ticketPrice    Float        @default(0)
+  status         String       @default("UPCOMING") // "UPCOMING" | "LIVE" | "FINISHED"
+  createdAt      DateTime     @default(now())
+
+  @@map("events")
+}

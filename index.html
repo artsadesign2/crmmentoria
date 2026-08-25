@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Rocket Club — Painel da Tripulação</title>
+<link id="app-favicon" rel="icon" type="image/x-icon" href="api/favicon.ico"/>
+<link rel="preload" as="image" href="api/system_logo.webp"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css"/>
+<link rel="stylesheet" href="assets/css/style.css?v=2.0.2"/>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+<div class="main-container">
+  <!-- BARRA LATERAL (SIDEBAR) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo" style="width:100%; display:flex; justify-content:center; align-items:center;">
+        <div class="logo-mark"><img src="api/system_logo.webp" alt="Logo" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; if(this.parentElement) this.parentElement.innerText='🚀';" /></div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-menu">
+      <button class="menu-item active" id="menu-dashboard" onclick="navigate('dashboard')">
+        <i class="ti ti-dashboard"></i>
+        <span>Dashboard</span>
+      </button>
+      <button class="menu-item" id="menu-kanban" onclick="navigate('kanban')">
+        <i class="ti ti-layout-kanban"></i>
+        <span>Quadro Kanban</span>
+      </button>
+      <button class="menu-item" id="menu-financial" onclick="navigate('financial')">
+        <i class="ti ti-report-money"></i>
+        <span>Financeiro</span>
+      </button>
+      <button class="menu-item" id="menu-events" onclick="navigate('events')">
+        <i class="ti ti-calendar-event"></i>
+        <span>Eventos & Imersões</span>
+      </button>
+      <button class="menu-item" id="menu-wiki" onclick="navigate('wiki')">
+        <i class="ti ti-books"></i>
+        <span>Wiki</span>
+      </button>
+      <button class="menu-item" id="menu-academy" onclick="navigate('academy')">
+        <i class="ti ti-school"></i>
+        <span>Academy</span>
+      </button>
+      <button class="menu-item" id="menu-settings" onclick="navigate('settings')">
+        <i class="ti ti-settings"></i>
+        <span>Configurações</span>
+      </button>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-row" style="display:flex; gap:10px; align-items:center; width:100%;">
+        <button class="btn-logout" onclick="logout()" title="Sair da Conta" style="flex:1; border-radius:8px;">
+          <i class="ti ti-logout"></i>
+          <span>Sair</span>
+        </button>
+        <button class="btn-collapse" id="btn-collapse" onclick="toggleSidebarCollapse()" title="Recolher Menu">
+          <i class="ti ti-chevron-left" id="collapse-icon"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ÁREA DE CONTEÚDO PRINCIPAL -->
+  <main class="content-area">
+    <!-- CABEÇALHO (HEADER) -->
+    <header class="header">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button class="mobile-toggle" id="mobile-toggle" onclick="toggleMobileSidebar()" title="Menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
+        <div style="display:flex; flex-direction:column">
+          <h2 id="view-title" class="view-title" style="font-size:18px; font-weight:700; color:var(--gold); letter-spacing:0.5px">Dashboard</h2>
+        </div>
+      </div>
+
+      <!-- Estatísticas do Topo (Formatadas como Pílula Centralizada) -->
+      <div class="stats" id="header-stats" style="display:none; margin:0 auto;">
+        <div class="stat"><div class="stat-n" id="cn-cinza" style="color:var(--gray)">—</div><div class="stat-l">Não Alocados</div></div>
+        <div class="stat"><div class="stat-n" id="cn-azul" style="color:var(--blue)">—</div><div class="stat-l">Iniciantes</div></div>
+        <div class="stat"><div class="stat-n" id="cn-verde" style="color:var(--green)">—</div><div class="stat-l">Engajados</div></div>
+        <div class="stat"><div class="stat-n" id="cn-amarela" style="color:var(--yellow)">—</div><div class="stat-l">Mornos</div></div>
+        <div class="stat"><div class="stat-n" id="cn-vermelha" style="color:var(--red)">—</div><div class="stat-l">Atenção</div></div>
+        <div class="stat"><div class="stat-n" id="cn-contacts" style="color:var(--blue)">—</div><div class="stat-l">Contatos/mês</div></div>
+      </div>
+
+      <!-- Command Palette Trigger & Central de Notificações & Ações Rápidas -->
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="cmd-palette-trigger" onclick="openCommandPalette()" title="Buscar ou Executar (Ctrl+K)">
+          <i class="ti ti-search" style="color:var(--gold)"></i>
+          <span>Buscar ou executar...</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+        
+        <div class="notif-wrapper">
+          <button class="notif-btn" id="btn-notif-toggle" onclick="toggleNotifPanel()" title="Central de Notificações">
+            <i class="ti ti-bell"></i>
+            <span class="notif-badge" id="notif-badge-count" style="display:none">0</span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown-panel" style="display:none">
+            <div class="notif-header" style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:13px; font-weight:600;"><i class="ti ti-bell" style="color:var(--gold); margin-right:6px;"></i> Notificações & Alertas</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <a href="javascript:void(0)" onclick="markAllNotificationsAsRead()" style="font-size:11px; color:var(--gold); text-decoration:none; font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Marcar todas como lidas</a>
+                <button onclick="toggleNotifPanel()" style="background:none; border:none; color:var(--muted); cursor:pointer;"><i class="ti ti-x"></i></button>
+              </div>
+            </div>
+            <div class="notif-list" id="notif-list-container">
+              <div style="padding:20px; text-align:center; color:var(--muted); font-size:12px;">Sem notificações pendentes</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-btns" id="header-action-btns" style="display:none">
+          <button class="btn" onclick="confirmGeneratePDF()" title="Gerar Members Book PDF"><i class="ti ti-file-type-pdf"></i> Members Book</button>
+          <button class="btn gold" onclick="openAdd()"><i class="ti ti-plus"></i> Novo membro</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Visualizações -->
+    <div class="view-container">
+      
+      <!-- VIEW: DASHBOARD -->
+      <section id="view-dashboard" class="view-panel active">
+        <div class="dashboard-scroll" style="padding:24px 28px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:24px;">
+          <!-- HEALTH SCORE WIDGET -->
+          <div class="health-score-card">
+            <div>
+              <span style="font-size:11px; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; font-weight:700;">HEALTH SCORE DA TRIPULAÇÃO</span>
+              <h3 style="font-size:20px; font-weight:700; color:var(--text); margin-top:2px;" id="dash-health-status">Tripulação Engajada</h3>
+              <p style="font-size:13px; color:var(--muted); margin-top:4px;">Indicador de saúde baseado em interações e progresso recente.</p>
+            </div>
+            <div class="health-score-circle" id="dash-health-score-val">--%</div>
+          </div>
+
+          <!-- GRID DE MÉTRICAS -->
+          <div class="dash-cards-grid">
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(223,178,108,0.1); color:var(--gold)"><i class="ti ti-users"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Membros Totais</div>
+                <div class="dc-value" id="dash-m-total">0</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(16,185,129,0.1); color:var(--green)"><i class="ti ti-target"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Metas Concluídas</div>
+                <div class="dc-value" id="dash-g-done">0</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(59,130,246,0.1); color:var(--blue)"><i class="ti ti-trophy"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Etapas Conquistadas</div>
+                <div class="dc-value" id="dash-m-milestones">0</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(239,68,68,0.1); color:var(--red)"><i class="ti ti-alert-circle"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Atenção Urgente</div>
+                <div class="dc-value" id="dash-m-urgent">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-sections-grid">
+            <!-- DISTRIBUIÇÃO DOS STATUS -->
+            <div class="dash-section-card">
+              <h3 class="section-title"><i class="ti ti-chart-bar" style="color:var(--gold)"></i> Distribuição da Tripulação</h3>
+              <div class="status-dist-list" id="dash-status-dist">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+
+            <!-- ATIVIDADE RECENTE -->
+            <div class="dash-section-card">
+              <h3 class="section-title"><i class="ti ti-history" style="color:var(--gold)"></i> Atividade Recente</h3>
+              <div class="recent-activity-list" id="dash-recent-activity">
+                <!-- Preenchido via JS -->
+              </div>
+          </div>
+        </div>
+
+        <!-- PRÓXIMOS ANIVERSARIANTES -->
+        <div class="dash-section-card" style="margin-top: 24px;">
+          <h3 class="section-title"><i class="ti ti-gift" style="color:var(--gold)"></i> Próximos Aniversariantes</h3>
+          <div class="birthday-grid">
+            <!-- ANIVERSARIANTES DO MÊS -->
+            <div class="birthday-col">
+              <h4 style="font-size: 13px; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                <i class="ti ti-calendar-event"></i> Aniversariantes do Mês (<span id="birthdays-current-month-name">Mês Atual</span>)
+              </h4>
+              <div id="dash-birthdays-current" class="birthday-list">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+            
+            <!-- ANIVERSARIANTES DO PRÓXIMO MÊS -->
+            <div class="birthday-col">
+              <h4 style="font-size: 13px; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                <i class="ti ti-calendar-stats"></i> Aniversariantes do Próximo Mês (<span id="birthdays-next-month-name">Próximo Mês</span>)
+              </h4>
+              <div id="dash-birthdays-next" class="birthday-list">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+
+            <!-- ANIVERSARIANTES DO MÊS SEGUINTE -->
+            <div class="birthday-col">
+              <h4 style="font-size: 13px; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                <i class="ti ti-calendar-stats"></i> Aniversariantes de (<span id="birthdays-next2-month-name">Mês Subseguinte</span>)
+              </h4>
+              <div id="dash-birthdays-next2" class="birthday-list">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+      <!-- VIEW: KANBAN -->
+      <section id="view-kanban" class="view-panel" style="overflow:hidden;">
+        <!-- Barra de Filtros e Busca -->
+        <div class="board-filters" style="display:flex; gap:16px; padding:16px 28px; background:var(--bg2); border-bottom:1px solid var(--border); align-items:center; flex-wrap:wrap; width:100%">
+          
+          <!-- Botão Gerar Members Book PDF -->
+          <button class="btn btn-sm gold" onclick="confirmGeneratePDF()" title="Gerar Members Book PDF" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:13px; height:34px; padding:0 14px; white-space:nowrap; background:var(--gold); color:#07080c; border:none; border-radius:6px; cursor:pointer;">
+            <i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Members Book
+          </button>
+
+          <!-- Busca Textual -->
+          <div style="position:relative; flex:1; min-width:200px; max-width:320px;">
+            <i class="ti ti-search" style="position:absolute; left:10px; top:9px; color:var(--muted)"></i>
+            <input type="text" id="kanban-search" oninput="triggerFilter()" placeholder="Buscar por nome, especialidade, empresa..." style="width:100%; padding-left:32px; padding-right:30px; height:34px; font-size:13px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text)" />
+            <i class="ti ti-x" id="kanban-search-clear" onclick="clearSearchFilter()" title="Limpar busca" style="position:absolute; right:8px; top:8px; color:var(--muted); font-size:16px; cursor:pointer; display:none; padding:2px; border-radius:50%;"></i>
+          </div>
+
+          <!-- Filtro por Especialidade -->
+          <div style="min-width:160px; max-width:220px; width:100%;">
+            <select id="kanban-filter-specialty" onchange="triggerFilter()" style="width:100%; height:34px; font-size:13px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; cursor:pointer;">
+              <option value="">Todas Especialidades</option>
+            </select>
+          </div>
+
+          <!-- Filtro por Recência de Contato -->
+          <div style="min-width:180px; max-width:240px; width:100%;">
+            <select id="kanban-filter-contact" onchange="triggerFilter()" style="width:100%; height:34px; font-size:13px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; cursor:pointer;">
+              <option value="">Qualquer data de contato</option>
+              <option value="never">Nunca contactado</option>
+              <option value="delayed15">Sem contato há +15 dias</option>
+              <option value="delayed30">Sem contato há +30 dias</option>
+              <option value="recent">Contato recente (últimos 7 dias)</option>
+            </select>
+          </div>
+
+          <!-- Filtro por Status no Members Book -->
+          <div style="min-width:180px; max-width:240px; width:100%;">
+            <select id="kanban-filter-book" onchange="triggerFilter()" style="width:100%; height:34px; font-size:13px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; cursor:pointer;">
+              <option value="">Exibição no Members Book</option>
+              <option value="included">Incluídos no Members Book</option>
+              <option value="excluded">Ocultados do Members Book</option>
+            </select>
+          </div>
+
+          <!-- Contador de Resultados -->
+          <div style="font-size:12px; color:var(--muted); margin-left:auto;" id="kanban-filter-count">
+            Mostrando 0 de 0 membros
+          </div>
+        </div>
+
+        <div id="kanban-table-container" style="display:none; flex:1; overflow:auto; padding:0 28px;">
+          <table class="kanban-table">
+            <thead>
+              <tr>
+                <th>Membro</th>
+                <th>Status</th>
+                <th>Especialidade</th>
+                <th>Contato</th>
+                <th>Cidade / Estado</th>
+                <th>Última Abordagem</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="kanban-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="board-scroll" id="kanban-cols-container" style="flex:1; overflow:auto;">
+          <div class="board">
+            <div class="col cinza" ondragover="onOver(event,'cinza')" ondrop="onDrop(event,'cinza')" ondragleave="onLeave(event)">
+              <div class="col-head">
+                <div class="col-title"><div class="dot"></div><span style="color:var(--gray)">Não Alocados</span></div>
+                <span class="badge" id="b-cinza">0</span>
+              </div>
+              <div class="cards" id="cards-cinza"></div>
+              <button class="add-btn" onclick="openAdd('cinza')"><i class="ti ti-plus"></i> Adicionar</button>
+            </div>
+            <div class="col azul" ondragover="onOver(event,'azul')" ondrop="onDrop(event,'azul')" ondragleave="onLeave(event)">
+              <div class="col-head">
+                <div class="col-title"><div class="dot"></div><span style="color:var(--blue)">Iniciantes</span></div>
+                <span class="badge" id="b-azul">0</span>
+              </div>
+              <div class="cards" id="cards-azul"></div>
+              <button class="add-btn" onclick="openAdd('azul')"><i class="ti ti-plus"></i> Adicionar</button>
+            </div>
+            <div class="col verde" ondragover="onOver(event,'verde')" ondrop="onDrop(event,'verde')" ondragleave="onLeave(event)">
+              <div class="col-head">
+                <div class="col-title"><div class="dot"></div><span style="color:var(--green)">Engajados</span></div>
+                <span class="badge" id="b-verde">0</span>
+              </div>
+              <div class="cards" id="cards-verde"></div>
+              <button class="add-btn" onclick="openAdd('verde')"><i class="ti ti-plus"></i> Adicionar</button>
+            </div>
+            <div class="col amarela" ondragover="onOver(event,'amarela')" ondrop="onDrop(event,'amarela')" ondragleave="onLeave(event)">
+              <div class="col-head">
+                <div class="col-title"><div class="dot"></div><span style="color:var(--yellow)">Mornos</span></div>
+                <span class="badge" id="b-amarela">0</span>
+              </div>
+              <div class="cards" id="cards-amarela"></div>
+              <button class="add-btn" onclick="openAdd('amarela')"><i class="ti ti-plus"></i> Adicionar</button>
+            </div>
+            <div class="col vermelha" ondragover="onOver(event,'vermelha')" ondrop="onDrop(event,'vermelha')" ondragleave="onLeave(event)">
+              <div class="col-head">
+                <div class="col-title"><div class="dot"></div><span style="color:var(--red)">Atenção Urgente</span></div>
+                <span class="badge" id="b-vermelha">0</span>
+              </div>
+              <div class="cards" id="cards-vermelha"></div>
+              <button class="add-btn" onclick="openAdd('vermelha')"><i class="ti ti-plus"></i> Adicionar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: WIKI -->
+      <section id="view-wiki" class="view-panel" style="flex-direction:row; height:100%; overflow:hidden;">
+        <!-- Sidebar da Wiki (Lista de Artigos por Departamento) -->
+        <div class="wiki-sidebar" style="width:280px; border-right:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; overflow:hidden;">
+          <div class="wiki-sidebar-header" style="padding:16px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <h3 style="font-size:14px; font-weight:600; color:var(--text)">Base de Conhecimento</h3>
+              <button class="btn gold btn-sm" id="btn-wiki-new" onclick="openWikiModal()" style="display:none; padding:4px 8px; font-size:11px; height:auto;">
+                <i class="ti ti-plus"></i> Novo
+              </button>
+            </div>
+            <div class="search-box" style="position:relative">
+              <i class="ti ti-search" style="position:absolute; left:10px; top:10px; color:var(--muted)"></i>
+              <input type="text" id="wiki-search" oninput="filterWikiArticles()" placeholder="Pesquisar artigos..." style="width:100%; padding-left:32px; height:34px; font-size:13px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text)" />
+            </div>
+          </div>
+          <div class="wiki-sidebar-list" id="wiki-articles-list" style="flex:1; overflow-y:auto; padding:12px;">
+            <!-- Artigos carregados dinamicamente -->
+          </div>
+        </div>
+
+        <!-- Leitor da Wiki -->
+        <div class="wiki-reader" style="flex:1; display:flex; flex-direction:column; background:var(--bg); overflow:hidden;">
+          <div class="wiki-reader-header" id="wiki-article-header" style="padding:20px 32px; border-bottom:1px solid var(--border); display:none; align-items:center; justify-content:space-between; width:100%;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <span class="badge" id="wiki-article-dept" style="background:var(--border); color:var(--gold);">—</span>
+                <span class="badge" id="wiki-article-visibility" style="background:var(--border); color:var(--muted)">Público</span>
+              </div>
+              <h2 id="wiki-article-title" style="font-size:20px; font-weight:700; color:var(--text)">Título do Artigo</h2>
+              <div style="font-size:11px; color:var(--muted); margin-top:2px;">
+                Por <span id="wiki-article-author">—</span> em <span id="wiki-article-date">—</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;" id="wiki-article-actions">
+              <button class="btn btn-sm" onclick="editWikiArticle()"><i class="ti ti-pencil"></i> Editar</button>
+              <button class="btn btn-sm" onclick="deleteWikiArticle()" style="color:var(--red)"><i class="ti ti-trash"></i> Excluir</button>
+            </div>
+          </div>
+          <div class="wiki-reader-content" id="wiki-article-body" style="flex:1; overflow-y:auto; padding:32px; color:var(--text); line-height:1.7; font-size:15px;">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--muted); text-align:center;">
+              <i class="ti ti-books" style="font-size:48px; color:var(--gold); margin-bottom:16px;"></i>
+              <h3>Base de Conhecimento Rocket Club</h3>
+              <p style="font-size:13px; max-width:320px; margin-top:4px;">Selecione um artigo na barra lateral para começar a ler ou pesquise temas de interesse.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: FINANCIAL (ROCKET CLUB FINANCE) -->
+      <section id="view-financial" class="view-panel" style="overflow-y:auto; padding:24px 28px;">
+        <div style="display:flex; flex-direction:column; gap:24px; width:100%;">
+          
+          <!-- Top Financial Actions Bar -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; background:var(--bg2); padding:16px 20px; border-radius:14px; border:1px solid var(--border);">
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm active" id="btn-fin-tab-overview" onclick="switchFinTab('overview')" style="background:var(--gold); color:#07080c; font-weight:600;"><i class="ti ti-chart-bar"></i> Visão Geral</button>
+              <button class="btn btn-sm" id="btn-fin-tab-transactions" onclick="switchFinTab('transactions')" style="background:transparent; color:var(--muted);"><i class="ti ti-receipt-2"></i> Lançamentos</button>
+              <button class="btn btn-sm" id="btn-fin-tab-contracts" onclick="switchFinTab('contracts')" style="background:transparent; color:var(--muted);"><i class="ti ti-file-text"></i> Contratos Recorrentes</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn" onclick="openAddFinTransaction('receita')"><i class="ti ti-circle-plus" style="color:var(--green)"></i> Nova Receita</button>
+              <button class="btn" onclick="openAddFinTransaction('despesa')"><i class="ti ti-circle-minus" style="color:var(--red)"></i> Nova Despesa</button>
+              <button class="btn gold" onclick="openAddFinContract()"><i class="ti ti-plus"></i> Novo Contrato</button>
+            </div>
+          </div>
+
+          <!-- Financial KPIs Grid -->
+          <div class="dash-cards-grid">
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(223,178,108,0.12); color:var(--gold);"><i class="ti ti-cash"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">MRR Recorrente</div>
+                <div class="dc-value" id="fin-mrr-val">R$ 0,00</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(16,185,129,0.12); color:var(--green);"><i class="ti ti-trending-up"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Receita Confirmada (Mês)</div>
+                <div class="dc-value" id="fin-income-val">R$ 0,00</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(239,68,68,0.12); color:var(--red);"><i class="ti ti-trending-down"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">Despesas (Mês)</div>
+                <div class="dc-value" id="fin-expense-val">R$ 0,00</div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dc-icon" style="background:rgba(234,179,8,0.12); color:var(--yellow);"><i class="ti ti-clock"></i></div>
+              <div class="dc-info">
+                <div class="dc-label">A Receber (Pendente)</div>
+                <div class="dc-value" id="fin-pending-val">R$ 0,00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Content Section: Transactions & Contracts Table -->
+          <div class="dash-section-card" id="fin-panel-main">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+              <h3 class="section-title" id="fin-panel-title"><i class="ti ti-receipt" style="color:var(--gold)"></i> Lançamentos Financeiros</h3>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <select id="fin-filter-type" onchange="renderFinTransactions()" style="height:32px; font-size:12px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 8px;">
+                  <option value="">Todos os Tipos</option>
+                  <option value="receita">Receitas (Entradas)</option>
+                  <option value="despesa">Despesas (Saídas)</option>
+                </select>
+                <select id="fin-filter-status" onchange="renderFinTransactions()" style="height:32px; font-size:12px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 8px;">
+                  <option value="">Todos os Status</option>
+                  <option value="pago">Pago / Recebido</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="atrasado">Atrasado</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table class="kanban-table" id="fin-table">
+                <thead>
+                  <tr>
+                    <th>Vencimento</th>
+                    <th>Descrição</th>
+                    <th>Cliente / Fornecedor</th>
+                    <th>Categoria</th>
+                    <th>Valor (R$)</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="fin-transactions-tbody">
+                  <!-- Loaded dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW: EVENTS (EVENTOS & IMERSÕES REDESENHADAS) -->
+      <section id="view-events" class="view-panel" style="overflow-y:auto; padding:24px 28px;">
+        <div style="display:flex; flex-direction:column; gap:24px; width:100%;">
+          
+          <!-- Header Hero & Novo Evento Button -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; background:linear-gradient(135deg, rgba(223,178,108,0.08) 0%, rgba(15,17,26,0.95) 100%), var(--bg2); padding:20px 24px; border-radius:16px; border:1px solid var(--border); box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div>
+              <span style="font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:1px;">CALENDÁRIO DA TRIPULAÇÃO</span>
+              <h3 style="font-size:22px; font-weight:700; color:var(--text); margin-top:2px;"><i class="ti ti-calendar-event" style="color:var(--gold)"></i> Eventos & Imersões Exclusivas</h3>
+              <p style="font-size:13px; color:var(--muted); margin-top:4px;">Acompanhe a agenda de imersões presenciais, masterminds e confirmação de presença da tripulação.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn gold" onclick="openAddEvent()"><i class="ti ti-plus"></i> Novo Evento</button>
+            </div>
+          </div>
+
+          <!-- Hero Destaque do Próximo Evento -->
+          <div id="events-hero-container"></div>
+
+          <!-- Filtros de Categorias de Evento -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; gap:8px;" id="events-category-filters">
+              <button class="btn btn-sm active" onclick="filterEventsCategory('all')" id="btn-ev-cat-all" style="background:var(--gold); color:#07080c; font-weight:600;">Todos os Eventos</button>
+              <button class="btn btn-sm" onclick="filterEventsCategory('Imersão Presencial')" id="btn-ev-cat-imersao" style="background:transparent; color:var(--muted);">Imersões Presenciais</button>
+              <button class="btn btn-sm" onclick="filterEventsCategory('Mastermind Online')" id="btn-ev-cat-mastermind" style="background:transparent; color:var(--muted);">Masterminds Online</button>
+              <button class="btn btn-sm" onclick="filterEventsCategory('Workshop')" id="btn-ev-cat-workshop" style="background:transparent; color:var(--muted);">Workshops & Aulas</button>
+            </div>
+            <span style="font-size:12px; color:var(--muted);" id="events-count-label">0 eventos listados</span>
+          </div>
+
+          <!-- Grid de Cards de Eventos -->
+          <div id="events-grid-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px;">
+            <!-- Carregado via JS -->
+          </div>
+        </div>
+      </section>
+
+<!-- VIEW: CONFIGURAÇÕES -->
+      <section id="view-settings" class="view-panel" style="overflow:hidden;">
+        <!-- Sub-navegação de Configurações -->
+        <div class="settings-tabs" style="display:flex; border-bottom:1px solid var(--border); padding: 0 28px; background: var(--bg2); gap: 4px; overflow-x: auto;">
+          <button class="settings-tab active" id="settings-tab-btn-system" onclick="switchSettingsTab('system')">
+            <i class="ti ti-adjustments-alt"></i> Configurações do Sistema
+          </button>
+          <button class="settings-tab" id="settings-tab-btn-users" onclick="switchSettingsTab('users')">
+            <i class="ti ti-users"></i> Controle de Usuários
+          </button>
+          <button class="settings-tab" id="settings-tab-btn-depts" onclick="switchSettingsTab('depts')">
+            <i class="ti ti-building-community"></i> Departamentos
+          </button>
+
+          <button class="settings-tab" id="settings-tab-btn-csvimport" onclick="switchSettingsTab('csvimport')">
+            <i class="ti ti-file-spreadsheet"></i> Importar CSV
+          </button>
+        </div>
+
+        <!-- Subview: Configurações do Sistema -->
+        <div class="settings-scroll" id="settings-subview-system" style="padding:24px 28px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:24px; width:100%; max-width:100%; margin:0;">
+          
+          <!-- Pilares do Programa -->
+          <div class="dash-section-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:20px 24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div>
+                <h3 class="section-title" style="font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; margin:0;">
+                  <i class="ti ti-target" style="color:var(--gold)"></i> Pilares do Programa de Mentoria
+                </h3>
+                <p style="color:var(--muted); font-size:12px; margin-top:3px;">
+                  Defina os nomes dos 5 pilares estratégicos da tripulação.
+                </p>
+              </div>
+              <span class="badge" style="background:var(--bg3); border:1px solid var(--border); color:var(--gold); font-size:11px; font-weight:600;">5 Pilares</span>
+            </div>
+            
+            <div class="grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+              <div class="field">
+                <label style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <span style="width:18px; height:18px; border-radius:50%; background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">1</span> Pilar 1
+                </label>
+                <input id="set-pillar-1" type="text" placeholder="Nome do Pilar 1"/>
+              </div>
+              <div class="field">
+                <label style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <span style="width:18px; height:18px; border-radius:50%; background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">2</span> Pilar 2
+                </label>
+                <input id="set-pillar-2" type="text" placeholder="Nome do Pilar 2"/>
+              </div>
+            </div>
+            <div class="grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+              <div class="field">
+                <label style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <span style="width:18px; height:18px; border-radius:50%; background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">3</span> Pilar 3
+                </label>
+                <input id="set-pillar-3" type="text" placeholder="Nome do Pilar 3"/>
+              </div>
+              <div class="field">
+                <label style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <span style="width:18px; height:18px; border-radius:50%; background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">4</span> Pilar 4
+                </label>
+                <input id="set-pillar-4" type="text" placeholder="Nome do Pilar 4"/>
+              </div>
+            </div>
+            <div class="field">
+              <label style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                <span style="width:18px; height:18px; border-radius:50%; background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">5</span> Pilar 5
+              </label>
+              <input id="set-pillar-5" type="text" placeholder="Nome do Pilar 5"/>
+            </div>
+          </div>
+
+          <!-- Gestão da Identidade Visual & Logotipos -->
+          <div class="dash-section-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:20px 24px;">
+            <h3 class="section-title" style="font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <i class="ti ti-photo" style="color:var(--gold)"></i> Identidade Visual & Logotipos da Marca
+            </h3>
+            <p style="color:var(--muted); font-size:12px; margin-bottom:18px;">
+              Personalize as marcas oficiais exibidas no painel, capas de livros e relatórios em PDF.
+            </p>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+              
+              <!-- 1. Logo do Sistema -->
+              <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; display:flex; align-items:center; gap:6px;">
+                    <i class="ti ti-brand-rocket" style="color:var(--gold);"></i> Logotipo do Sistema
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); line-height:1.4;">Substitui o ícone padrão no menu lateral e cabeçalho.</div>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:14px; border-top:1px solid rgba(255,255,255,0.04); padding-top:12px;">
+                  <div style="width:50px; height:50px; border-radius:10px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); overflow:hidden; position:relative; flex-shrink:0;">
+                    <img id="settings-logo-preview" src="" style="width:100%; height:100%; object-fit:contain; display:none;" />
+                    <span id="settings-logo-placeholder" style="font-size:20px;">🚀</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn gold btn-sm" type="button" onclick="document.getElementById('settings-logo-file').click()">
+                      <i class="ti ti-upload"></i> Alterar Logo
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="settings-btn-remove-logo" type="button" onclick="removeSystemLogo()" style="display:none;">
+                      <i class="ti ti-trash"></i> Remover
+                    </button>
+                    <input type="file" id="settings-logo-file" style="display:none" accept="image/png, image/jpeg, image/jpg, image/svg+xml" onchange="handleSystemLogoUpload(event)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Favicon do Sistema -->
+              <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; display:flex; align-items:center; gap:6px;">
+                    <i class="ti ti-world" style="color:var(--gold);"></i> Favicon do Sistema
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); line-height:1.4;">Ícone exibido na aba do navegador (PNG, ICO, SVG, WEBP).</div>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:14px; border-top:1px solid rgba(255,255,255,0.04); padding-top:12px;">
+                  <div style="width:50px; height:50px; border-radius:10px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); overflow:hidden; position:relative; flex-shrink:0;">
+                    <img id="settings-favicon-preview" src="" style="width:32px; height:32px; object-fit:contain; display:none;" />
+                    <span id="settings-favicon-placeholder" style="font-size:11px; color:var(--muted)">Sem Ícone</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn gold btn-sm" type="button" onclick="document.getElementById('settings-favicon-file').click()">
+                      <i class="ti ti-upload"></i> Alterar Favicon
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="settings-btn-remove-favicon" type="button" onclick="removeFavicon()" style="display:none;">
+                      <i class="ti ti-trash"></i> Remover
+                    </button>
+                    <input type="file" id="settings-favicon-file" style="display:none" accept="image/png, image/x-icon, image/vnd.microsoft.icon, image/jpeg, image/webp, image/svg+xml" onchange="handleFaviconUpload(event)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Logo do Card de Aniversário -->
+              <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; display:flex; align-items:center; gap:6px;">
+                    <i class="ti ti-cake" style="color:var(--gold);"></i> Logo Card Aniversário
+                  </div>
+                  <div style="font-size:11px; color:var(--muted); line-height:1.4;">Marca para o gerador de cards (535x130px).</div>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:14px; border-top:1px solid rgba(255,255,255,0.04); padding-top:12px;">
+                  <div style="width:70px; height:50px; border-radius:10px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); overflow:hidden; position:relative; flex-shrink:0;">
+                    <img id="settings-card-logo-preview" src="" style="width:100%; height:100%; object-fit:contain; display:none;" />
+                    <span id="settings-card-logo-placeholder" style="font-size:11px; color:var(--muted)">Sem Logo</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn gold btn-sm" type="button" onclick="document.getElementById('settings-card-logo-file').click()">
+                      <i class="ti ti-upload"></i> Alterar Logo
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="settings-btn-remove-card-logo" type="button" onclick="removeCardLogo()" style="display:none;">
+                      <i class="ti ti-trash"></i> Remover
+                    </button>
+                    <input type="file" id="settings-card-logo-file" style="display:none" accept="image/png, image/jpeg, image/jpg, image/svg+xml" onchange="handleCardLogoUpload(event)" />
+                  </div>
+                </div>
+              </div>
+
+              </div>
+          </div>
+
+          <!-- Exportação para Google Drive & Batch Cards de Aniversário -->
+          <div class="dash-section-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:20px 24px;">
+            <h3 class="section-title" style="font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <i class="ti ti-brand-google-drive" style="color:#4285F4"></i> Exportação para Google Drive & Cards de Aniversário
+            </h3>
+            <p style="color:var(--muted); font-size:12px; margin-bottom:18px;">
+              Gere em lote todos os cards de aniversário em alta resolução (1080x1920) e envie diretamente para a pasta do Google Drive.
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <!-- Container de Autenticação Automática e Credenciais OAuth Google Drive -->
+              <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                  <div style="font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+                    <i class="ti ti-brand-google-drive" style="color:#4285F4;"></i> Credenciais OAuth 2.0 (Renovação Automática)
+                  </div>
+                  <span class="badge" style="background:rgba(66,133,244,0.15); color:#4285F4; border:1px solid rgba(66,133,244,0.3); font-size:11px; padding:3px 8px; border-radius:6px; font-weight:600;">
+                    ⚡ Token Automático Sem Expiração
+                  </span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px;">
+                      <i class="ti ti-folder" style="color:var(--gold)"></i> ID ou Link da Pasta do Google Drive
+                    </label>
+                    <input type="text" id="set-gdrive-folder-id" placeholder="Ex: 1a2b3c4d5e6f7g8h9i0j..." style="width:100%; height:41px; box-sizing:border-box;" />
+                    <span style="font-size:11px; color:var(--muted); margin-top:4px; display:block;">Copiado da URL: drive.google.com/drive/folders/<strong>ID_AQUI</strong></span>
+                  </div>
+
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px;">
+                      <i class="ti ti-refresh" style="color:var(--gold)"></i> Refresh Token OAuth (1//04...)
+                    </label>
+                    <input type="password" id="set-gdrive-refresh-token" placeholder="Cole seu Refresh Token do Google" style="width:100%; height:41px; box-sizing:border-box;" />
+                    <span style="font-size:11px; color:var(--muted); margin-top:4px; display:block;">Mantém a autorização ativa permanentemente sem expirar a cada 1h.</span>
+                  </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px;">
+                      <i class="ti ti-id" style="color:var(--gold)"></i> Client ID OAuth
+                    </label>
+                    <input type="text" id="set-gdrive-client-id" placeholder="Ex: 12345...apps.googleusercontent.com" style="width:100%; height:41px; box-sizing:border-box;" />
+                  </div>
+
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px;">
+                      <i class="ti ti-lock" style="color:var(--gold)"></i> Client Secret OAuth
+                    </label>
+                    <input type="password" id="set-gdrive-client-secret" placeholder="Ex: GOCSPX-..." style="width:100%; height:41px; box-sizing:border-box;" />
+                  </div>
+
+                  <div class="field" style="margin-bottom:0;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px;">
+                      <i class="ti ti-key" style="color:var(--gold)"></i> Access Token Direto (ya29... / Opcional)
+                    </label>
+                    <input type="password" id="set-gdrive-api-key" placeholder="Usado caso não informe Refresh Token" style="width:100%; height:41px; box-sizing:border-box;" />
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:4px;">
+                  <button class="btn" type="button" id="btn-test-gdrive-conn" onclick="testGoogleDriveConnection()" style="height:36px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px; background:rgba(66,133,244,0.15); border:1px solid #4285F4; color:#fff;">
+                    <i class="ti ti-plug" style="color:#4285F4;"></i> Testar Conexão com Google Drive
+                  </button>
+                </div>
+              </div>
+
+              <!-- Aviso Informativo sobre Modelo do Card de Aniversário -->
+              <div class="field" style="margin-bottom:16px;">
+                <div style="padding:14px 16px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; gap:12px;">
+                  <i class="ti ti-info-circle" style="font-size:24px; color:var(--gold); flex-shrink:0;"></i>
+                  <div style="font-size:12.5px; color:var(--text); line-height:1.4;">
+                    <strong>Modelo dos Cards de Aniversário:</strong> O modelo visual (Modelo 1 ou Modelo 2) e o alinhamento da foto são definidos <strong>individualmente na ficha de cada mentorado</strong>. Na exportação em lote, o sistema identifica e aplica automaticamente o modelo e alinhamento escolhidos para cada um.
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div>
+                  <div style="font-size:13.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+                    <i class="ti ti-cake" style="color:var(--gold);"></i> Gerador & Exportador em Lote
+                  </div>
+                  <div style="font-size:11.5px; color:var(--muted); margin-top:2px;">
+                    Processa e exporta os cards de todos os membros cadastrados utilizando o modelo e alinhamento selecionados.
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                  <button class="btn gold" type="button" onclick="confirmExportAllBirthdayCards()" style="box-shadow:0 4px 14px rgba(223, 178, 108, 0.2);">
+                    <i class="ti ti-brand-google-drive"></i> Gerar & Exportar Todos os Cards
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status de Operação do Sistema (Sem dados sensíveis de DB) -->
+          <div class="dash-section-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:var(--glow-green); border:1px solid rgba(16,185,129,0.3); color:var(--green); display:flex; align-items:center; justify-content:center; font-size:20px;">
+                <i class="ti ti-shield-check"></i>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:var(--text);">Sistema Operacional & Seguro</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">Conexão criptografada (SSL/TLS) e integridade dos serviços ativa.</div>
+              </div>
+            </div>
+            <span class="badge" style="background:var(--glow-green); color:var(--green); border-color:rgba(16,185,129,0.3); font-size:11px; font-weight:600; padding:4px 10px;">
+              🟢 100% Operacional
+            </span>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:6px">
+            <button class="btn" onclick="navigate('dashboard')">Cancelar</button>
+            <button class="btn gold" onclick="saveSettings()"><i class="ti ti-device-floppy"></i> Salvar Configurações</button>
+          </div>
+        </div>
+
+        <!-- Subview: Controle de Usuários -->
+        <div class="settings-scroll" id="settings-subview-users" style="padding:24px 28px; overflow-y:auto; flex:1; display:none; flex-direction:column; gap:24px; width:100%; max-width:100%; margin:0;">
+          <div class="dash-section-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 class="section-title"><i class="ti ti-users" style="color:var(--gold)"></i> Controle de Usuários</h3>
+              <button class="btn gold btn-sm" onclick="openUserModal()"><i class="ti ti-plus"></i> Novo Usuário</button>
+            </div>
+            <p style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:16px;">
+              Cadastre novos usuários no sistema e gerencie suas permissões e cargos.
+            </p>
+            <div style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border); color:var(--muted);">
+                    <th style="padding:12px;">Nome</th>
+                    <th style="padding:12px;">E-mail</th>
+                    <th style="padding:12px;">Cargo</th>
+                    <th style="padding:12px; text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body">
+                  <!-- Usuários carregados via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subview: Departamentos -->
+        <div class="settings-scroll" id="settings-subview-depts" style="padding:24px 28px; overflow-y:auto; flex:1; display:none; flex-direction:column; gap:24px; width:100%; max-width:100%; margin:0;">
+          <div class="dash-section-card">
+            <h3 class="section-title" style="margin-bottom:12px;"><i class="ti ti-building-community" style="color:var(--gold)"></i> Gerenciar Departamentos</h3>
+            <p style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:16px;">
+              Adicione ou remova áreas de atuação para filtrar seus mentorados no Kanban e relatórios.
+            </p>
+
+            <form id="dept-form" onsubmit="saveDepartment(event)" style="display:flex; gap:10px; margin-bottom:20px; align-items:flex-end;">
+              <div class="field" style="flex:1; margin-bottom:0;">
+                <label style="font-size:12px; color:var(--muted); font-weight:600; display:block; margin-bottom:6px;">NOME DO NOVO DEPARTAMENTO</label>
+                <input type="text" id="dept-name" placeholder="Ex: Tecnologia, Marketing, Vendas..." required style="width:100%; height:41px; box-sizing:border-box;" />
+              </div>
+              <button class="btn gold" type="submit" style="height:41px; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><i class="ti ti-plus"></i> Adicionar</button>
+            </form>
+
+            <div style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border); color:var(--muted);">
+                    <th style="padding:12px;">Nome do Departamento</th>
+                    <th style="padding:12px;">Tipo</th>
+                    <th style="padding:12px; text-align:right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="depts-table-body">
+                  <!-- Departamentos carregados via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Subview: Importar via CSV -->
+        <div class="settings-scroll" id="settings-subview-csvimport" style="padding:24px 28px; overflow-y:auto; flex:1; display:none; flex-direction:column; gap:24px; width:100%; max-width:100%; margin:0;">
+          <div class="dash-section-card">
+            <h3 class="section-title"><i class="ti ti-upload" style="color:var(--gold)"></i> Importação de Dados via CSV</h3>
+            <p style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:16px;">
+              Carregue os arquivos CSV do formulário de cadastro e/ou formulário de diagnóstico para atualizar as informações dos mentorados existentes ou cadastrar novos automaticamente. O sistema utiliza comparação inteligente de nomes para evitar duplicações.
+            </p>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">
+              <!-- 1. Form de Cadastro -->
+              <div class="file-dropzone-card" onclick="document.getElementById('csv-file-cadastro').click()">
+                <input type="file" id="csv-file-cadastro" accept=".csv" style="display:none;" onchange="updateFileLabel('csv-file-cadastro', 'csv-label-cadastro')" />
+                <div style="display:flex; align-items:center; gap:14px;">
+                  <div style="width:44px; height:44px; border-radius:10px; background:rgba(223,178,108,0.1); border:1px solid rgba(223,178,108,0.25); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+                    <i class="ti ti-file-spreadsheet"></i>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:600; color:var(--text);">1. Formulário de Cadastro (CSV)</div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="csv-label-cadastro">Clique para selecionar o arquivo .csv</div>
+                  </div>
+                  <span class="btn gold btn-sm" style="pointer-events:none; flex-shrink:0;"><i class="ti ti-upload"></i> Escolher</span>
+                </div>
+              </div>
+
+              <!-- 2. Form de Diagnóstico -->
+              <div class="file-dropzone-card" onclick="document.getElementById('csv-file-diagnostico').click()">
+                <input type="file" id="csv-file-diagnostico" accept=".csv" style="display:none;" onchange="updateFileLabel('csv-file-diagnostico', 'csv-label-diagnostico')" />
+                <div style="display:flex; align-items:center; gap:14px;">
+                  <div style="width:44px; height:44px; border-radius:10px; background:rgba(223,178,108,0.1); border:1px solid rgba(223,178,108,0.25); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+                    <i class="ti ti-activity"></i>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:600; color:var(--text);">2. Formulário de Diagnóstico (CSV)</div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="csv-label-diagnostico">Clique para selecionar o arquivo .csv</div>
+                  </div>
+                  <span class="btn gold btn-sm" style="pointer-events:none; flex-shrink:0;"><i class="ti ti-upload"></i> Escolher</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+              <button class="btn gold" onclick="processCSVFiles()"><i class="ti ti-loader"></i> Processar Arquivos</button>
+            </div>
+          </div>
+           
+           <div class="dash-section-card" id="csv-preview-card" style="display:none;">
+             <h3 class="section-title"><i class="ti ti-eye" style="color:var(--gold)"></i> Pré-visualização da Importação</h3>
+             <p style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:12px;" id="csv-preview-summary"></p>
+             
+             <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.2); margin-bottom:16px;">
+<table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+                 <thead>
+                   <tr style="border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02)">
+                     <th style="padding:10px 12px; color:var(--muted)">Nome</th>
+                     <th style="padding:10px 12px; color:var(--muted)">Ação</th>
+                     <th style="padding:10px 12px; color:var(--muted)">Contato</th>
+                   </tr>
+                 </thead>
+                 <tbody id="csv-preview-table-body">
+                 </tbody>
+               </table>
+             </div>
+             
+             <div style="display:flex; justify-content:flex-end; gap:12px;">
+               <button class="btn" onclick="cancelCSVImport()">Cancelar</button>
+               <button class="btn gold" onclick="confirmCSVImport()"><i class="ti ti-check"></i> Efetivar Importação</button>
+             </div>
+           </div>
+          </div>
+       </section>
+
+      <!-- VIEW: ROCKET ACADEMY (E-LEARNING PLATFORM) -->
+      <section id="view-academy" class="view-panel" style="flex:1; flex-direction:column; overflow:hidden; width:100%;">
+        
+        <!-- VISÃO 1: CATÁLOGO DE CURSOS (HOME ACADEMY) -->
+        <div id="academy-courses-view" style="display:flex; flex-direction:column; gap:20px; padding:24px 28px; overflow-y:auto; flex:1; width:100%;">
+          
+          <!-- BARRA SUPERIOR: BUSCA, FILTROS E AÇÃO ADMIN -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; width:100%; background:var(--bg2); padding:16px 20px; border-radius:14px; border:1px solid var(--border);">
+            
+            <!-- Pílulas de Categoria -->
+            <div id="academy-category-pills" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm active-pill" onclick="filterAcademyCategory('all', this)" style="border-radius:20px; padding:6px 14px; font-size:12px;">Todos os Cursos</button>
+              <button class="btn btn-sm" onclick="filterAcademyCategory('Mentorias', this)" style="border-radius:20px; padding:6px 14px; font-size:12px; background:var(--bg2); color:var(--muted);">Mentorias Gravadas</button>
+              <button class="btn btn-sm" onclick="filterAcademyCategory('Vendas', this)" style="border-radius:20px; padding:6px 14px; font-size:12px; background:var(--bg2); color:var(--muted);">Vendas & Escala</button>
+              <button class="btn btn-sm" onclick="filterAcademyCategory('Posicionamento', this)" style="border-radius:20px; padding:6px 14px; font-size:12px; background:var(--bg2); color:var(--muted);">Posicionamento</button>
+              <button class="btn btn-sm" onclick="filterAcademyCategory('Gestão', this)" style="border-radius:20px; padding:6px 14px; font-size:12px; background:var(--bg2); color:var(--muted);">Gestão & Processos</button>
+              <button class="btn btn-sm" onclick="filterAcademyCategory('Imersões', this)" style="border-radius:20px; padding:6px 14px; font-size:12px; background:var(--bg2); color:var(--muted);">Imersões Presenciais</button>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <!-- Busca Dinâmica -->
+              <div style="position:relative; width:240px;">
+                <i class="ti ti-search" style="position:absolute; left:10px; top:9px; color:var(--muted); font-size:15px;"></i>
+                <input type="text" id="academy-search-input" oninput="renderAcademyCoursesGrid()" placeholder="Buscar curso ou aula..." style="width:100%; padding-left:32px; height:34px; font-size:12.5px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); color:var(--text);" />
+              </div>
+
+              <!-- Botão Admin Novo Curso -->
+              <button class="btn gold btn-sm" id="btn-academy-new-course" onclick="openCourseModal()" style="display:none; height:34px; border-radius:8px; font-weight:600;">
+                <i class="ti ti-plus"></i> Novo Curso
+              </button>
+            </div>
+          </div>
+
+          <!-- GRID DE CARDS DOS CURSOS -->
+          <div id="academy-courses-grid" class="academy-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; width:100%;">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+
+        <!-- VISÃO 2: PLAYER DO CURSO E SALA DE AULA (LAYOUT SPLIT) -->
+        <div id="academy-player-view" style="display:none; flex:1; height:100%; overflow:hidden; width:100%;">
+          
+          <!-- LADO ESQUERDO: PLAYER & CONTEÚDO -->
+          <div style="flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:20px 24px; gap:20px; border-right:1px solid var(--border);">
+            
+            <!-- Header de Navegação do Player (Breadcrumb) -->
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+              <nav class="academy-breadcrumb" style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:500; color:var(--muted); flex-wrap:wrap;">
+                <button onclick="backToAcademyCourses()" style="background:rgba(223,178,108,0.1); border:1px solid rgba(223,178,108,0.3); color:var(--gold); padding:4px 10px; border-radius:6px; font-weight:600; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2sease;" onmouseover="this.style.background='rgba(223,178,108,0.2)'" onmouseout="this.style.background='rgba(223,178,108,0.1)'">
+                  <i class="ti ti-arrow-left" style="font-size:14px;"></i> Cursos
+                </button>
+                <i class="ti ti-chevron-right" style="font-size:13px; opacity:0.4; color:var(--muted);"></i>
+                <span id="academy-breadcrumb-course" style="color:var(--text); font-weight:700; font-size:14px;">Título do Curso</span>
+                <span id="academy-breadcrumb-sep-lesson" style="display:none; align-items:center; gap:8px;">
+                  <i class="ti ti-chevron-right" style="font-size:13px; opacity:0.4; color:var(--muted);"></i>
+                  <span id="academy-breadcrumb-lesson" style="color:var(--gold); font-weight:600; font-size:13.5px;">Aula Atual</span>
+                </span>
+              </nav>
+
+              <!-- Ações Admin (Editar Curso / Adicionar Módulo / Adicionar Aula) -->
+              <div id="academy-admin-course-actions" style="display:none; gap:8px; align-items:center;">
+                <button class="btn btn-sm" onclick="openCourseModal(currentAcademyCourse ? currentAcademyCourse.id : null)" title="Editar Curso">
+                  <i class="ti ti-pencil"></i> Editar Curso
+                </button>
+                <button class="btn btn-sm gold" onclick="openModuleModal()" title="Adicionar Módulo">
+                  <i class="ti ti-folder-plus"></i> + Módulo
+                </button>
+                <button class="btn btn-sm gold" onclick="openLessonModal()" title="Adicionar Aula">
+                  <i class="ti ti-video-plus"></i> + Aula
+                </button>
+              </div>
+            </div>
+
+            <!-- INFORMAÇÕES DA AULA & BOTÃO CONCLUIR (BLOCO DE TÍTULO ANTES DO PLAYER) -->
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; background:var(--bg2); padding:16px 20px; border-radius:12px; border:1px solid var(--border);">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <h2 id="academy-lesson-title" style="font-size:18px; font-weight:700; color:var(--text); margin:0;">Nome da Aula</h2>
+                  <span id="academy-lesson-duration" class="badge" style="background:rgba(223,178,108,0.1); color:var(--gold); border-color:rgba(223,178,108,0.3); font-size:11px;">0 min</span>
+                </div>
+              </div>
+
+              <!-- Botão Marcar como Concluída -->
+              <button id="btn-toggle-lesson-complete" class="btn" onclick="toggleAcademyLessonComplete()" style="border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+                <i class="ti ti-circle-check"></i>
+                <span>Marcar como Concluída</span>
+              </button>
+            </div>
+
+            <!-- CONTAINER RESPONSIVO DO PLAYER DE VÍDEO (16:9) COM PLYR -->
+            <div class="academy-video-wrapper" id="academy-video-wrapper" style="position:relative; width:100%; min-height:380px; background:#000; border-radius:14px; overflow:hidden; border:1px solid var(--border); box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+              <div id="academy-plyr-target" style="width:100%; height:100%;"></div>
+            </div>
+
+            <!-- ABAS DE NAVEGAÇÃO DO CONTEÚDO (DESCRIÇÃO / ANOTAÇÕES / ANEXOS) -->
+            <div style="display:flex; flex-direction:column; gap:14px; background:var(--bg2); border-radius:12px; border:1px solid var(--border); padding:16px 20px;">
+              <div style="display:flex; gap:16px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                <button class="academy-tab-btn active" id="tab-btn-desc" onclick="switchAcademyPlayerTab('desc')" style="background:none; border:none; color:var(--gold); font-weight:600; font-size:13px; cursor:pointer; padding-bottom:4px; border-bottom:2px solid var(--gold);">
+                  <i class="ti ti-file-text"></i> Visão Geral & Descrição
+                </button>
+                <button class="academy-tab-btn" id="tab-btn-notes" onclick="switchAcademyPlayerTab('notes')" style="background:none; border:none; color:var(--muted); font-weight:600; font-size:13px; cursor:pointer; padding-bottom:4px;">
+                  <i class="ti ti-notes"></i> Minhas Anotações Salvas
+                </button>
+                <button class="academy-tab-btn" id="tab-btn-attachments" onclick="switchAcademyPlayerTab('attachments')" style="background:none; border:none; color:var(--muted); font-weight:600; font-size:13px; cursor:pointer; padding-bottom:4px;">
+                  <i class="ti ti-paperclip"></i> Materiais & Anexos
+                </button>
+                <button class="academy-tab-btn" id="tab-btn-comments" onclick="switchAcademyPlayerTab('comments')" style="background:none; border:none; color:var(--muted); font-weight:600; font-size:13px; cursor:pointer; padding-bottom:4px;">
+                  <i class="ti ti-messages"></i> Dúvidas & Comentários (<span id="academy-comments-count">0</span>)
+                </button>
+              </div>
+
+              <!-- Conteúdo da Aba 1: Descrição -->
+              <div id="academy-tab-content-desc" style="font-size:13px; color:var(--text); line-height:1.6;">
+                <p id="academy-lesson-description" style="margin:0; opacity:0.9;">Descrição da aula...</p>
+              </div>
+
+              <!-- Conteúdo da Aba 2: Anotações -->
+              <div id="academy-tab-content-notes" style="display:none; flex-direction:column; gap:12px;">
+                <p style="font-size:12px; color:var(--muted); margin:0;">Escreva suas anotações pessoais desta aula. Elas são salvas automaticamente na sua conta.</p>
+                <textarea id="academy-student-notes" style="width:100%; min-height:120px; padding:12px; font-size:13px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-family:inherit;" placeholder="Digite aqui suas anotações e insights da aula..."></textarea>
+                <div style="display:flex; justify-content:flex-end;">
+                  <button class="btn gold btn-sm" onclick="saveAcademyStudentNotes()">
+                    <i class="ti ti-device-floppy"></i> Salvar Anotações
+                  </button>
+                </div>
+              </div>
+
+              <!-- Conteúdo da Aba 3: Anexos -->
+              <div id="academy-attachments-container" style="display:none; flex-direction:column; gap:10px;">
+                <div id="academy-attachments-list" style="display:flex; flex-direction:column; gap:8px;">
+                  <!-- Lista de links preenchida via JS -->
+                </div>
+              </div>
+
+              <!-- Conteúdo da Aba 4: Dúvidas & Comentários -->
+              <div id="academy-tab-content-comments" style="display:none; flex-direction:column; gap:16px;">
+                <p style="font-size:12px; color:var(--muted); margin:0;">Tire suas dúvidas sobre esta aula ou deixe suas observações. A equipe e outros tripulantes poderão responder.</p>
+                
+                <!-- Form de envio de comentário -->
+                <div style="display:flex; flex-direction:column; gap:10px; background:var(--bg3); padding:14px; border-radius:10px; border:1px solid var(--border);">
+                  <div id="comment-reply-notice" style="display:none; align-items:center; justify-content:space-between; font-size:12px; color:var(--gold); background:rgba(223,178,108,0.1); padding:6px 12px; border-radius:6px;">
+                    <span>Respondendo a <strong id="comment-reply-author">--</strong></span>
+                    <button onclick="cancelCommentReply()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px;"><i class="ti ti-x"></i> Cancelar</button>
+                  </div>
+                  <input type="hidden" id="academy-comment-parent-id" value="" />
+                  <textarea id="academy-comment-input" style="width:100%; min-height:80px; padding:10px; font-size:13px; border-radius:8px; background:var(--bg2); border:1px solid var(--border); color:var(--text); font-family:inherit;" placeholder="Escreva aqui sua dúvida ou comentário..."></textarea>
+                  <div style="display:flex; justify-content:flex-end;">
+                    <button class="btn gold btn-sm" onclick="sendAcademyComment()">
+                      <i class="ti ti-send"></i> Enviar Dúvida / Comentário
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Lista de Comentários -->
+                <div id="academy-comments-list" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                  <!-- Lista preenchida via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LADO DIREITO: SIDEBAR DE MÓDULOS E AULAS -->
+          <div style="width:340px; flex-shrink:0; background:var(--bg2); display:flex; flex-direction:column; overflow:hidden;">
+            
+            <!-- Barra de Progresso do Curso na Sidebar -->
+            <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:var(--bg3);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.5px;">PROGRESSO DO CURSO</span>
+                <span id="academy-sidebar-progress-text" style="font-size:12px; font-weight:700; color:var(--gold);">0%</span>
+              </div>
+              <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
+                <div id="academy-sidebar-progress-bar" style="height:100%; width:0%; background:var(--gold); border-radius:4px; transition:width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Lista de Módulos (Accordion) -->
+            <div id="academy-sidebar-modules-list" style="flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:10px;">
+              <!-- Módulos e Aulas renderizados via JS -->
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+<!-- TELA DE LOGIN OVERLAY (MODELO REFERÊNCIA TEMA ESCURO) -->
+<div id="login-overlay" class="login-overlay-backdrop" style="display:none;">
+  <div class="login-split-card">
+    <!-- PAINEL DA ESQUERDA (HERO & ROCKET GRAPHIC) -->
+    <div class="login-hero-panel">
+      <img src="login_rocket.webp" alt="Rocket Launch" class="login-hero-img" />
+      <div class="login-hero-overlay"></div>
+      <div class="login-hero-content">
+        <div class="login-logo-wrapper" style="width:100%; max-width:280px; margin:0 auto 20px auto; display:flex; align-items:center; justify-content:center;">
+          <img src="api/system_logo.webp" id="login-system-logo" alt="Logo do Sistema" style="width:100%; height:auto; max-height:110px; object-fit:contain; filter:drop-shadow(0 4px 16px rgba(0,0,0,0.7)); display:block;" />
+        </div>
+        <h1 class="login-hero-title">Bem-vindo</h1>
+        <p class="login-hero-subtitle">Ao ecossistema dos grandes líderes e de eventos exclusivos</p>
+      </div>
+    </div>
+
+    <!-- PAINEL DA DIREITA (FORMULÁRIO DE AUTENTICAÇÃO) -->
+    <div class="login-form-panel">
+      <form id="login-form" onsubmit="handleLogin(event)" class="login-form-body">
+        <div id="login-error-msg" class="login-error-box" style="display:none;">
+          <i class="ti ti-alert-circle" style="font-size:18px; flex-shrink:0;"></i>
+          <span id="login-error-text"></span>
+        </div>
+
+        <div class="login-field-group">
+          <label class="login-field-label"><span style="color:var(--gold)">*</span> Email</label>
+          <div class="login-input-wrapper">
+            <i class="ti ti-mail login-input-icon"></i>
+            <input type="email" id="login-email" required placeholder="suporte.dgmentoria@gmail.com" class="login-input-control" />
+          </div>
+        </div>
+
+        <div class="login-field-group">
+          <label class="login-field-label"><span style="color:var(--gold)">*</span> Senha</label>
+          <div class="login-input-wrapper">
+            <i class="ti ti-lock login-input-icon"></i>
+            <input type="password" id="login-password" required placeholder="••••••••" minlength="6" class="login-input-control" />
+            <button type="button" class="login-password-toggle" onclick="togglePasswordVisibility('login-password', this)" aria-label="Mostrar ou ocultar senha" title="Mostrar/ocultar senha">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-action-wrapper">
+          <button type="submit" class="login-btn-primary" id="btn-login-submit">
+            Login
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Novo/Editar Artigo da Wiki -->
+<div class="overlay" id="mo-wiki-article">
+  <div class="modal" style="max-width:700px; width:100%;">
+    <div class="m-head">
+      <h3 id="wiki-modal-title">Novo Artigo da Wiki</h3>
+      <button class="close" onclick="closeModal('mo-wiki-article')">&times;</button>
+    </div>
+    <form id="wiki-article-form" onsubmit="saveWikiArticle(event)">
+      <input type="hidden" id="wiki-id" />
+      <div class="m-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="field">
+          <label>Título do Artigo</label>
+          <input type="text" id="wiki-title" required placeholder="Ex: Manual de Integração do Cliente" style="width:100%" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Departamento</label>
+            <select id="wiki-dept-id" required style="width:100%">
+              <!-- Departamentos carregados dinamicamente -->
+            </select>
+          </div>
+          <div class="field">
+            <label>Visibilidade</label>
+            <select id="wiki-is-public" style="width:100%">
+              <option value="false">Interno (Apenas Equipe)</option>
+              <option value="true">Público (Clientes também veem)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Conteúdo (Aceita tags HTML básicas)</label>
+          <textarea id="wiki-content" required style="min-height:300px; font-family:sans-serif; line-height:1.6; resize:vertical" placeholder="Escreva o artigo da wiki aqui..."></textarea>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal('mo-wiki-article')">Cancelar</button>
+        <button type="submit" class="btn-save">Salvar Artigo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Novo/Editar Curso da Academy -->
+<div class="overlay" id="mo-academy-course">
+  <div class="modal" style="max-width:550px; width:100%;">
+    <div class="m-head">
+      <h3 id="academy-course-modal-title">Novo Curso — Academy</h3>
+      <button class="close" onclick="closeModal('mo-academy-course')">&times;</button>
+    </div>
+    <form id="academy-course-form" onsubmit="saveAcademyCourse(event)" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="academy-course-id" />
+      <div class="field">
+        <label>Título do Curso *</label>
+        <input type="text" id="academy-course-title" required placeholder="Ex: Mentoria de Vendas & Escala 10X" style="width:100%;" />
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Categoria</label>
+          <select id="academy-course-category" style="width:100%;">
+            <option value="Mentorias">Mentorias</option>
+            <option value="Imersões">Imersões</option>
+            <option value="Vendas">Vendas & Escala</option>
+            <option value="Encontros">Encontros de Quinta</option>
+            <option value="Geral">Geral</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Ordem de Exibição</label>
+          <input type="number" id="academy-course-position" value="0" min="0" style="width:100%;" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Descrição do Curso</label>
+        <textarea id="academy-course-description" rows="3" placeholder="Resumo do objetivo do curso..." style="width:100%; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; font-size:13px;"></textarea>
+      </div>
+      <div class="field">
+        <label>URL da Imagem de Capa (Opcional)</label>
+        <input type="url" id="academy-course-cover" placeholder="https://exemplo.com/capa.jpg" style="width:100%;" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button type="button" class="btn" onclick="closeModal('mo-academy-course')">Cancelar</button>
+        <button type="submit" class="btn gold">Salvar Curso</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Novo/Editar Módulo -->
+<div class="overlay" id="mo-academy-module">
+  <div class="modal" style="max-width:500px; width:100%;">
+    <div class="m-head">
+      <h3 id="academy-module-modal-title">Novo Módulo</h3>
+      <button class="close" onclick="closeModal('mo-academy-module')">&times;</button>
+    </div>
+    <form id="academy-module-form" onsubmit="saveAcademyModule(event)" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="academy-module-id" />
+      <input type="hidden" id="academy-module-course-id" />
+      <div class="field">
+        <label>Título do Módulo *</label>
+        <input type="text" id="academy-module-title" required placeholder="Ex: Módulo 1 — Boas-Vindas & Alinhamento" style="width:100%;" />
+      </div>
+      <div class="field">
+        <label>Ordem / Posição</label>
+        <input type="number" id="academy-module-position" value="0" min="0" style="width:100%;" />
+      </div>
+      <div class="field">
+        <label>Descrição Breve</label>
+        <input type="text" id="academy-module-description" placeholder="Ex: Fundamentos e introdução às metodologias" style="width:100%;" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button type="button" class="btn" onclick="closeModal('mo-academy-module')">Cancelar</button>
+        <button type="submit" class="btn gold">Salvar Módulo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Novo/Editar Aula -->
+<div class="overlay" id="mo-academy-lesson">
+  <div class="modal" style="max-width:600px; width:100%;">
+    <div class="m-head">
+      <h3 id="academy-lesson-modal-title">Nova Aula — Academy</h3>
+      <button class="close" onclick="closeModal('mo-academy-lesson')">&times;</button>
+    </div>
+    <form id="academy-lesson-form" onsubmit="saveAcademyLesson(event)" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="academy-lesson-id" />
+      <input type="hidden" id="academy-lesson-module-id" />
+      
+      <div class="field">
+        <label>Título da Aula / Encontro *</label>
+        <input type="text" id="academy-lesson-title-input" required placeholder="Ex: Aula 01 — Estrutura de Pitch Indestrutível" style="width:100%;" />
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 2fr; gap:12px;">
+        <div class="field">
+          <label>Provedor de Vídeo</label>
+          <select id="academy-lesson-provider" style="width:100%;">
+            <option value="youtube">YouTube (Link/Unlisted)</option>
+            <option value="vimeo">Vimeo (Link/Private)</option>
+            <option value="gdrive">Google Drive</option>
+            <option value="zoom">Zoom Replay</option>
+            <option value="mp4">Vídeo MP4 Direto</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>URL do Vídeo / Link de Incorporação *</label>
+          <input type="text" id="academy-lesson-url" required placeholder="https://www.youtube.com/watch?v=... ou https://vimeo.com/..." style="width:100%;" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Duração (minutos)</label>
+          <input type="number" id="academy-lesson-duration-input" placeholder="Ex: 45" min="0" style="width:100%;" />
+        </div>
+        <div class="field">
+          <label>Ordem / Posição</label>
+          <input type="number" id="academy-lesson-position-input" value="0" min="0" style="width:100%;" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Descrição / Conteúdo da Aula</label>
+        <textarea id="academy-lesson-desc-input" rows="3" placeholder="Resumo dos pontos abordados nesta aula..." style="width:100%; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; font-size:13px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Materiais de Apoio (URLs separadas por vírgula)</label>
+        <input type="text" id="academy-lesson-attachments-input" placeholder="Ex: https://link.com/slides.pdf, https://link.com/planilha.xlsx" style="width:100%;" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button type="button" class="btn" onclick="closeModal('mo-academy-lesson')">Cancelar</button>
+        <button type="submit" class="btn gold">Salvar Aula</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para Novo/Editar Usuário -->
+<div class="overlay" id="mo-user">
+  <div class="modal" style="max-width:480px; width:100%;">
+    <div class="m-head">
+      <h3 id="user-modal-title">Novo Usuário</h3>
+      <button class="close" onclick="closeModal('mo-user')">&times;</button>
+    </div>
+    <form id="user-form" onsubmit="saveUser(event)">
+      <input type="hidden" id="user-id" />
+      <div class="m-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="field">
+          <label>Nome Completo</label>
+          <input type="text" id="user-name" required placeholder="Nome do usuário" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="user-email" required placeholder="usuario@rocketclub.com" style="width:100%" />
+        </div>
+        <div class="field">
+          <label id="user-pass-label">Senha</label>
+          <input type="password" id="user-password" placeholder="Mínimo 6 caracteres" minlength="6" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>Cargo (Role)</label>
+          <select id="user-role" onchange="togglePermissionsForm()" style="width:100%">
+            <option value="funcionario">Funcionário</option>
+            <option value="admin">Administrador (Admin)</option>
+            <option value="cliente">Cliente</option>
+            <option value="master">Master</option>
+          </select>
+        </div>
+
+        <!-- Checkboxes de permissão (apenas para funcionários) -->
+        <div id="user-permissions-section" style="display:block; border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
+          <label style="font-size:12px; font-weight:600; color:var(--text); display:block; margin-bottom:8px;">Permissões Adicionais (Overrides):</label>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="members_write" class="perm-cb" /> Editar/Excluir Membros</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="contacts_write" class="perm-cb" /> Registrar/Excluir Contatos</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="goals_write" class="perm-cb" /> Gerenciar Metas (Criar/Editar/Excluir)</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="milestones_write" class="perm-cb" /> Gerenciar Conquistas</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="wiki_write" class="perm-cb" /> Criar/Editar Artigos na Wiki</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" value="departments_write" class="perm-cb" /> Gerenciar Departamentos</label>
+          </div>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal('mo-user')">Cancelar</button>
+        <button type="submit" class="btn-save">Salvar Usuário</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal de confirmação para gerar PDF -->
+<div class="overlay" id="mo-confirm-pdf">
+  <div class="modal" style="max-width:420px">
+    <div style="text-align:center;padding:24px 20px 16px">
+      <i class="ti ti-file-type-pdf" style="font-size:48px;color:var(--gold);display:block;margin-bottom:12px"></i>
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text)">Gerar Members Book PDF</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:20px" id="pdf-modal-desc">
+        Deseja gerar o <strong style="color:var(--gold)">Members Book</strong> com a ficha completa de todos os membros ativos?<br>
+        <span style="font-size:11px;opacity:0.7">O download iniciará automaticamente. Isso pode levar alguns segundos.</span>
+      </p>
+      
+      <!-- Container de Progresso -->
+      <div id="pdf-progress-container" style="display:none; margin: 10px 0 20px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; color:var(--text)">
+          <span id="pdf-progress-status" style="font-weight:500;">Inicializando gerador...</span>
+          <span id="pdf-progress-percent" style="color:var(--gold); font-weight:bold;">0%</span>
+        </div>
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+          <div id="pdf-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--gold), #e0c068); transition:width 0.1s linear; border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center" id="pdf-modal-actions">
+        <button class="btn-cancel" onclick="closeModal('mo-confirm-pdf')">Cancelar</button>
+        <button class="btn-save" onclick="executePDFGeneration()" id="btn-generate-pdf">
+          <i class="ti ti-download"></i> Gerar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhe (Ficha do Membro Unificada - Executive Profile) -->
+<div class="overlay" id="mo-detail">
+  <div class="modal" style="max-width:880px; width:100%; padding:0; overflow:hidden; border-radius:16px;">
+    <input type="file" id="cover-file-input" accept="image/*" style="display:none" onchange="if(this.files.length) handleCoverFile(this.files[0])"/>
+    
+    <!-- Executive Profile Banner Header -->
+    <div class="member-exec-banner" style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 24px; background:linear-gradient(135deg, rgba(223,178,108,0.06) 0%, rgba(15,17,26,0.98) 100%), var(--bg2); border-bottom:1px solid var(--border);">
+      
+      <div style="display:flex; align-items:center; gap:16px; min-width:0; flex:1;">
+        <div class="member-exec-avatar-wrapper" onclick="document.getElementById('cover-file-input').click()" title="Alterar Foto de Perfil">
+          <div class="member-exec-avatar" id="member-exec-avatar-preview">
+            <i class="ti ti-user" id="member-exec-avatar-icon"></i>
+          </div>
+          <div class="member-exec-avatar-upload-badge" title="Upload de Foto">
+            <i class="ti ti-camera"></i>
+          </div>
+        </div>
+        
+        <div class="member-exec-info" style="min-width:0;">
+          <h2 id="detail-name-exec" class="member-exec-name" style="font-size:18px; font-weight:700; color:var(--text); margin:0; line-height:1.2; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">Nome do Membro</h2>
+          
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+            <span id="detail-status-badge" class="member-exec-badge" style="font-size:10px; padding:2px 8px; border-radius:12px; font-weight:700; text-transform:uppercase;">Status</span>
+            <span id="detail-health-badge" style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.25);">🟢 Health: 100%</span>
+            <span id="detail-expiration-badge" style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; background:rgba(223,178,108,0.12); color:var(--gold); border:1px solid rgba(223,178,108,0.25); display:none;">⏳ Anuidade: —</span>
+          </div>
+
+          <div id="detail-spec-exec" class="member-exec-spec" style="font-size:12.5px; color:var(--gold); margin-top:3px; font-weight:500; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">Especialidade / Cargo</div>
+          
+          <div class="member-exec-meta" style="font-size:11px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span><i class="ti ti-calendar" style="color:var(--gold)"></i> <span id="detail-meta-last">Último contato: —</span></span>
+            <span><i class="ti ti-phone" style="color:var(--green)"></i> <span id="detail-meta-phone">—</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons Column -->
+      <div class="member-exec-actions" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+        
+        <!-- Primary Action: WhatsApp com Dropdown de Templates -->
+        <div style="position:relative; display:inline-block;">
+          <button type="button" class="btn btn-sm btn-wa" id="btn-exec-wa" style="color:var(--green); border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.12); display:none; height:34px; padding:0 12px; font-size:12px; font-weight:600;" onclick="toggleWaMenu(event)">
+            <i class="ti ti-brand-whatsapp" style="font-size:15px;"></i> WhatsApp <i class="ti ti-chevron-down" style="font-size:10px; margin-left:2px;"></i>
+          </button>
+          <div id="wa-template-menu" style="display:none; position:absolute; right:0; top:38px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; width:220px; z-index:1500; box-shadow:0 10px 25px rgba(0,0,0,0.5); padding:6px 0;">
+            <div style="font-size:10px; font-weight:700; color:var(--gold); padding:6px 12px; text-transform:uppercase; letter-spacing:0.5px;">Modelos de WhatsApp</div>
+            <div onclick="sendWaTemplate('bday')" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-cake" style="color:var(--gold);"></i> Feliz Aniversário</div>
+            <div onclick="sendWaTemplate('goal')" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-target-arrow" style="color:#3b82f6;"></i> Follow-up de Meta</div>
+            <div onclick="sendWaTemplate('welcome')" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-rocket" style="color:#10b981;"></i> Boas-Vindas ao Club</div>
+            <div onclick="sendWaTemplate('meeting')" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-calendar-event" style="color:#a855f7;"></i> Lembrete de Mentoria</div>
+            <div onclick="sendWaTemplate('direct')" style="padding:8px 12px; font-size:12px; color:var(--muted); border-top:1px solid var(--border); margin-top:4px; cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-message"></i> Conversa Direta</div>
+          </div>
+        </div>
+
+        <!-- Secondary Actions Dropdown Menu (Ações Rápidas) -->
+        <div style="position:relative; display:inline-block;">
+          <button type="button" class="btn btn-sm" id="btn-exec-actions-toggle" style="color:var(--text); border-color:var(--border); background:var(--bg3); height:34px; padding:0 10px; font-size:12px; font-weight:600;" onclick="toggleExecActionsMenu(event)">
+            <i class="ti ti-dots-vertical" style="font-size:14px;"></i> <i class="ti ti-chevron-down" style="font-size:10px;"></i>
+          </button>
+          <div id="exec-actions-menu" style="display:none; position:absolute; right:0; top:38px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; width:200px; z-index:1500; box-shadow:0 10px 25px rgba(0,0,0,0.5); padding:6px 0;">
+            <div style="font-size:10px; font-weight:700; color:var(--gold); padding:6px 12px; text-transform:uppercase; letter-spacing:0.5px;">Ações Rápidas</div>
+            <div onclick="downloadSinglePDF(); closeExecActionsMenu();" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-file-text" style="color:var(--gold);"></i> PDF Individual</div>
+            <div id="btn-menu-bday" onclick="generateBirthdayCard(detailId); closeExecActionsMenu();" style="padding:8px 12px; font-size:12px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-cake" style="color:var(--gold);"></i> Card Aniversário</div>
+            <div id="btn-menu-remove-photo" onclick="removeCover(event); closeExecActionsMenu();" style="padding:8px 12px; font-size:12px; color:var(--red); border-top:1px solid var(--border); margin-top:4px; cursor:pointer; display:flex; align-items:center; gap:8px;" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'"><i class="ti ti-trash"></i> Remover Foto</div>
+          </div>
+        </div>
+
+        <button class="m-close" onclick="closeModal('mo-detail')" title="Fechar" style="height:34px; width:34px; display:flex; align-items:center; justify-content:center;"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab on" onclick="tab('profile')">Perfil</button>
+      <button class="tab" onclick="tab('contacts')">Abordagens</button>
+      <button class="tab" onclick="tab('goals')">Metas</button>
+      <button class="tab" onclick="tab('milestones')">Conquistas</button>
+      <button class="tab" onclick="tab('deals')">Negócios (ROI)</button>
+      <button class="tab" onclick="tab('networking')">Networking</button>
+      <button class="tab" onclick="tab('history')">Histórico</button>
+    </div>
+
+    <!-- Corpo do Modal com Rolar Independente -->
+    <div class="m-body" style="max-height: calc(82vh - 160px); overflow-y: auto; padding: 24px 28px;">
+
+      <!-- Aba: Perfil (Editar/Salvar Dados do Membro) -->
+      <div class="tp on" id="tp-profile">
+
+      <!-- Seção 1: Informações Pessoais -->
+      <div class="accordion-section open" id="sec-personal">
+        <div class="accordion-header" onclick="toggleSection('sec-personal')">
+          <span><i class="ti ti-user-circle"></i> Informações Pessoais</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="field"><label>Nome completo</label><input id="f-name" type="text" placeholder="Ex: Maria Silva"/></div>
+          <div class="grid-2">
+            <div class="field"><label>Data de Nascimento</label><input id="f-birthdate" type="date"/></div>
+            <div class="field"><label>Idade</label><input id="f-age" type="text" placeholder="Preenchida automaticamente"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>E-mail</label><input id="f-email" type="email" placeholder="exemplo@email.com"/></div>
+            <div class="field"><label>Telefone</label><input id="f-phone" type="text" placeholder="(21) 99999-9999"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>CPF</label><input id="f-cpf" type="text" placeholder="000.000.000-00"/></div>
+            <div class="field"><label>RG</label><input id="f-rg" type="text" placeholder="0.000.000"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Estado Civil</label>
+              <select id="f-marital_status" style="width:100%; height:38px; font-size:13px; border-radius:6px; background:var(--bg2); border:1px solid var(--border); color:var(--text); padding:0 10px; cursor:pointer;">
+                <option value="">Selecione...</option>
+                <option value="Solteiro(a)">Solteiro(a)</option>
+                <option value="Casado(a)">Casado(a)</option>
+                <option value="União Estável">União Estável</option>
+                <option value="Divorciado(a)">Divorciado(a)</option>
+                <option value="Viúvo(a)">Viúvo(a)</option>
+                <option value="Separado(a)">Separado(a)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Contato de Emergência (Nome e Telefone)</label>
+              <input id="f-emergency_contact" type="text" placeholder="Nome - (21) 99999-9999"/>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Cidade Natal</label><input id="f-birthplace" type="text" placeholder="Petrópolis/RJ"/></div>
+            <div class="field"><label>Residência Atual</label><input id="f-residence" type="text" placeholder="Rio de Janeiro/RJ"/></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 2: Profissional & PJ -->
+      <div class="accordion-section" id="sec-professional">
+        <div class="accordion-header" onclick="toggleSection('sec-professional')">
+          <span><i class="ti ti-briefcase"></i> Profissional & PJ</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="grid-2">
+            <div class="field"><label>Especialidade</label><input id="f-spec" type="text" placeholder="Ex: Cardiologista"/></div>
+            <div class="field"><label>Registro Profissional</label><input id="f-professional_register" type="text" placeholder="CRM-RJ 123456"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Tempo de Atuação</label><input id="f-professional_experience" type="text" placeholder="Ex: 10 anos"/></div>
+            <div class="field"><label>Faturamento Mensal</label><input id="f-monthly_revenue" type="text" placeholder="Ex: R$ 30.000"/></div>
+          </div>
+          <div class="field"><label>Locais de Trabalho</label><textarea id="f-work_locations" placeholder="Hospital X, Consultório Y..." style="min-height:50px"></textarea></div>
+          <div class="field"><label>Descrição das Atividades & Carga Horária</label><textarea id="f-work_description_hours" placeholder="Descreva suas funções e carga horária semanal..." style="min-height:60px"></textarea></div>
+          <div class="grid-2">
+            <div class="field"><label>Deseja cadastrar PJ?</label><input id="f-register_pj" type="text" placeholder="Sim/Não"/></div>
+            <div class="field"><label>CNPJ</label><input id="f-cnpj" type="text" placeholder="00.000.000/0000-00"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Razão Social</label><input id="f-company_name" type="text" placeholder="Razão Social da Empresa"/></div>
+            <div class="field"><label>Nome Fantasia</label><input id="f-trade_name" type="text" placeholder="Nome Fantasia"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Inscrição Municipal</label><input id="f-municipal_register" type="text" placeholder="Inscrição Municipal"/></div>
+            <div class="field"><label>Endereço Comercial</label><input id="f-commercial_address" type="text" placeholder="Endereço Comercial Completo"/></div>
+          </div>
+        </div>
+      </div>
+
+            <!-- Seção: Redes Sociais -->
+      <div class="accordion-section" id="sec-social">
+        <div class="accordion-header" onclick="toggleSection('sec-social')">
+          <span><i class="ti ti-share"></i> Redes Sociais</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="field">
+            <label>Instagram</label>
+            <div style="position:relative;">
+              <i class="ti ti-brand-instagram" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-instagram" type="text" placeholder="@usuario" style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>LinkedIn</label>
+            <div style="position:relative;">
+              <i class="ti ti-brand-linkedin" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-linkedin" type="text" placeholder="https://linkedin.com/in/usuario" style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Facebook</label>
+            <div style="position:relative;">
+              <i class="ti ti-brand-facebook" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-facebook" type="text" placeholder="https://facebook.com/usuario" style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>YouTube</label>
+            <div style="position:relative;">
+              <i class="ti ti-brand-youtube" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-youtube" type="text" placeholder="https://youtube.com/@canal" style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>X (Twitter)</label>
+            <div style="position:relative;">
+              <i class="ti ti-brand-twitter" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-twitter" type="text" placeholder="https://x.com/usuario" style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Outras Redes (Links)</label>
+            <div style="position:relative;">
+              <i class="ti ti-share" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-social_media" type="text" placeholder="Outras redes sociais, separadas por vírgula..." style="padding-left:36px;"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Website</label>
+            <div style="position:relative;">
+              <i class="ti ti-world" style="position:absolute; left:12px; top:10px; color:var(--gold); font-size:16px;"></i>
+              <input id="f-website" type="text" placeholder="www.seusite.com.br" style="padding-left:36px;"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- Seção: Vida Pessoal & Família -->
+      <div class="accordion-section" id="sec-family">
+        <div class="accordion-header" onclick="toggleSection('sec-family')">
+          <span><i class="ti ti-home-heart"></i> Vida Pessoal & Família</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="field"><label>Cônjuge / Companheiro(a) (Nome e Idade)</label><input id="f-spouse_info" type="text" placeholder="Ex: João Silva, 35 anos"/></div>
+          <div class="field"><label>Filhos (Nomes e Idades)</label><textarea id="f-children_info" placeholder="Ex: Pedro (5 anos), Ana (2 anos)" style="min-height:50px"></textarea></div>
+          <div class="field"><label>Pets (Nomes e Espécies)</label><textarea id="f-pets_info" placeholder="Ex: Rex (Cão), Luna (Gata)" style="min-height:50px"></textarea></div>
+          <div class="field"><label>Hobbies</label><textarea id="f-hobbies" placeholder="Hobbies para compartilhar com a tripulação..." style="min-height:50px"></textarea></div>
+          <div class="field"><label>Esportes Praticados</label><textarea id="f-sports_info" placeholder="Ex: Corrida, Tênis, Musculação" style="min-height:50px"></textarea></div>
+        </div>
+      </div>
+
+      <!-- Seção 4: Mentoria & Objetivos -->
+      <div class="accordion-section" id="sec-mentorship">
+        <div class="accordion-header" onclick="toggleSection('sec-mentorship')">
+          <span><i class="ti ti-target-arrow"></i> Mentoria & Objetivos</span>
+          <i class="ti ti-chevron-down chevron"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="grid-2">
+            <div class="field"><label>Último contato</label><input id="f-last" type="date"/></div>
+            <div class="field"><label>Status</label>
+              <select id="f-status">
+                <option value="cinza">Não alocado</option>
+                <option value="azul">Iniciante</option>
+                <option value="verde">Engajado</option>
+                <option value="amarela">Morno</option>
+                <option value="vermelha">Atenção urgente</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Interesse na Mentoria</label><textarea id="f-mentorship_interest" placeholder="O que despertou seu interesse na mentoria?" style="min-height:60px"></textarea></div>
+          <div class="field"><label>Maior Objetivo Profissional Hoje</label><textarea id="f-main_goal" placeholder="Qual o seu maior objetivo hoje?" style="min-height:60px"></textarea></div>
+          <div class="field"><label>Maior Desafio & Dificuldades</label><textarea id="f-biggest_challenge" placeholder="Quais são os maiores desafios e dificuldades?" style="min-height:60px"></textarea></div>
+          <div class="field"><label>Conteúdo que Consome</label><textarea id="f-content_consumption" placeholder="Que tipo de conteúdo consome regularmente? (YouTube, Spotify, etc)" style="min-height:50px"></textarea></div>
+          <div class="grid-2">
+            <div class="field"><label>Disponibilidade de Tempo</label><input id="f-weekly_availability" type="text" placeholder="Ex: 4h semanais"/></div>
+            <div class="field"><label>Como nos conheceu?</label><input id="f-how_did_you_find_us" type="text" placeholder="Ex: Indicação, Instagram"/></div>
+          </div>
+          <div class="field"><label>Outras Áreas de Interesse</label><textarea id="f-interests" placeholder="Interesses, mentoria, vendas..." style="min-height:50px"></textarea></div>
+          <div class="field"><label>Notas / Observações</label><textarea id="f-notes" placeholder="Observações..."></textarea></div>
+          <div class="field" style="display:flex; align-items:center; gap:8px; margin-top:12px; margin-bottom:12px;">
+            <input id="f-exclude_from_book" type="checkbox" style="width:auto; margin:0; cursor:pointer;"/>
+            <label for="f-exclude_from_book" style="margin:0; cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:500; font-size:13px;">
+              <i class="ti ti-book-off" style="font-size:16px; color:var(--red);"></i> Ocultar esta ficha no Members Book (PDF)
+            </label>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="tp" id="tp-contacts">
+      <!-- Formulário Novo Registro de Abordagem -->
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:600; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-plus"></i> Registrar Nova Abordagem
+        </div>
+        <div class="grid-2" style="margin-bottom:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Canal de Contato</label>
+            <select id="c-type" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;">
+              <option value="message">💬 Mensagem / WhatsApp</option>
+              <option value="call">📞 Ligação Telefônica</option>
+              <option value="meeting">🤝 Reunião Presencial/Online</option>
+              <option value="email">✉️ E-mail</option>
+              <option value="other">📝 Outro Registro</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Data do Contato</label>
+            <input id="c-date" type="date" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Data de Próximo Retorno (Follow-up - Opcional)</label>
+          <input id="c-followup" type="date" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Resumo da Conversa / Nota</label>
+          <textarea id="c-note" placeholder="Descreva o que foi conversado, acordado ou próximos passos..." style="min-height:70px; width:100%; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:10px; font-size:13px; font-family:inherit;"></textarea>
+        </div>
+        <button class="btn gold" style="width:100%; height:38px; font-size:13px; font-weight:600; justify-content:center;" onclick="addContact()">
+          <i class="ti ti-check"></i> Salvar Abordagem
+        </button>
+      </div>
+
+      <!-- Barra de Filtros e Busca no Histórico de Abordagens -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+          <div style="position:relative; flex:1;">
+            <i class="ti ti-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px;"></i>
+            <input type="text" id="c-filter-search" oninput="filterContactsList()" placeholder="Buscar nas notas..." style="width:100%; height:32px; padding-left:30px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text);" />
+          </div>
+          <select id="c-filter-type" onchange="filterContactsList()" style="height:32px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0 8px; cursor:pointer;">
+            <option value="">Todos os canais</option>
+            <option value="message">Mensagem</option>
+            <option value="call">Ligação</option>
+            <option value="meeting">Reunião</option>
+            <option value="email">E-mail</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+        <div style="font-size:12px; color:var(--muted); font-weight:500;" id="c-count-label">0 abordagens</div>
+      </div>
+
+      <!-- Lista / Timeline de Abordagens -->
+      <div id="contacts-list" style="display:flex; flex-direction:column; gap:12px; max-height:450px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <div class="tp" id="tp-goals">
+      <!-- Formulário Novo Registro de Meta -->
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:600; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-target-arrow"></i> Adicionar Nova Meta do Membro
+        </div>
+        
+        <div class="grid-2" style="margin-bottom:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Pilar da Mentoria</label>
+            <select id="g-pillar" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;">
+              <option value="1">🧠 1 — Mentalidade Empreendedora</option>
+              <option value="2">📈 2 — Crescimento Comercial</option>
+              <option value="3">⭐ 3 — Posicionamento e Autoridade</option>
+              <option value="4">🏢 4 — Estruturação Profissional</option>
+              <option value="5">⚖️ 5 — Qualidade de Vida</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Prazo de Conclusão</label>
+            <input id="g-due" type="date" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Título da Meta</label>
+          <input id="g-title" type="text" placeholder="Ex: Atingir R$ 100k de faturamento mensal..." style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Detalhamento / Plano de Ação (Opcional)</label>
+          <textarea id="g-desc" placeholder="Passos necessários para alcançar esta meta..." style="min-height:50px; width:100%; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:10px; font-size:13px; font-family:inherit;"></textarea>
+        </div>
+
+        <button class="btn gold" style="width:100%; height:38px; font-size:13px; font-weight:600; justify-content:center;" onclick="addGoal()">
+          <i class="ti ti-plus"></i> Salvar Meta
+        </button>
+      </div>
+
+      <!-- Card de Progresso e Métricas das Metas -->
+      <div id="goals-summary-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:600; color:var(--text); text-transform:uppercase; letter-spacing:0.5px;">Progresso das Metas</span>
+          <span style="font-size:12px; font-weight:700; color:var(--gold);" id="goals-percent-text">0% Concluído</span>
+        </div>
+        <div style="width:100%; height:8px; background:var(--bg3); border-radius:4px; overflow:hidden; margin-bottom:10px;">
+          <div id="goals-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--gold), #10b981); transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--muted);" id="goals-stats-pills">
+          <!-- Dinâmico em JS -->
+        </div>
+      </div>
+
+      <!-- Barra de Filtros por Status e Pilar -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+          <select id="g-filter-status" onchange="filterGoalsList()" style="height:32px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0 8px; cursor:pointer;">
+            <option value="">Todos os status</option>
+            <option value="open">Em Aberto (Pendentes)</option>
+            <option value="done">Concluídas</option>
+            <option value="overdue">Atrasadas / Vencidas</option>
+          </select>
+          <select id="g-filter-pillar" onchange="filterGoalsList()" style="height:32px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0 8px; cursor:pointer;">
+            <option value="">Todos os pilares</option>
+            <option value="1">Pilar 1 — Mentalidade</option>
+            <option value="2">Pilar 2 — Vendas/Comercial</option>
+            <option value="3">Pilar 3 — Posicionamento</option>
+            <option value="4">Pilar 4 — Estruturação</option>
+            <option value="5">Pilar 5 — Qualidade de Vida</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Lista de Metas -->
+      <div id="goals-list" style="display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <div class="tp" id="tp-milestones">
+      <!-- Formulário Novo Registro de Conquista -->
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:600; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-trophy"></i> Registrar Novo Marco / Conquista
+        </div>
+        
+        <div class="grid-2" style="margin-bottom:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Pilar do Marco</label>
+            <select id="m-pillar" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;">
+              <option value="1">🧠 1 — Mentalidade Empreendedora</option>
+              <option value="2">📈 2 — Crescimento Comercial</option>
+              <option value="3">⭐ 3 — Posicionamento e Autoridade</option>
+              <option value="4">🏢 4 — Estruturação Profissional</option>
+              <option value="5">⚖️ 5 — Qualidade de Vida</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Data do Feito</label>
+            <input id="m-date" type="date" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Título da Conquista</label>
+          <input id="m-title" type="text" placeholder="Ex: Bateu R$ 500k de faturamento em um único mês..." style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">História / Contexto da Conquista (Opcional)</label>
+          <textarea id="m-desc" placeholder="Detalhes do feito, impacto no negócio, depoimento do membro..." style="min-height:60px; width:100%; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:10px; font-size:13px; font-family:inherit;"></textarea>
+        </div>
+
+        <button class="btn gold" style="width:100%; height:38px; font-size:13px; font-weight:600; justify-content:center;" onclick="addMilestone()">
+          <i class="ti ti-trophy"></i> Celebrar e Salvar Conquista
+        </button>
+      </div>
+
+      <!-- Barra de Estatísticas & Filtros de Conquistas -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+          <div style="position:relative; flex:1;">
+            <i class="ti ti-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px;"></i>
+            <input type="text" id="m-filter-search" oninput="filterMilestonesList()" placeholder="Buscar nas conquistas..." style="width:100%; height:32px; padding-left:30px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text);" />
+          </div>
+          <select id="m-filter-pillar" onchange="filterMilestonesList()" style="height:32px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0 8px; cursor:pointer;">
+            <option value="">Todos os pilares</option>
+            <option value="1">Pilar 1 — Mentalidade</option>
+            <option value="2">Pilar 2 — Comercial</option>
+            <option value="3">Pilar 3 — Posicionamento</option>
+            <option value="4">Pilar 4 — Estruturação</option>
+            <option value="5">Pilar 5 — Qualidade de Vida</option>
+          </select>
+        </div>
+        <div style="font-size:12px; color:var(--gold); font-weight:600;" id="m-count-label">🏆 0 conquistas</div>
+      </div>
+
+      <!-- Timeline de Troféus / Conquistas -->
+      <div id="milestones-list" style="display:flex; flex-direction:column; gap:12px; max-height:450px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <!-- Aba: Negócios (ROI do Membro no Club) -->
+    <div class="tp" id="tp-deals">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:600; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-currency-dollar"></i> Registrar Negócio / Parceria Gerada no Club
+        </div>
+        
+        <div class="grid-2" style="margin-bottom:12px;">
+          <div class="field" style="margin-bottom:0; position:relative;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Membro Parceiro (Com quem fechou?)</label>
+            <div style="position:relative;">
+              <input id="dl-partner-search" type="text" placeholder="Digite para buscar mentorado ou parceiro..." autocomplete="off" oninput="onPartnerSearchInput()" onfocus="onPartnerSearchFocus()" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 30px 0 32px; font-size:13px;" />
+              <i class="ti ti-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; pointer-events:none;"></i>
+              <button type="button" id="dl-partner-clear" onclick="clearPartnerSearch()" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px;"><i class="ti ti-x"></i></button>
+            </div>
+            <input type="hidden" id="dl-partner" name="dl-partner" />
+
+            <!-- Floating Results Dropdown -->
+            <div id="dl-partner-dropdown" style="display:none; position:absolute; left:0; right:0; top:62px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; max-height:220px; overflow-y:auto; z-index:1600; box-shadow:0 10px 25px rgba(0,0,0,0.6); padding:4px 0;"></div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Valor Estimado do Negócio (R$)</label>
+            <input id="dl-value" type="number" step="0.01" placeholder="50000.00" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:12px;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Título do Negócio / Projeto</label>
+            <input id="dl-title" type="text" placeholder="Ex: Contrato de Prestação de Serviços..." style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Data do Fechamento</label>
+            <input id="dl-date" type="date" style="width:100%; height:36px; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:0 10px; font-size:13px;"/>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:600;">Observações / Detalhes (Opcional)</label>
+          <textarea id="dl-notes" placeholder="Detalhes do contrato, duração, escopo..." style="min-height:50px; width:100%; border-radius:6px; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:10px; font-size:13px; font-family:inherit;"></textarea>
+        </div>
+
+        <button class="btn gold" style="width:100%; height:38px; font-size:13px; font-weight:600; justify-content:center;" onclick="addDeal()">
+          <i class="ti ti-check"></i> Registrar Negócio no ROI
+        </button>
+      </div>
+
+      <!-- Totalizador de ROI -->
+      <div style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(223, 178, 108, 0.15)); border:1px solid rgba(16, 185, 129, 0.3); border-radius:10px; padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Retorno Gerado no Rocket Club (ROI)</div>
+          <div style="font-size:22px; font-weight:800; color:var(--green); margin-top:2px;" id="deals-total-roi">R$ 0,00</div>
+        </div>
+        <div style="width:40px; height:40px; border-radius:10px; background:rgba(16, 185, 129, 0.2); color:var(--green); display:flex; align-items:center; justify-content:center; font-size:20px;">
+          <i class="ti ti-chart-dots"></i>
+        </div>
+      </div>
+
+      <!-- Lista de Negócios -->
+      <div id="deals-list" style="display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <!-- Aba: Networking & Smart Matching por Endereço -->
+    <div class="tp" id="tp-networking">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:8px;">
+              <i class="ti ti-topology-full"></i> Smart Matching — Conexões por Endereço & Região
+            </div>
+            <div style="font-size:12px; color:var(--muted); margin-top:2px;">
+              Membros sugeridos por proximidade de residência (cidade/estado), atuação e especialidade complementar.
+            </div>
+          </div>
+          <div id="networking-current-loc-badge" style="background:var(--bg3); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-map-pin" style="color:var(--gold);"></i>
+            <span id="networking-loc-text">Carregando endereço...</span>
+          </div>
+        </div>
+
+        <!-- Filtros Rápidos de Networking -->
+        <div style="display:flex; align-items:center; gap:8px; margin-top:14px; flex-wrap:wrap;" id="networking-filter-buttons">
+          <button type="button" class="net-filter-btn active" onclick="setNetworkingFilter('all', this)" style="background:var(--bg3); border:1px solid var(--border-focus); color:var(--gold); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-grid-dots"></i> Todos (<span id="net-count-all">0</span>)
+          </button>
+          <button type="button" class="net-filter-btn" onclick="setNetworkingFilter('city', this)" style="background:var(--bg3); border:1px solid var(--border); color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-map-pin-filled" style="color:var(--gold);"></i> Mesma Cidade (<span id="net-count-city">0</span>)
+          </button>
+          <button type="button" class="net-filter-btn" onclick="setNetworkingFilter('state', this)" style="background:var(--bg3); border:1px solid var(--border); color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-map-pin" style="color:var(--blue);"></i> Mesmo Estado (<span id="net-count-state">0</span>)
+          </button>
+          <button type="button" class="net-filter-btn" onclick="setNetworkingFilter('specialty', this)" style="background:var(--bg3); border:1px solid var(--border); color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <i class="ti ti-briefcase" style="color:var(--green);"></i> Mesma Especialidade (<span id="net-count-spec">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <div id="networking-matches-list" style="display:flex; flex-direction:column; gap:12px; max-height:480px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    <div class="tp" id="tp-history">
+      <!-- Barra de Filtros e Contador do Histórico -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="position:relative; flex:1; min-width:200px;">
+          <i class="ti ti-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px;"></i>
+          <input type="text" id="h-filter-search" oninput="filterHistoryList()" placeholder="Buscar no histórico de alterações..." style="width:100%; height:32px; padding-left:30px; font-size:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text);" />
+        </div>
+        <div style="font-size:12px; color:var(--muted); font-weight:500;" id="h-count-label">0 registros</div>
+      </div>
+
+      <!-- Lista / Timeline do Histórico de Alterações -->
+      <div id="history-list" style="display:flex; flex-direction:column; gap:10px; max-height:450px; overflow-y:auto; padding-right:4px;"></div>
+    </div>
+
+    </div> <!-- Fim de .m-body -->
+
+    <!-- Rodapé Fixo de Ações -->
+    <div class="m-foot" style="padding: 16px 28px; background: var(--bg3); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn" id="btn-profile-birthday-card" style="display:none; background:rgba(223, 178, 108, 0.1); border-color:var(--gold); color:var(--gold);" onclick="generateBirthdayCard(editId)"><i class="ti ti-cake"></i> Gerar Card</button>
+        <button class="btn-del" id="btn-profile-del" style="display:none" onclick="confirmDeleteCurrentMember()"><i class="ti ti-trash"></i> Remover Ficha</button>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-cancel" onclick="closeModal('mo-detail')">Fechar</button>
+        <button class="btn-save" id="btn-profile-save" onclick="saveMember()"><i class="ti ti-device-floppy"></i> Salvar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Confirmar Exclusão Moderna -->
+<div class="overlay" id="mo-confirm-delete">
+  <div class="modal" style="max-width: 400px; text-align: center;">
+    <div style="margin-bottom: 20px; display: inline-block;">
+      <div class="warning-icon-glow">
+        <i class="ti ti-alert-triangle" style="font-size: 38px; color: var(--red);"></i>
+      </div>
+    </div>
+    <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 12px;">Excluir Ficha Permanentemente?</h3>
+    <p style="font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 24px;">
+      Você está prestes a remover a ficha de <strong id="del-member-name" style="color: var(--text)"></strong>. Esta ação é <strong style="color: var(--red)">irreversível</strong> e apagará todos os contatos, metas e conquistas associadas.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="btn-cancel" onclick="closeConfirmModal()" style="flex: 1;">Cancelar</button>
+      <button class="btn-save" id="btn-confirm-delete-action" style="background: var(--red); color: #fff; flex: 1; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+        Excluir (5s)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmação Genérica de Ações Destrutivas (Design System) -->
+<div class="overlay" id="mo-confirm-action">
+  <div class="modal" style="max-width: 420px; text-align: center;">
+    <div style="margin-bottom: 16px; display: inline-block;">
+      <div class="warning-icon-glow">
+        <i class="ti ti-alert-triangle" style="font-size: 38px; color: var(--red);"></i>
+      </div>
+    </div>
+    <h3 id="mo-confirm-title" style="font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 10px;">Confirmar Exclusão</h3>
+    <p id="mo-confirm-message" style="font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 24px; padding: 0 10px;">
+      Tem certeza que deseja remover este item? Esta ação não poderá ser desfeita.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="btn-cancel" onclick="closeConfirmActionModal()" style="flex: 1;">Cancelar</button>
+      <button class="btn-save" id="btn-confirm-action-submit" style="background: var(--red); color: #fff; flex: 1; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+        <i class="ti ti-trash"></i> Confirmar Exclusão
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Aniversário Card Preview -->
+<div class="overlay" id="mo-birthday-card">
+  <div class="modal" style="max-width:480px; text-align:center;">
+    <div class="m-head">
+      <div class="m-title" style="display:flex; align-items:center; gap:6px;"><i class="ti ti-gift" style="color:var(--gold)"></i> Card de Aniversário</div>
+      <button class="m-close" onclick="closeModal('mo-birthday-card')"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="padding:16px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <!-- Seletor em Tempo Real do Modelo Visual & Posição da Foto -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; box-sizing:border-box; background:var(--bg3); padding:14px 16px; border-radius:12px; border:1px solid var(--border);">
+        <div>
+          <label for="mo-card-model-select" style="font-size:11.5px; color:var(--muted); font-weight:600; display:block; margin-bottom:6px; text-align:left;">
+            <i class="ti ti-layout-grid" style="color:var(--gold)"></i> Modelo Visual:
+          </label>
+          <select id="mo-card-model-select" onchange="changeBirthdayCardModel(this.value)" style="width:100%; height:38px; box-sizing:border-box; background:var(--bg2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:0 10px; font-size:12px; font-weight:600; cursor:pointer;">
+            <option value="model1">Modelo 1 — Fundo Inteiro</option>
+            <option value="model2">Modelo 2 — Moldura</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="mo-card-align-select" style="font-size:11.5px; color:var(--muted); font-weight:600; display:block; margin-bottom:6px; text-align:left;">
+            <i class="ti ti-align-center" style="color:var(--gold)"></i> Posição da Foto:
+          </label>
+          <select id="mo-card-align-select" onchange="changeBirthdayCardAlign(this.value)" style="width:100%; height:38px; box-sizing:border-box; background:var(--bg2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:0 10px; font-size:12px; font-weight:600; cursor:pointer;">
+            <option value="top">Topo Centro</option>
+            <option value="center">Centro Centro</option>
+            <option value="bottom">Centro Base</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="birthday-card-loading" style="font-size:14px; color:var(--gold); padding:20px 0;">
+        <i class="ti ti-loader animate-spin" style="font-size:24px; display:block; margin:0 auto 10px;"></i> Gerando card de alta resolução...
+      </div>
+      <div id="birthday-card-preview-container" style="width:100%; max-width:320px; border-radius:12px; overflow:hidden; border:1px solid var(--border); box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none;">
+        <img id="birthday-card-img" style="width:100%; height:auto; display:block;" />
+      </div>
+      <div style="display:flex; gap:10px; width:100%; flex-wrap:wrap; margin-top:4px;">
+        <button class="btn-cancel" onclick="closeModal('mo-birthday-card')" style="flex:0.8; min-width:90px; white-space:nowrap;">Fechar</button>
+        <button class="btn" id="btn-gdrive-single-upload" onclick="sendCurrentCardToGoogleDrive()" style="flex:1.3; background:rgba(66,133,244,0.15); border:1px solid #4285F4; color:#fff; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:600; font-size:12.5px;">
+          <i class="ti ti-brand-google-drive" style="color:#4285F4; font-size:16px;"></i> Enviar p/ Drive
+        </button>
+        <button class="btn-save" id="btn-download-birthday-card" style="flex:1.2; white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px;">
+          <i class="ti ti-download"></i> Baixar Imagem
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmação & Progresso de Exportação do Google Drive (Mesmo padrão do PDF) -->
+<div class="overlay" id="mo-gdrive-export">
+  <div class="modal" style="max-width: 520px; width: 92%;">
+    <div style="text-align:center; padding: 24px 20px 16px;">
+      <i class="ti ti-brand-google-drive" style="font-size:48px; color:#4285F4; display:block; margin-bottom:12px;"></i>
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:8px; color:var(--text)">Exportar Cards de Aniversário</h3>
+      <p style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:20px" id="gdrive-export-desc">
+        Deseja gerar os cards de aniversário de alta resolução (<strong style="color:var(--gold)">1080x1920</strong>) de toda a tripulação e exportar para o <strong style="color:#4285F4">Google Drive</strong>?<br>
+        <span style="font-size:11px; opacity:0.7">O processamento será realizado em lote e salvo automaticamente.</span>
+      </p>
+
+      <!-- Container de Progresso -->
+      <div id="gdrive-progress-container" style="display:none; margin: 10px 0 20px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; color:var(--text)">
+          <span id="gdrive-export-status" style="font-weight:500;">Inicializando gerador...</span>
+          <span id="gdrive-export-percent" style="color:var(--gold); font-weight:bold;">0%</span>
+        </div>
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+          <div id="gdrive-export-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4285F4, var(--gold)); transition:width 0.2s ease; border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:center; align-items:center;" id="gdrive-modal-actions">
+        <button class="btn-cancel" onclick="closeModal('mo-gdrive-export')">Cancelar</button>
+        <button class="btn gold" onclick="executeBirthdayCardsExport()" id="btn-start-gdrive-export" style="box-shadow:0 4px 14px rgba(66,133,244,0.3); white-space:nowrap;">
+          <i class="ti ti-brand-google-drive"></i> Sim, Exportar Cards
+        </button>
+      </div>
+
+      <div style="display:none; gap:12px; justify-content:center; align-items:center; margin-top:14px;" id="gdrive-modal-done-actions">
+        <button class="btn-cancel" onclick="closeModal('mo-gdrive-export')" style="flex:0.8; min-width:110px; white-space:nowrap; height:42px;">Fechar</button>
+        <button class="btn gold" id="btn-download-cards-batch" onclick="downloadAllCardsZip()" style="flex:1.5; white-space:nowrap; height:42px; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="ti ti-file-zip"></i> Baixar Todos em ZIP (.zip)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMMAND PALETTE (CTRL + K) -->
+<div class="overlay" id="mo-command-palette" onclick="if(event.target===this) closeCommandPalette()">
+  <div class="modal" style="max-width: 640px; width: 100%; padding: 0; overflow: hidden; border-radius: 16px; background: var(--bg2); border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,0.8), 0 0 40px rgba(223,178,108,0.1);">
+    <div style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg3); gap: 12px;">
+      <i class="ti ti-search" style="font-size: 20px; color: var(--gold);"></i>
+      <input type="text" id="cmd-palette-input" placeholder="Digite um comando, nome de membro ou artigo da wiki..." style="flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 15px; font-family: inherit;" oninput="onCommandPaletteInput(this.value)" onkeydown="onCommandPaletteKeydown(event)" />
+      <kbd style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--muted); font-family: monospace;">ESC</kbd>
+    </div>
+    <div id="cmd-palette-results" style="max-height: 380px; overflow-y: auto; padding: 8px 12px;"></div>
+    <div style="padding: 10px 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted);">
+      <span><i class="ti ti-arrows-vertical" style="font-size: 14px;"></i> Navegar com setas</span>
+      <span><i class="ti ti-corner-down-left" style="font-size: 14px;"></i> Selecionar</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: NOVO/EDITAR LANÇAMENTO FINANCEIRO -->
+<div class="overlay" id="mo-fin-transaction">
+  <div class="modal" style="max-width:540px; width:100%;">
+    <div class="m-head">
+      <h3 id="fin-trans-modal-title">Novo Lançamento Financeiro</h3>
+      <button class="close" onclick="closeModal('mo-fin-transaction')">&times;</button>
+    </div>
+    <form onsubmit="saveFinTransaction(event)">
+      <input type="hidden" id="fin-trans-id" />
+      <div class="m-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="grid-2">
+          <div class="field">
+            <label>Tipo</label>
+            <select id="fin-trans-type" required style="width:100%">
+              <option value="receita">Receita (Entrada)</option>
+              <option value="despesa">Despesa (Saída)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Valor (R$)</label>
+            <input type="number" step="0.01" id="fin-trans-amount" required placeholder="0.00" style="width:100%" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Descrição</label>
+          <input type="text" id="fin-trans-description" required placeholder="Ex: Mensalidade Mentoria - Cliente X" style="width:100%" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Cliente / Beneficiário</label>
+            <input type="text" id="fin-trans-client-name" placeholder="Nome do cliente ou fornecedor" style="width:100%" />
+          </div>
+          <div class="field">
+            <label>Categoria de Serviço</label>
+            <select id="fin-trans-category" style="width:100%">
+              <option value="Mentoria Rocket Club">Mentoria Rocket Club</option>
+              <option value="Hospedagem & Domínio">Hospedagem & Domínio</option>
+              <option value="Manutenção de Site">Manutenção de Site</option>
+              <option value="Gestão de Tráfego">Gestão de Tráfego</option>
+              <option value="Consultoria & Projetos">Consultoria & Projetos</option>
+              <option value="Despesas Operacionais">Despesas Operacionais</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Data de Vencimento</label>
+            <input type="date" id="fin-trans-due-date" required style="width:100%" />
+          </div>
+          <div class="field">
+            <label>Status do Pagamento</label>
+            <select id="fin-trans-status" style="width:100%">
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago / Confirmado</option>
+              <option value="atrasado">Atrasado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal('mo-fin-transaction')">Cancelar</button>
+        <button type="submit" class="btn-save"><i class="ti ti-device-floppy"></i> Salvar Lançamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: NOVO CONTRATO RECORRENTE -->
+<div class="overlay" id="mo-fin-contract">
+  <div class="modal" style="max-width:540px; width:100%;">
+    <div class="m-head">
+      <h3>Novo Contrato / Assinatura Recorrente</h3>
+      <button class="close" onclick="closeModal('mo-fin-contract')">&times;</button>
+    </div>
+    <form onsubmit="saveFinContract(event)">
+      <div class="m-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="field">
+          <label>Nome do Cliente</label>
+          <input type="text" id="fin-contract-client" required placeholder="Ex: João da Silva / Empresa X" style="width:100%" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Serviço / Plano</label>
+            <select id="fin-contract-service" required style="width:100%">
+              <option value="Mentoria Rocket Club">Mentoria Rocket Club</option>
+              <option value="Hospedagem Web & Domínio">Hospedagem Web & Domínio</option>
+              <option value="Manutenção de Site">Manutenção de Site</option>
+              <option value="Gestão de Tráfego">Gestão de Tráfego</option>
+              <option value="Consultoria Recorrente">Consultoria Recorrente</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Valor Mensal / Recorrente (R$)</label>
+            <input type="number" step="0.01" id="fin-contract-amount" required placeholder="1500.00" style="width:100%" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Dia do Vencimento</label>
+            <input type="number" min="1" max="31" id="fin-contract-due-day" value="10" required style="width:100%" />
+          </div>
+          <div class="field">
+            <label>Status do Contrato</label>
+            <select id="fin-contract-status" style="width:100%">
+              <option value="ativo">Ativo</option>
+              <option value="suspenso">Suspenso</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal('mo-fin-contract')">Cancelar</button>
+        <button type="submit" class="btn-save"><i class="ti ti-device-floppy"></i> Salvar Contrato</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: NOVO EVENTO -->
+<div class="overlay" id="mo-event">
+  <div class="modal" style="max-width:560px; width:100%;">
+    <div class="m-head">
+      <h3>Novo Evento / Imersão</h3>
+      <button class="close" onclick="closeModal('mo-event')">&times;</button>
+    </div>
+    <form onsubmit="saveEventForm(event)">
+      <div class="m-body" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="field">
+          <label>Título do Evento</label>
+          <input type="text" id="event-title" required placeholder="Ex: Imersão Presencial Rocket Club 2026" style="width:100%" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Categoria</label>
+            <select id="event-category" style="width:100%">
+              <option value="Imersão Presencial">Imersão Presencial</option>
+              <option value="Mastermind Online">Mastermind Online</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Mentoria em Grupo">Mentoria em Grupo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Data & Hora</label>
+            <input type="datetime-local" id="event-date" required style="width:100%" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Localização / Link de Transmissão</label>
+          <input type="text" id="event-location" required placeholder="Ex: Hotel Windsor Barra - RJ ou Link do Zoom" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>Descrição do Evento</label>
+          <textarea id="event-description" style="min-height:80px" placeholder="Descreva a pauta e a programação do evento..."></textarea>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal('mo-event')">Cancelar</button>
+        <button type="submit" class="btn-save"><i class="ti ti-device-floppy"></i> Criar Evento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
+<script src="assets/js/app.js?v=2.0.2"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# Impedir listagem de diretórios
+Options -Indexes
+
+# Habilitar Reescrita de URLs Amigáveis
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Ignorar arquivos e diretórios existentes
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Rotas amigáveis para as páginas principais
+    RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+    RewriteRule ^kanban/?$ kanban.php [L,QSA]
+    RewriteRule ^academy/?$ academy.php [L,QSA]
+    RewriteRule ^wiki/?$ wiki.php [L,QSA]
+    RewriteRule ^financial/?$ financial.php [L,QSA]
+    RewriteRule ^events/?$ events.php [L,QSA]
+    RewriteRule ^settings/?$ settings.php [L,QSA]
+</IfModule>
+
+# Impedir acesso a arquivos sensíveis, de ambiente e scripts
+<FilesMatch "^\.env|^\.git|^\.htaccess|.*\.log$|.*\.phar$|.*\.py$|.*\.zip$|check_missing_fn\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Impedir acesso direto a arquivos de infraestrutura dentro da API
+RedirectMatch 403 /api/(db|helpers)\.php$
+
+# Evitar indexação por mecanismos de busca
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>

@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 11 15 23;
+    --surface: 19 25 38;
+    --surface-border: 31 41 61;
+    --gold-primary: #EAB308;
+    --gold-gradient: linear-gradient(135deg, #FFE585 0%, #EAB308 50%, #CA8A04 100%);
+  }
+
+  body {
+    @apply bg-[#0B0F17] text-slate-100 font-sans antialiased min-h-screen selection:bg-yellow-500/30 selection:text-yellow-200;
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(19, 25, 38, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(234, 179, 8, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -10px rgba(234, 179, 8, 0.15);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF3C4 0%, #EAB308 50%, #CA8A04 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-badge {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #FDE047;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F293D;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #EAB308;
+}
+
+/* iOS Safe Area Utilities */
+.safe-area-pb {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-pt {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Prevent iOS Safari auto-zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
