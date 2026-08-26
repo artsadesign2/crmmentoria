@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   UserRole,
   SystemUser,
@@ -30,187 +30,296 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>(INITIAL_SYSTEM_USERS);
-  const [activeUserId, setActiveUserId] = useState<string>('usr-master-1');
-  const [rolePermissions, setRolePermissions] = useState<Record<UserRole, RolePermissions>>(
-    DEFAULT_ROLE_PERMISSIONS
-  );
-
-  // Load persistent state from localStorage on mount
-  useEffect(() => {
+function getSessionUserId(): string {
+  if (typeof document !== 'undefined') {
+    // 1. Check session cookie first (isolated per tab/window mode)
+    const match = document.cookie.match(/(?:^|;\s*)rocket_session=([^;]+)/);
+    if (match && match[1]) {
+      try {
+        const decoded = decodeURIComponent(match[1]).trim();
+        if (decoded) return decoded;
+      } catch {}
+    }
+    // 2. Check localStorage
     try {
-      const savedUsers = localStorage.getItem('rocket_system_users');
-      const savedActiveUser = localStorage.getItem('rocket_active_user_id');
-      const savedPermissions = localStorage.getItem('rocket_role_permissions');
+      const fromLocal = localStorage.getItem('rocket_active_user_id');
+      if (fromLocal && fromLocal.trim()) return fromLocal.trim();
+    } catch {}
+  }
+  return 'usr-master-1';
+}
 
-      if (savedUsers) {
-        setSystemUsers(JSON.parse(savedUsers));
-      }
-      if (savedActiveUser) {
-        setActiveUserId(savedActiveUser);
-      }
-      if (savedPermissions) {
-        setRolePermissions(JSON.parse(savedPermissions));
-      }
-    } catch (e) {}
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('rocket_system_users');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return INITIAL_SYSTEM_USERS;
+  });
+
+  const [activeUserId, setActiveUserId] = useState<string>(() => getSessionUserId());
+
+  const [rolePermissions, setRolePermissions] = useState<Record<UserRole, RolePermissions>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('rocket_role_permissions');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return DEFAULT_ROLE_PERMISSIONS;
+  });
+
+  // Sync state from cookies and storage on mount & storage changes
+  useEffect(() => {
+    const syncUserSession = () => {
+      try {
+        const savedUsers = localStorage.getItem('rocket_system_users');
+        const savedPermissions = localStorage.getItem('rocket_role_permissions');
+
+        let currentUsers = INITIAL_SYSTEM_USERS;
+        if (savedUsers) {
+          currentUsers = JSON.parse(savedUsers);
+          setSystemUsers(currentUsers);
+        }
+
+        const sessionUser = getSessionUserId();
+        const matched = currentUsers.find(
+          (u) =>
+            u.id === sessionUser ||
+            u.email.toLowerCase() === sessionUser.toLowerCase()
+        );
+
+        if (matched) {
+          setActiveUserId(matched.id);
+          localStorage.setItem('rocket_active_user_id', matched.id);
+        } else if (sessionUser) {
+          setActiveUserId(sessionUser);
+        }
+
+        if (savedPermissions) {
+          setRolePermissions(JSON.parse(savedPermissions));
+        }
+      } catch (e) {}
+    };
+
+    syncUserSession();
+
+    // Listen for storage events across tabs
+    window.addEventListener('storage', syncUserSession);
+    return () => window.removeEventListener('storage', syncUserSession);
   }, []);
 
-  const currentUser =
-    systemUsers.find((u) => u.id === activeUserId) ||
-    systemUsers.find((u) => u.role === 'Master') ||
-    systemUsers[0] ||
-    INITIAL_SYSTEM_USERS[0];
+  // Resolve current active user dynamically
+  const currentUser: SystemUser = React.useMemo(() => {
+    const cleanActiveId = (activeUserId || '').trim().toLowerCase();
+    const byId = systemUsers.find(
+      (u) =>
+        u.id.toLowerCase() === cleanActiveId ||
+        u.email.toLowerCase() === cleanActiveId
+    );
+    if (byId) return byId;
+
+    const initialMatch = INITIAL_SYSTEM_USERS.find(
+      (u) =>
+        u.id.toLowerCase() === cleanActiveId ||
+        u.email.toLowerCase() === cleanActiveId
+    );
+    if (initialMatch) return initialMatch;
+
+    return (
+      systemUsers.find((u) => u.role === 'Master') ||
+      systemUsers[0] ||
+      INITIAL_SYSTEM_USERS[0]
+    );
+  }, [systemUsers, activeUserId]);
 
   const currentRole = currentUser.role;
   const isMaster = currentRole === 'Master';
   const isAdmin = currentRole === 'Administrador' || isMaster;
 
-  const canAccessModule = (permissionKey: keyof RolePermissions): boolean => {
-    if (isMaster) return true; // Master always has full access
-    const permissionsForRole = rolePermissions[currentRole];
-    if (!permissionsForRole) return false;
-    return Boolean(permissionsForRole[permissionKey]);
-  };
+  const canAccessModule = useCallback(
+    (permissionKey: keyof RolePermissions): boolean => {
+      if (isMaster) return true; // Master always has full access
+      const permissionsForRole = rolePermissions[currentRole];
+      if (!permissionsForRole) return false;
+      return Boolean(permissionsForRole[permissionKey]);
+    },
+    [isMaster, rolePermissions, currentRole]
+  );
 
-  const switchUser = (userId: string) => {
-    const found = systemUsers.find((u) => u.id === userId);
-    if (found) {
-      setActiveUserId(found.id);
-      try {
-        localStorage.setItem('rocket_active_user_id', found.id);
-      } catch (e) {}
-    }
-  };
+  const switchUser = useCallback(
+    (userId: string) => {
+      const found = systemUsers.find(
+        (u) => u.id === userId || u.email.toLowerCase() === userId.toLowerCase()
+      );
+      if (found) {
+        setActiveUserId(found.id);
+        document.cookie = `rocket_session=${encodeURIComponent(
+          found.id
+        )}; path=/; max-age=86400; SameSite=Lax`;
+        try {
+          localStorage.setItem('rocket_active_user_id', found.id);
+        } catch (e) {}
+      }
+    },
+    [systemUsers]
+  );
 
-  const switchRoleSimulation = (role: UserRole) => {
-    // Finds existing user with this role or creates temporary simulated user
-    const existing = systemUsers.find((u) => u.role === role);
-    if (existing) {
-      switchUser(existing.id);
-    } else {
-      const simUser: SystemUser = {
-        id: `sim-${role.toLowerCase()}`,
-        name: `Usuário ${role} (Simulação)`,
-        email: `${role.toLowerCase()}@rocketclub.com.br`,
-        role,
-        status: 'ATIVO',
-        department: 'Simulação de Acesso',
+  const switchRoleSimulation = useCallback(
+    (role: UserRole) => {
+      // Finds existing user with this role or creates temporary simulated user
+      const existing = systemUsers.find((u) => u.role === role);
+      if (existing) {
+        switchUser(existing.id);
+      } else {
+        const simUser: SystemUser = {
+          id: `sim-${role.toLowerCase()}`,
+          name: `Usuário ${role} (Simulação)`,
+          email: `${role.toLowerCase()}@rocketclub.com.br`,
+          role,
+          status: 'ATIVO',
+          department: 'Simulação de Acesso',
+        };
+        const updated = [...systemUsers, simUser];
+        setSystemUsers(updated);
+        setActiveUserId(simUser.id);
+        document.cookie = `rocket_session=${encodeURIComponent(
+          simUser.id
+        )}; path=/; max-age=86400; SameSite=Lax`;
+        try {
+          localStorage.setItem('rocket_system_users', JSON.stringify(updated));
+          localStorage.setItem('rocket_active_user_id', simUser.id);
+        } catch (e) {}
+      }
+    },
+    [systemUsers, switchUser]
+  );
+
+  const addUser = useCallback(
+    (newUser: Omit<SystemUser, 'id'>) => {
+      if (!isMaster && currentRole !== 'Administrador') {
+        return {
+          success: false,
+          error: 'Você não tem permissão para cadastrar novos usuários.',
+        };
+      }
+
+      if (newUser.role === 'Master' && !isMaster) {
+        return {
+          success: false,
+          error: 'Apenas o Comandante Master pode criar outros usuários de nível Master.',
+        };
+      }
+
+      const created: SystemUser = {
+        ...newUser,
+        id: `usr-${Date.now()}`,
       };
-      const updated = [...systemUsers, simUser];
+
+      const updated = [...systemUsers, created];
       setSystemUsers(updated);
-      setActiveUserId(simUser.id);
       try {
         localStorage.setItem('rocket_system_users', JSON.stringify(updated));
-        localStorage.setItem('rocket_active_user_id', simUser.id);
       } catch (e) {}
-    }
-  };
 
-  const addUser = (newUser: Omit<SystemUser, 'id'>) => {
-    if (!isMaster && currentRole !== 'Administrador') {
-      return {
-        success: false,
-        error: 'Você não tem permissão para cadastrar novos usuários.',
-      };
-    }
+      return { success: true };
+    },
+    [isMaster, currentRole, systemUsers]
+  );
 
-    if (newUser.role === 'Master' && !isMaster) {
-      return {
-        success: false,
-        error: 'Apenas o Comandante Master pode criar outros usuários de nível Master.',
-      };
-    }
+  const updateUser = useCallback(
+    (userId: string, updates: Partial<SystemUser>) => {
+      const target = systemUsers.find((u) => u.id === userId);
+      if (!target) return { success: false, error: 'Usuário não encontrado.' };
 
-    const created: SystemUser = {
-      ...newUser,
-      id: `usr-${Date.now()}`,
-    };
+      if (updates.role && updates.role !== target.role) {
+        const check = checkCanEditRole(currentRole, target, updates.role);
+        if (!check.allowed) {
+          return { success: false, error: check.reason };
+        }
+      }
 
-    const updated = [...systemUsers, created];
-    setSystemUsers(updated);
-    try {
-      localStorage.setItem('rocket_system_users', JSON.stringify(updated));
-    } catch (e) {}
+      const updated = systemUsers.map((u) => (u.id === userId ? { ...u, ...updates } : u));
+      setSystemUsers(updated);
+      try {
+        localStorage.setItem('rocket_system_users', JSON.stringify(updated));
+      } catch (e) {}
 
-    return { success: true };
-  };
+      return { success: true };
+    },
+    [systemUsers, currentRole]
+  );
 
-  const updateUser = (userId: string, updates: Partial<SystemUser>) => {
-    const target = systemUsers.find((u) => u.id === userId);
-    if (!target) return { success: false, error: 'Usuário não encontrado.' };
+  const deleteUser = useCallback(
+    (userId: string) => {
+      const target = systemUsers.find((u) => u.id === userId);
+      if (!target) return { success: false, error: 'Usuário não encontrado.' };
 
-    if (updates.role && updates.role !== target.role) {
-      const check = checkCanEditRole(currentRole, target, updates.role);
+      const check = checkCanDelete(currentRole, target);
       if (!check.allowed) {
         return { success: false, error: check.reason };
       }
-    }
 
-    const updated = systemUsers.map((u) => (u.id === userId ? { ...u, ...updates } : u));
-    setSystemUsers(updated);
-    try {
-      localStorage.setItem('rocket_system_users', JSON.stringify(updated));
-    } catch (e) {}
+      const updated = systemUsers.filter((u) => u.id !== userId);
+      setSystemUsers(updated);
 
-    return { success: true };
-  };
-
-  const deleteUser = (userId: string) => {
-    const target = systemUsers.find((u) => u.id === userId);
-    if (!target) return { success: false, error: 'Usuário não encontrado.' };
-
-    const check = checkCanDelete(currentRole, target);
-    if (!check.allowed) {
-      return { success: false, error: check.reason };
-    }
-
-    const updated = systemUsers.filter((u) => u.id !== userId);
-    setSystemUsers(updated);
-
-    if (activeUserId === userId) {
-      const nextUser = updated.find((u) => u.role === 'Master') || updated[0];
-      if (nextUser) {
-        setActiveUserId(nextUser.id);
-        try {
-          localStorage.setItem('rocket_active_user_id', nextUser.id);
-        } catch (e) {}
+      if (activeUserId === userId) {
+        const nextUser = updated.find((u) => u.role === 'Master') || updated[0];
+        if (nextUser) {
+          setActiveUserId(nextUser.id);
+          document.cookie = `rocket_session=${encodeURIComponent(
+            nextUser.id
+          )}; path=/; max-age=86400; SameSite=Lax`;
+          try {
+            localStorage.setItem('rocket_active_user_id', nextUser.id);
+          } catch (e) {}
+        }
       }
-    }
 
-    try {
-      localStorage.setItem('rocket_system_users', JSON.stringify(updated));
-    } catch (e) {}
+      try {
+        localStorage.setItem('rocket_system_users', JSON.stringify(updated));
+      } catch (e) {}
 
-    return { success: true };
-  };
+      return { success: true };
+    },
+    [systemUsers, currentRole, activeUserId]
+  );
 
-  const toggleRolePermission = (role: UserRole, permissionKey: keyof RolePermissions) => {
-    if (!isMaster) {
-      return; // Only Master can alter the RBAC permission matrix
-    }
+  const toggleRolePermission = useCallback(
+    (role: UserRole, permissionKey: keyof RolePermissions) => {
+      if (!isMaster) {
+        return; // Only Master can alter the RBAC permission matrix
+      }
 
-    const updated = {
-      ...rolePermissions,
-      [role]: {
-        ...rolePermissions[role],
-        [permissionKey]: !rolePermissions[role][permissionKey],
-      },
-    };
+      const updated = {
+        ...rolePermissions,
+        [role]: {
+          ...rolePermissions[role],
+          [permissionKey]: !rolePermissions[role][permissionKey],
+        },
+      };
 
-    setRolePermissions(updated);
-    try {
-      localStorage.setItem('rocket_role_permissions', JSON.stringify(updated));
-    } catch (e) {}
-  };
+      setRolePermissions(updated);
+      try {
+        localStorage.setItem('rocket_role_permissions', JSON.stringify(updated));
+      } catch (e) {}
+    },
+    [isMaster, rolePermissions]
+  );
 
-  const resetRolePermissions = () => {
+  const resetRolePermissions = useCallback(() => {
     if (!isMaster) return;
     setRolePermissions(DEFAULT_ROLE_PERMISSIONS);
     try {
       localStorage.setItem('rocket_role_permissions', JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
     } catch (e) {}
-  };
+  }, [isMaster]);
 
   return (
     <AuthContext.Provider

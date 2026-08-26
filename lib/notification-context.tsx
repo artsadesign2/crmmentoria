@@ -22,12 +22,30 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+function getSessionUser(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)rocket_session=([^;]+)/);
+  if (match && match[1]) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return match[1];
+    }
+  }
+  try {
+    return localStorage.getItem('rocket_active_user_id');
+  } catch {}
+  return null;
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('rocket_club_notifications');
+      const user = getSessionUser();
+      const userKey = user ? `rocket_club_notifications_${user}` : 'rocket_club_notifications';
+      const saved = localStorage.getItem(userKey) || localStorage.getItem('rocket_club_notifications');
       if (saved) {
         setNotifications(JSON.parse(saved));
       }
@@ -39,6 +57,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const saveNotifications = (items: NotificationItem[]) => {
     setNotifications(items);
     try {
+      const user = getSessionUser();
+      if (user) {
+        localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify(items));
+      }
       localStorage.setItem('rocket_club_notifications', JSON.stringify(items));
     } catch (e) {
       // ignore

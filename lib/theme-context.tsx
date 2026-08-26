@@ -133,16 +133,39 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [activePaletteId, setActivePaletteId] = useState<PaletteId>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
-        if (saved && COLOR_PALETTES[saved]) return saved;
-      } catch (e) {}
+function getSessionUser(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)rocket_session=([^;]+)/);
+  if (match && match[1]) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return match[1];
     }
-    return 'rocket-gold';
-  });
+  }
+  try {
+    return localStorage.getItem('rocket_active_user_id');
+  } catch {}
+  return null;
+}
+
+function getInitialPalette(): PaletteId {
+  if (typeof window !== 'undefined') {
+    try {
+      const user = getSessionUser();
+      if (user) {
+        const userSaved = localStorage.getItem(`rocket_club_color_palette_${user}`) as PaletteId;
+        if (userSaved && COLOR_PALETTES[userSaved]) return userSaved;
+      }
+      const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
+      if (saved && COLOR_PALETTES[saved]) return saved;
+    } catch (e) {}
+  }
+  return 'rocket-gold';
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [activePaletteId, setActivePaletteId] = useState<PaletteId>(() => getInitialPalette());
 
   const activePalette = COLOR_PALETTES[activePaletteId] || COLOR_PALETTES['rocket-gold'];
   const isLightMode = activePalette.mode === 'light';
@@ -187,6 +210,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!COLOR_PALETTES[id]) return;
     setActivePaletteId(id);
     try {
+      const user = getSessionUser();
+      if (user) {
+        localStorage.setItem(`rocket_club_color_palette_${user}`, id);
+      }
       localStorage.setItem('rocket_club_color_palette', id);
     } catch (e) {}
   };
