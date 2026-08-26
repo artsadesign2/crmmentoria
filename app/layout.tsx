@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import { cookies } from 'next/headers';
 import './globals.css';
-import { COLOR_PALETTES, PaletteId, DEFAULT_PALETTE_ID } from '@/lib/theme-constants';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast-context';
@@ -18,42 +16,13 @@ export const metadata: Metadata = {
   description: 'Plataforma All-in-One para gestão de membros, vendas, cursos, wiki e eventos.',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const sessionUser = cookieStore.get('rocket_session')?.value || null;
-  const themeCookie = (cookieStore.get('rocket_theme')?.value as PaletteId) || null;
-
-  const initialPaletteId: PaletteId =
-    themeCookie && COLOR_PALETTES[themeCookie] ? themeCookie : DEFAULT_PALETTE_ID;
-  const activePalette = COLOR_PALETTES[initialPaletteId] || COLOR_PALETTES[DEFAULT_PALETTE_ID];
-  const isLight = activePalette.mode === 'light';
-
   return (
-    <html
-      lang="pt-BR"
-      className={`${jakarta.variable} ${isLight ? 'theme-light' : 'dark theme-dark'}`}
-      style={{
-        backgroundColor: activePalette.tokens.background,
-        color: activePalette.tokens.textPrimary,
-        ['--primary-color' as any]: activePalette.tokens.primary,
-        ['--primary-glow' as any]: activePalette.tokens.glow,
-        ['--primary-gradient' as any]: activePalette.tokens.primaryGradient,
-        ['--accent-color' as any]: activePalette.tokens.accent,
-        ['--theme-bg' as any]: activePalette.tokens.background,
-        ['--theme-surface' as any]: activePalette.tokens.surface,
-        ['--theme-border' as any]: activePalette.tokens.surfaceBorder,
-        ['--theme-text-primary' as any]: activePalette.tokens.textPrimary,
-        ['--theme-text-secondary' as any]: activePalette.tokens.textSecondary,
-        ['--theme-badge-bg' as any]: activePalette.tokens.badgeBg,
-        ['--theme-badge-text' as any]: activePalette.tokens.badgeText,
-        ['--theme-badge-border' as any]: activePalette.tokens.badgeBorder,
-      }}
-      suppressHydrationWarning
-    >
+    <html lang="pt-BR" className={`${jakarta.variable} dark theme-dark`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -101,8 +70,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased selection:bg-[var(--primary-color)]/30 selection:text-[var(--primary-color)]">
-        <ThemeProvider initialPaletteId={initialPaletteId}>
-          <AuthProvider initialUserId={sessionUser}>
+        <ThemeProvider>
+          <AuthProvider>
             <ToastProvider>
               {children}
               <ToastContainer />

@@ -53,7 +53,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
-import { Member, KANBAN_STAGES } from '@/lib/mock-data';
+import { Member, KANBAN_STAGES, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { generatePdfDirectlyInPage } from '@/lib/pdf-export';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { MenteeSheet } from '@/components/mentee-sheet';
@@ -61,10 +61,25 @@ import { maskPhone } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 
+function getInitialMembers(): (Member & { excludeFromBook?: boolean })[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_members');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+  return INITIAL_MEMBERS.map((m) => ({ ...m, excludeFromBook: false }));
+}
+
 export default function MentoradosPage() {
   const { isLightMode, activePalette } = useTheme();
-  const [members, setMembers] = useState<(Member & { excludeFromBook?: boolean })[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState<(Member & { excludeFromBook?: boolean })[]>(() =>
+    getInitialMembers()
+  );
+  const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [selectedMember, setSelectedMember] = useState<(Member & { excludeFromBook?: boolean }) | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,20 +114,6 @@ export default function MentoradosPage() {
     else if (type === 'info') toast.info(text);
     else toast.warning(text);
   };
-
-  // Instant client-side cached load
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_members');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMembers(parsed);
-          setLoading(false);
-        }
-      }
-    } catch (e) {}
-  }, []);
 
   // Background Fetch members
   useEffect(() => {

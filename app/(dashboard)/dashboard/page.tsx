@@ -66,13 +66,39 @@ const MONTH_SHORTS = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
 ];
 
+function getDashboardCachedMembers(): Member[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_members');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+  return INITIAL_MEMBERS;
+}
+
+function getDashboardCachedFinancial(): DbTransaction[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_financial');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  }
+  return [];
+}
+
 export default function DashboardPage() {
   const { isLightMode, activePalette } = useTheme();
   const { currentUser, currentRole, isMaster, isAdmin } = useAuth();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [transactions, setTransactions] = useState<DbTransaction[]>([]);
+  const [members, setMembers] = useState<Member[]>(() => getDashboardCachedMembers());
+  const [transactions, setTransactions] = useState<DbTransaction[]>(() => getDashboardCachedFinancial());
   const [events, setEvents] = useState<DbEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Birthday Block State (3-month window)
   const currentMonthIndex = new Date().getMonth();
@@ -91,15 +117,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    // 1. Instant cache load
-    try {
-      const cachedM = localStorage.getItem('rocket_club_cached_members');
-      if (cachedM) setMembers(JSON.parse(cachedM));
-      const cachedF = localStorage.getItem('rocket_club_cached_financial');
-      if (cachedF) setTransactions(JSON.parse(cachedF));
-    } catch (e) {}
-
-    // 2. Fetch fresh data in parallel
+    // Fetch fresh data in parallel in background
     Promise.all([
       fetch('/api/members').then((r) => r.json()).catch(() => ({})),
       fetch('/api/financial').then((r) => r.json()).catch(() => ({})),

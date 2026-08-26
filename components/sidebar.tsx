@@ -302,6 +302,7 @@ export function Sidebar({
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     onClick={onCloseMobile}
                     className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all relative group shrink-0 ${
                       isActive
@@ -350,6 +351,7 @@ export function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
                   onClick={onCloseMobile}
                   className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive

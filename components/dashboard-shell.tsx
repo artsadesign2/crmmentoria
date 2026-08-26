@@ -88,6 +88,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={nav.href}
                 href={nav.href}
+                prefetch={true}
                 className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
                   isActive ? 'font-bold scale-105' : 'text-slate-400 hover:text-slate-200'
                 }`}
