@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   UserRole,
   SystemUser,
@@ -50,6 +51,8 @@ function getSessionUserId(): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -75,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return DEFAULT_ROLE_PERMISSIONS;
   });
 
-  // Sync state from cookies and storage on mount & storage changes
+  // Sync state from cookies and storage on mount, pathname changes & storage events
   useEffect(() => {
     const syncUserSession = () => {
       try {
@@ -113,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for storage events across tabs
     window.addEventListener('storage', syncUserSession);
     return () => window.removeEventListener('storage', syncUserSession);
-  }, []);
+  }, [pathname]);
 
   // Resolve current active user dynamically
   const currentUser: SystemUser = React.useMemo(() => {

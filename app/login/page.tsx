@@ -32,42 +32,71 @@ function LoginForm() {
     setErrorMessage(null);
     setLoading(true);
 
-    // Get current registered users
+    // 1. Get current registered users
     let systemUsers: SystemUser[] = INITIAL_SYSTEM_USERS;
     try {
       const saved = localStorage.getItem('rocket_system_users');
       if (saved) {
-        systemUsers = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          systemUsers = parsed;
+        }
       }
     } catch {}
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // Check master fallback aliases
-    const isMasterAlias =
-      cleanEmail === 'admin@mentoria.com' ||
-      cleanEmail === 'master@rocketclub.com.br' ||
-      cleanEmail === 'admin@rocketclub.com.br';
-
-    const matchedUser = systemUsers.find(
+    // 2. Direct exact match in systemUsers by email
+    let matchedUser = systemUsers.find(
       (u) => u.email.trim().toLowerCase() === cleanEmail
     );
 
-    // Validate credentials
+    // 3. Fallback role aliases mapping
+    if (!matchedUser) {
+      if (
+        cleanEmail === 'master@rocketclub.com.br' ||
+        cleanEmail === 'comandante@rocketclub.com.br' ||
+        cleanEmail === 'master@mentoria.com'
+      ) {
+        matchedUser = systemUsers.find((u) => u.role === 'Master') || INITIAL_SYSTEM_USERS[0];
+      } else if (
+        cleanEmail === 'admin@rocketclub.com.br' ||
+        cleanEmail === 'admin@mentoria.com' ||
+        cleanEmail === 'administrador@rocketclub.com.br' ||
+        cleanEmail === 'henrique.admin@rocketclub.com.br'
+      ) {
+        matchedUser = systemUsers.find((u) => u.role === 'Administrador') || INITIAL_SYSTEM_USERS[1];
+      } else if (
+        cleanEmail === 'editor@rocketclub.com.br' ||
+        cleanEmail === 'fernanda.conteudo@rocketclub.com.br'
+      ) {
+        matchedUser = systemUsers.find((u) => u.role === 'Editor') || INITIAL_SYSTEM_USERS[2];
+      } else if (
+        cleanEmail === 'cliente@rocketclub.com.br' ||
+        cleanEmail === 'carlos@silvagroup.com.br' ||
+        cleanEmail === 'mentorado@rocketclub.com.br'
+      ) {
+        matchedUser = systemUsers.find((u) => u.role === 'Cliente') || INITIAL_SYSTEM_USERS[3];
+      } else if (
+        cleanEmail === 'usuario@rocketclub.com.br' ||
+        cleanEmail === 'rodrigo.trial@gmail.com' ||
+        cleanEmail === 'visitante@rocketclub.com.br'
+      ) {
+        matchedUser = systemUsers.find((u) => u.role === 'Usuário') || INITIAL_SYSTEM_USERS[4];
+      }
+    }
+
+    // 4. Validate credentials
     let isAuthenticated = false;
     let authenticatedUser: SystemUser | null = null;
 
     if (matchedUser) {
-      // If user has customized password, check it; otherwise default is 123456
       const validPass = matchedUser.password || '123456';
       if (cleanPassword === validPass || cleanPassword === '123456') {
         isAuthenticated = true;
         authenticatedUser = matchedUser;
       }
-    } else if (isMasterAlias && (cleanPassword === '123456' || cleanPassword.length >= 4)) {
-      isAuthenticated = true;
-      authenticatedUser = systemUsers.find((u) => u.role === 'Master') || INITIAL_SYSTEM_USERS[0];
     }
 
     if (!isAuthenticated || !authenticatedUser) {
@@ -76,7 +105,7 @@ function LoginForm() {
       return;
     }
 
-    // Set auth session cookie (valid for 24h)
+    // 5. Set session cookie and storage strictly for the matched user
     document.cookie = `rocket_session=${encodeURIComponent(
       authenticatedUser.id
     )}; path=/; max-age=86400; SameSite=Lax`;
@@ -86,8 +115,8 @@ function LoginForm() {
     } catch {}
 
     setTimeout(() => {
-      router.push(callbackUrl);
-    }, 400);
+      window.location.href = callbackUrl;
+    }, 150);
   };
 
   const handleFillQuickDemo = (userEmail: string, userPass: string) => {
@@ -218,10 +247,24 @@ function LoginForm() {
             </button>
             <button
               type="button"
-              onClick={() => handleFillQuickDemo('henrique.admin@rocketclub.com.br', '123456')}
+              onClick={() => handleFillQuickDemo('admin@rocketclub.com.br', '123456')}
               className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-all"
             >
               🛡️ Administrador
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFillQuickDemo('editor@rocketclub.com.br', '123456')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 transition-all"
+            >
+              📝 Editor
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFillQuickDemo('cliente@rocketclub.com.br', '123456')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+            >
+              🚀 Mentorado VIP
             </button>
           </div>
         </div>

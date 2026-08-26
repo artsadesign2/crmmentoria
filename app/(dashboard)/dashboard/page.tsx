@@ -38,6 +38,8 @@ import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { DbTransaction } from '@/lib/financial-db';
 import { DbEvent } from '@/lib/events-db';
 import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth-context';
+import { ROLE_HIERARCHIES } from '@/lib/permissions';
 import { sendEvolutionWhatsAppMessage } from '@/lib/evolution-api';
 
 interface BirthdayMember {
@@ -66,6 +68,7 @@ const MONTH_SHORTS = [
 
 export default function DashboardPage() {
   const { isLightMode, activePalette } = useTheme();
+  const { currentUser, currentRole, isMaster, isAdmin } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [transactions, setTransactions] = useState<DbTransaction[]>([]);
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -242,13 +245,34 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <Badge variant="default" className="py-1">
-              <Sparkles size={14} className="mr-1.5" /> Painel Executivo & Gestão do Ecossistema
+              <Sparkles size={14} className="mr-1.5" /> {currentUser.department || 'Painel Executivo & Gestão'} • Nível {ROLE_HIERARCHIES[currentRole]?.rank || 1} de 5 ({currentRole})
             </Badge>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-100 tracking-tight">
-              Cockpit do <span className="theme-gradient-text">Comandante</span> 🚀
+              {currentRole === 'Master' ? (
+                <>
+                  Cockpit do <span className="theme-gradient-text">Comandante</span> 🚀
+                </>
+              ) : currentRole === 'Administrador' ? (
+                <>
+                  Painel de <span className="theme-gradient-text">Gestão & Operações</span> 🛡️
+                </>
+              ) : currentRole === 'Editor' ? (
+                <>
+                  Central de <span className="theme-gradient-text">Conteúdo & Academy</span> 📝
+                </>
+              ) : currentRole === 'Cliente' ? (
+                <>
+                  Portal do <span className="theme-gradient-text">Mentorado VIP</span> 🚀
+                </>
+              ) : (
+                <>
+                  Área do <span className="theme-gradient-text">Tripulante</span> 🛸
+                </>
+              )}
             </h1>
             <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
-              Gestão estratégica de alto nível: acompanhe a evolução de{' '}
+              Bem-vindo, <strong style={{ color: activePalette.tokens.primary }}>{currentUser.name}</strong>!{' '}
+              Acompanhe a evolução de{' '}
               <strong style={{ color: activePalette.tokens.primary }}>
                 {loading ? '...' : totalMembers} empresários
               </strong>{' '}
