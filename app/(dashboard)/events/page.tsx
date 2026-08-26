@@ -31,12 +31,13 @@ import {
   CheckSquare,
   Square,
   ShieldCheck,
+  Briefcase,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
-import { EventItem, MOCK_EVENTS, INITIAL_MEMBERS, Member } from '@/lib/mock-data';
+import { EventItem, MOCK_EVENTS, INITIAL_MEMBERS, Member, Lead, MOCK_LEADS, LEAD_STAGES } from '@/lib/mock-data';
 import { fetchAllMembersFromDb } from '@/lib/neon-db';
 import { useNotifications } from '@/lib/notification-context';
 import { useTheme } from '@/lib/theme-context';
@@ -53,6 +54,7 @@ export default function EventsPage() {
   const [confirmedEventIds, setConfirmedEventIds] = useState<string[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'UPCOMING' | 'LIVE' | 'FINISHED'>('ALL');
   const [membersList, setMembersList] = useState<Member[]>(INITIAL_MEMBERS);
+  const [leadsList, setLeadsList] = useState<Lead[]>(MOCK_LEADS);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -87,12 +89,13 @@ export default function EventsPage() {
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [isConfirmBroadcastModalOpen, setIsConfirmBroadcastModalOpen] = useState(false);
   const [broadcastTargetEvent, setBroadcastTargetEvent] = useState<EventItem | null>(null);
+  const [audienceType, setAudienceType] = useState<'mentees' | 'leads'>('mentees');
   const [customBroadcastMsg, setCustomBroadcastMsg] = useState('');
   const [broadcastDelayMs, setBroadcastDelayMs] = useState(2000);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [sendToAll, setSendToAll] = useState(true);
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [broadcastProgress, setBroadcastProgress] = useState<{
     current: number;
     total: number;
@@ -103,7 +106,7 @@ export default function EventsPage() {
     isFinished: boolean;
   } | null>(null);
 
-  // Load confirmed RSVPs and members on mount
+  // Load confirmed RSVPs, members, and leads on mount
   useEffect(() => {
     try {
       const savedRsvps = localStorage.getItem('rocket_club_confirmed_rsvps');
@@ -111,6 +114,9 @@ export default function EventsPage() {
 
       const savedEvents = localStorage.getItem('rocket_club_events_list');
       if (savedEvents) setEvents(JSON.parse(savedEvents));
+
+      const savedLeads = localStorage.getItem('rocket_club_crm_leads');
+      if (savedLeads) setLeadsList(JSON.parse(savedLeads));
     } catch (e) {}
 
     fetchAllMembersFromDb().then((dbMembers) => {
@@ -191,36 +197,84 @@ export default function EventsPage() {
     setBroadcastTargetEvent(event);
     setBroadcastProgress(null);
     setCustomBroadcastMsg('');
+    setAudienceType('mentees'); // Mentorados é SEMPRE o padrão
     setSendToAll(true);
-    setSelectedMemberIds(membersList.map((m) => m.id));
-    setMemberSearchQuery('');
+    setSelectedRecipientIds(membersList.map((m) => m.id));
+    setSearchQuery('');
     setIsConfirmBroadcastModalOpen(false);
     setIsBroadcastModalOpen(true);
   };
 
-  const handleToggleMember = (memberId: string) => {
-    if (selectedMemberIds.includes(memberId)) {
-      setSelectedMemberIds(selectedMemberIds.filter((id) => id !== memberId));
+  const handleSwitchAudience = (type: 'mentees' | 'leads') => {
+    setAudienceType(type);
+    setSendToAll(true);
+    if (type === 'mentees') {
+      setSelectedRecipientIds(membersList.map((m) => m.id));
     } else {
-      setSelectedMemberIds([...selectedMemberIds, memberId]);
+      setSelectedRecipientIds(leadsList.map((l) => l.id));
     }
   };
 
-  const handleSelectAllMembers = () => {
-    setSelectedMemberIds(membersList.map((m) => m.id));
+  const handleToggleRecipient = (id: string) => {
+    if (selectedRecipientIds.includes(id)) {
+      setSelectedRecipientIds(selectedRecipientIds.filter((item) => item !== id));
+    } else {
+      setSelectedRecipientIds([...selectedRecipientIds, id]);
+    }
   };
 
-  const handleDeselectAllMembers = () => {
-    setSelectedMemberIds([]);
+  const handleSelectAll = () => {
+    if (audienceType === 'mentees') {
+      setSelectedRecipientIds(membersList.map((m) => m.id));
+    } else {
+      setSelectedRecipientIds(leadsList.map((l) => l.id));
+    }
   };
+
+  const handleDeselectAll = () => {
+    setSelectedRecipientIds([]);
+  };
+
+  // Get standardized recipient objects
+  const getActiveRecipientsList = () => {
+    if (audienceType === 'mentees') {
+      return membersList.map((m) => ({
+        id: m.id,
+        name: m.name,
+        company: m.companyName || 'Mentorado',
+        phone: m.phone,
+        specialty: m.specialty || 'Mentoria',
+        tag: m.status ? `Mentorado ${m.status}` : 'Mentorado',
+        tagColor: 'bg-emerald-500/20 text-emerald-300',
+      }));
+    }
+    return leadsList.map((l) => ({
+      id: l.id,
+      name: l.name,
+      company: l.company || 'Lead CRM',
+      phone: l.phone,
+      specialty: l.specialty || 'Prospect',
+      tag: LEAD_STAGES.find((s) => s.id === l.stage)?.title || 'Lead CRM',
+      tagColor: 'bg-blue-500/20 text-blue-300',
+    }));
+  };
+
+  const activeRecipients = getActiveRecipientsList();
+
+  const filteredRecipients = activeRecipients.filter((r) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      r.name.toLowerCase().includes(q) ||
+      r.company.toLowerCase().includes(q) ||
+      (r.phone && r.phone.includes(q))
+    );
+  });
+
+  const selectedCount = sendToAll ? activeRecipients.length : selectedRecipientIds.length;
 
   const handleRequestBroadcast = () => {
-    const recipients = sendToAll
-      ? membersList
-      : membersList.filter((m) => selectedMemberIds.includes(m.id));
-
-    if (recipients.length === 0) {
-      setToastMsg('Selecione ao menos 1 mentorado para receber a mensagem.');
+    if (selectedCount === 0) {
+      setToastMsg(`Selecione ao menos 1 ${audienceType === 'mentees' ? 'mentorado' : 'lead'} para o disparo.`);
       setTimeout(() => setToastMsg(null), 3000);
       return;
     }
@@ -230,12 +284,12 @@ export default function EventsPage() {
   const handleStartBroadcast = async () => {
     if (!broadcastTargetEvent) return;
 
-    const recipientsToSend = sendToAll
-      ? membersList
-      : membersList.filter((m) => selectedMemberIds.includes(m.id));
+    const listToSend = sendToAll
+      ? activeRecipients
+      : activeRecipients.filter((r) => selectedRecipientIds.includes(r.id));
 
-    if (recipientsToSend.length === 0) {
-      setToastMsg('Nenhum mentorado selecionado para o disparo.');
+    if (listToSend.length === 0) {
+      setToastMsg('Nenhum destinatário válido selecionado.');
       setTimeout(() => setToastMsg(null), 3000);
       return;
     }
@@ -257,7 +311,7 @@ export default function EventsPage() {
     });
 
     const res = await sendWhatsAppBroadcastToAll(
-      recipientsToSend,
+      listToSend,
       messageToUse,
       {
         delayMs: broadcastDelayMs,
@@ -372,18 +426,6 @@ export default function EventsPage() {
   });
 
   const totalAttendeesAll = events.reduce((acc, ev) => acc + ev.attendeesCount, 0);
-
-  // Filtered mentees in the selection modal
-  const filteredMenteesForBroadcast = membersList.filter((m) => {
-    const q = memberSearchQuery.toLowerCase();
-    return (
-      m.name.toLowerCase().includes(q) ||
-      (m.companyName && m.companyName.toLowerCase().includes(q)) ||
-      (m.phone && m.phone.includes(q))
-    );
-  });
-
-  const targetRecipientsCount = sendToAll ? membersList.length : selectedMemberIds.length;
 
   return (
     <div className="space-y-6">
@@ -962,20 +1004,58 @@ export default function EventsPage() {
                   📅 {new Date(broadcastTargetEvent.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' })} • 📍 {broadcastTargetEvent.location}
                 </p>
               </div>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs px-2.5 py-1">
-                👥 {targetRecipientsCount} Selecionados
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs px-2.5 py-1 font-bold">
+                👥 {selectedCount} Selecionados
               </Badge>
+            </div>
+
+            {/* Audience Segment Switcher: Mentorados (Padrão) vs Leads */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                Selecione o Público-Alvo do Disparo:
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-[#0A0E1A] rounded-xl border border-[#1F293D]">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchAudience('mentees')}
+                  disabled={isBroadcasting}
+                  className={`py-2 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    audienceType === 'mentees'
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 shadow-md'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                  }`}
+                >
+                  <Users size={14} />
+                  <span>🎯 Mentorados Rocket Club ({membersList.length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchAudience('leads')}
+                  disabled={isBroadcasting}
+                  className={`py-2 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    audienceType === 'leads'
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 shadow-md'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-[#131A2B]'
+                  }`}
+                >
+                  <Briefcase size={14} />
+                  <span>💼 Leads & Prospects CRM ({leadsList.length})</span>
+                </button>
+              </div>
             </div>
 
             {/* Recipient Mode Selector: All vs Custom Selection */}
             <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-200 block text-xs">Destinatários do Disparo</span>
+                  <span className="font-bold text-slate-200 block text-xs">
+                    {audienceType === 'mentees' ? 'Mentorados Destinatários' : 'Leads Destinatários'}
+                  </span>
                   <span className="text-[10px] text-slate-400">
                     {sendToAll
-                      ? `Enviando para todos os ${membersList.length} mentorados da base`
-                      : `Seleção personalizada: ${selectedMemberIds.length} de ${membersList.length} mentorados`}
+                      ? `Enviando para todos os ${activeRecipients.length} ${audienceType === 'mentees' ? 'mentorados' : 'leads'}`
+                      : `Seleção personalizada: ${selectedRecipientIds.length} de ${activeRecipients.length} ${audienceType === 'mentees' ? 'mentorados' : 'leads'}`}
                   </span>
                 </div>
 
@@ -989,7 +1069,7 @@ export default function EventsPage() {
                         const checked = e.target.checked;
                         setSendToAll(checked);
                         if (checked) {
-                          setSelectedMemberIds(membersList.map((m) => m.id));
+                          setSelectedRecipientIds(activeRecipients.map((r) => r.id));
                         }
                       }}
                       className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 bg-[#0B0F17] border-[#1F293D] cursor-pointer"
@@ -999,7 +1079,7 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              {/* Custom Mentee Multi-Select Table / List when sendToAll is false */}
+              {/* Custom Mentee / Lead Multi-Select Table when sendToAll is false */}
               {!sendToAll && (
                 <div className="pt-2 border-t border-slate-800/40 space-y-2">
                   {/* Search and Quick Action Buttons */}
@@ -1008,39 +1088,41 @@ export default function EventsPage() {
                       <Search size={13} className="absolute left-3 top-2.5 text-slate-500" />
                       <input
                         type="text"
-                        value={memberSearchQuery}
-                        onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        placeholder="Buscar por nome, empresa ou telefone..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={`Buscar ${audienceType === 'mentees' ? 'mentorados' : 'leads'} por nome, empresa ou telefone...`}
                         className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <button
                       type="button"
-                      onClick={handleSelectAllMembers}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-300 font-bold text-[11px] border border-[#1F293D]"
+                      onClick={handleSelectAll}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-300 font-bold text-[11px] border border-[#1F293D] cursor-pointer"
                     >
                       Selecionar Todos
                     </button>
                     <button
                       type="button"
-                      onClick={handleDeselectAllMembers}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-400 font-bold text-[11px] border border-[#1F293D]"
+                      onClick={handleDeselectAll}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-400 font-bold text-[11px] border border-[#1F293D] cursor-pointer"
                     >
                       Desmarcar Todos
                     </button>
                   </div>
 
-                  {/* Scrollable Mentee List */}
+                  {/* Scrollable Recipient List */}
                   <div className="max-h-48 overflow-y-auto space-y-1 p-1 bg-[#070A12] rounded-xl border border-[#1F293D]">
-                    {filteredMenteesForBroadcast.length === 0 ? (
-                      <p className="p-3 text-center text-slate-500 text-xs">Nenhum mentorado encontrado.</p>
+                    {filteredRecipients.length === 0 ? (
+                      <p className="p-3 text-center text-slate-500 text-xs">
+                        Nenhum {audienceType === 'mentees' ? 'mentorado' : 'lead'} encontrado com este filtro.
+                      </p>
                     ) : (
-                      filteredMenteesForBroadcast.map((mentee) => {
-                        const isSelected = selectedMemberIds.includes(mentee.id);
+                      filteredRecipients.map((recipient) => {
+                        const isSelected = selectedRecipientIds.includes(recipient.id);
                         return (
                           <div
-                            key={mentee.id}
-                            onClick={() => !isBroadcasting && handleToggleMember(mentee.id)}
+                            key={recipient.id}
+                            onClick={() => !isBroadcasting && handleToggleRecipient(recipient.id)}
                             className={`p-2 rounded-lg flex items-center justify-between gap-2 cursor-pointer transition-all ${
                               isSelected
                                 ? 'bg-emerald-500/10 border border-emerald-500/30 text-slate-100'
@@ -1055,22 +1137,22 @@ export default function EventsPage() {
                                 className="w-3.5 h-3.5 rounded text-emerald-500 bg-[#0B0F17] border-[#1F293D] pointer-events-none"
                               />
                               <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-[10px] text-amber-400 shrink-0">
-                                {mentee.name[0]}
+                                {recipient.name[0]}
                               </div>
                               <div className="truncate text-left">
-                                <strong className="text-xs text-slate-200 block truncate">{mentee.name}</strong>
+                                <strong className="text-xs text-slate-200 block truncate">{recipient.name}</strong>
                                 <span className="text-[10px] text-slate-400 truncate block">
-                                  {mentee.companyName || 'Mentorado'} • {mentee.phone || 'Sem fone'}
+                                  {recipient.company} • {recipient.phone || 'Sem fone'}
                                 </span>
                               </div>
                             </div>
 
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                isSelected ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                                isSelected ? recipient.tagColor : 'bg-slate-800 text-slate-400'
                               }`}
                             >
-                              {isSelected ? 'Incluído' : 'Não selecionado'}
+                              {recipient.tag}
                             </span>
                           </div>
                         );
@@ -1098,7 +1180,7 @@ export default function EventsPage() {
                     type="button"
                     onClick={() => setBroadcastDelayMs(preset.ms)}
                     disabled={isBroadcasting}
-                    className={`px-2.5 py-1 rounded-lg border transition-all ${
+                    className={`px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                       broadcastDelayMs === preset.ms
                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 font-bold'
                         : 'bg-[#131926] text-slate-400 border-[#1F293D] hover:text-slate-200'
@@ -1114,7 +1196,7 @@ export default function EventsPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-300 block">
-                  Mensagem que será enviada individualmente para cada mentorado:
+                  Mensagem personalizada com dados do evento:
                 </label>
                 <span className="text-[10px] text-slate-500 font-mono">Tags personalizadas automaticamente</span>
               </div>
@@ -1128,8 +1210,8 @@ export default function EventsPage() {
                         INITIAL_DEFAULT_TEMPLATES.find((t) => t.id === 'event_announcement')?.content ||
                         '',
                     {
-                      nome: 'Rodrigo Silva',
-                      empresa: 'Alpha Scale',
+                      nome: audienceType === 'mentees' ? 'Carlos Eduardo Silva' : 'Dr. Fernando Albuquerque',
+                      empresa: audienceType === 'mentees' ? 'Silva Group' : 'Clínica Albuquerque',
                       eventoTitulo: broadcastTargetEvent.title,
                       eventoData: new Date(broadcastTargetEvent.date).toLocaleDateString('pt-BR', {
                         day: '2-digit',
@@ -1204,7 +1286,7 @@ export default function EventsPage() {
               <button
                 type="button"
                 onClick={handleRequestBroadcast}
-                disabled={isBroadcasting || targetRecipientsCount === 0}
+                disabled={isBroadcasting || selectedCount === 0}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isBroadcasting ? (
@@ -1215,7 +1297,7 @@ export default function EventsPage() {
                 ) : (
                   <>
                     <Send size={14} />
-                    <span>Iniciar Disparo ({targetRecipientsCount} Mentorados)</span>
+                    <span>Iniciar Disparo ({selectedCount} {audienceType === 'mentees' ? 'Mentorados' : 'Leads'})</span>
                   </>
                 )}
               </button>
@@ -1243,7 +1325,9 @@ export default function EventsPage() {
               <p className="text-slate-300 leading-relaxed text-xs">
                 Você está prestes a disparar o convite do evento{' '}
                 <strong className="text-emerald-400">"{broadcastTargetEvent.title}"</strong> para{' '}
-                <strong className="text-white underline">{targetRecipientsCount} mentorado(s) selecionado(s)</strong>.
+                <strong className="text-white underline">
+                  {selectedCount} {audienceType === 'mentees' ? 'mentorado(s) oficial(is)' : 'lead(s) do CRM'} selecionado(s)
+                </strong>.
               </p>
               <div className="pt-2 text-[11px] text-slate-400 flex items-center gap-4">
                 <span>⏱️ Intervalo Anti-Ban: <strong>{(broadcastDelayMs / 1000).toFixed(1)}s</strong></span>
@@ -1255,7 +1339,7 @@ export default function EventsPage() {
               <button
                 type="button"
                 onClick={() => setIsConfirmBroadcastModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D]"
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D] cursor-pointer"
               >
                 Voltar e Ajustar
               </button>
@@ -1266,7 +1350,7 @@ export default function EventsPage() {
                   setIsConfirmBroadcastModalOpen(false);
                   await handleStartBroadcast();
                 }}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 hover:scale-105 transition-all flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Send size={14} />
                 <span>Sim, Iniciar Disparo Agora 🚀</span>
