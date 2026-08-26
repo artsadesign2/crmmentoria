@@ -58,8 +58,10 @@ import { generatePdfDirectlyInPage } from '@/lib/pdf-export';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { MenteeSheet } from '@/components/mentee-sheet';
 import { maskPhone } from '@/lib/masks';
+import { useTheme } from '@/lib/theme-context';
 
 export default function MentoradosPage() {
+  const { isLightMode, activePalette } = useTheme();
   const [members, setMembers] = useState<(Member & { excludeFromBook?: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -440,14 +442,14 @@ export default function MentoradosPage() {
               <Users size={14} className="mr-1.5" /> Fichas dos Mentorados
             </Badge>
             <span className="text-xs text-slate-500">•</span>
-            <span className="text-xs font-semibold text-yellow-400">
+            <span className="text-xs font-semibold text-theme-primary">
               Edição Instantânea & Drag & Drop
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight">
-            Base de <span className="gold-gradient-text">Mentorados Rocket Club</span>
+            Base de <span className="theme-gradient-text">Mentorados & Membros</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mt-0.5">
+          <p className={`text-xs sm:text-sm max-w-2xl mt-0.5 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
             Acompanhe o ciclo de evolução, acesse e edite as fichas completas diretamente ao clicar e organize no quadro drag & drop.
           </p>
         </div>
@@ -459,9 +461,17 @@ export default function MentoradosPage() {
               onClick={() => setViewMode('kanban')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === 'kanban'
-                  ? 'bg-yellow-500 text-slate-950 shadow-md'
+                  ? 'shadow-md font-black'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
+              style={
+                viewMode === 'kanban'
+                  ? {
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }
+                  : {}
+              }
             >
               <KanbanIcon size={14} />
               <span>Quadro Kanban</span>
@@ -470,9 +480,17 @@ export default function MentoradosPage() {
               onClick={() => setViewMode('grid')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === 'grid'
-                  ? 'bg-yellow-500 text-slate-950 shadow-md'
+                  ? 'shadow-md font-black'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
+              style={
+                viewMode === 'grid'
+                  ? {
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }
+                  : {}
+              }
             >
               <LayoutGrid size={14} />
               <span>Fichas em Grid</span>
@@ -484,13 +502,18 @@ export default function MentoradosPage() {
             disabled={isGeneratingPdf}
             className="px-4 py-2.5 rounded-xl bg-[#111728] hover:bg-[#1E293B] text-slate-200 border border-[#1F293D] font-bold text-xs shadow-md transition-all flex items-center gap-2 shrink-0 disabled:opacity-50"
           >
-            {isGeneratingPdf ? <Loader2 size={15} className="animate-spin text-yellow-400" /> : <FileText size={15} className="text-yellow-400" />}
+            {isGeneratingPdf ? <Loader2 size={15} className="animate-spin text-theme-primary" /> : <FileText size={15} className="text-theme-primary" />}
             <span>Members Book (PDF)</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+            className="px-4 py-2.5 rounded-xl font-extrabold text-xs shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+            style={{
+              backgroundColor: activePalette.tokens.primary,
+              color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+            }}
           >
             <Plus size={16} />
             <span>Novo Mentorado</span>

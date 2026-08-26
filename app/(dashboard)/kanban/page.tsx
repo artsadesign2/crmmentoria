@@ -14,7 +14,7 @@ export default function KanbanRedirect() {
 
   return (
     <div className="h-96 flex flex-col items-center justify-center space-y-3 text-slate-400">
-      <Loader2 size={32} className="animate-spin text-yellow-400" />
+      <Loader2 size={32} className="animate-spin text-theme-primary" />
       <span className="text-sm font-semibold">Redirecionando para o CRM de Novos Leads & Follow-ups...</span>
     </div>
   );

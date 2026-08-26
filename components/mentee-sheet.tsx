@@ -1335,7 +1335,12 @@ export function MenteeSheet({
               type="button"
               onClick={() => handleFormSubmit()}
               disabled={isSaving}
-              className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 shrink-0"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-extrabold text-xs shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 shrink-0"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+              }}
             >
               <Save size={14} />
               <span>{isSaving ? 'Salvando...' : 'Salvar Alterações'}</span>

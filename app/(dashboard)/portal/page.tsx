@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { useTheme } from '@/lib/theme-context';
 import { generateRocketAiDiagnosis, DiagnosisReport } from '@/lib/ai-copilot';
+import { DEFAULT_TENANT } from '@/lib/tenant';
 
 export default function MenteePortalPage() {
   const { isLightMode, activePalette } = useTheme();
@@ -39,6 +40,7 @@ export default function MenteePortalPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'goals' | 'academy' | 'financial' | 'diagnosis'>('overview');
   const [aiReport, setAiReport] = useState<DiagnosisReport | null>(null);
   const [generatingAi, setGeneratingAi] = useState(false);
+  const [brandName, setBrandName] = useState(DEFAULT_TENANT.company.tradeName);
 
   // Dynamic state of mentee goals
   const [menteeGoals, setMenteeGoals] = useState<
@@ -48,10 +50,15 @@ export default function MenteePortalPage() {
     { id: 'g2', title: 'Estruturar script de qualificação de leads com SDR', category: 'Comercial', xp: 350, done: true, deadline: 'Semana 2' },
     { id: 'g3', title: 'Testar e validar nova oferta de Upsell para base ativa', category: 'Oferta', xp: 250, done: false, deadline: 'Semana 3' },
     { id: 'g4', title: 'Documentar fluxo de Onboarding no Notion / CRM', category: 'CS / LTV', xp: 150, done: false, deadline: 'Semana 4' },
-    { id: 'g5', title: 'Concluir módulo de Tráfego Perpétuo na Rocket Academy', category: 'Academy', xp: 300, done: false, deadline: 'Semana 4' },
+    { id: 'g5', title: 'Concluir módulo de Tráfego Perpétuo na Academy', category: 'Academy', xp: 300, done: false, deadline: 'Semana 4' },
   ]);
 
   useEffect(() => {
+    try {
+      const savedName = localStorage.getItem('rocket_club_company_tradename');
+      if (savedName) setBrandName(savedName);
+    } catch {}
+
     async function load() {
       try {
         const res = await fetch('/api/members');
@@ -132,7 +139,7 @@ export default function MenteePortalPage() {
                   '🚀'
                 )}
               </div>
-              <span className="absolute -bottom-1 -right-1 text-base" title="Comandante Ativo">
+              <span className="absolute -bottom-1 -right-1 text-base" title="Mentorado Ativo">
                 ⚡
               </span>
             </div>
@@ -148,7 +155,7 @@ export default function MenteePortalPage() {
                     border: `1px solid ${activePalette.tokens.badgeBorder}`,
                   }}
                 >
-                  🛸 Comandante Rocket
+                  ⭐ Membro em Aceleração
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -162,7 +169,7 @@ export default function MenteePortalPage() {
                   {totalXp} XP Acumulado
                 </span>
                 <span className="text-slate-600">•</span>
-                <span className="text-slate-400">Próxima Patente: Almirante de Frota (2.500 XP)</span>
+                <span className="text-slate-400">Próxima Patente: Diamante (2.500 XP)</span>
               </div>
             </div>
           </div>
@@ -176,7 +183,7 @@ export default function MenteePortalPage() {
               <select
                 value={selectedMemberId}
                 onChange={(e) => setSelectedMemberId(e.target.value)}
-                className="bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-yellow-500"
+                className="bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-theme-primary"
               >
                 {members.map((m) => (
                   <option key={m.id} value={m.id} className="bg-[#111728]">
@@ -193,10 +200,11 @@ export default function MenteePortalPage() {
               style={{
                 backgroundColor: activePalette.tokens.primary,
                 color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
               }}
             >
               <Sparkles size={14} />
-              <span>{generatingAi ? 'Diagnosticando...' : 'Rocket AI Co-Pilot'}</span>
+              <span>{generatingAi ? 'Diagnosticando...' : 'AI Co-Pilot de Mentoria'}</span>
             </button>
           </div>
         </div>
@@ -226,8 +234,8 @@ export default function MenteePortalPage() {
         {[
           { id: 'overview', label: '🚀 Visão Geral & Mural', icon: Rocket },
           { id: 'goals', label: '🎯 Metas & Sprints do Ciclo', icon: Target },
-          { id: 'academy', label: '🎓 Rocket Academy', icon: BookOpen },
-          { id: 'diagnosis', label: '🤖 Diagnóstico Rocket AI', icon: Sparkles },
+          { id: 'academy', label: '🎓 Academy & Aulas', icon: BookOpen },
+          { id: 'diagnosis', label: '🤖 Diagnóstico & IA', icon: Sparkles },
           { id: 'financial', label: '💳 Mensalidades & Pix', icon: DollarSign },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -292,14 +300,23 @@ export default function MenteePortalPage() {
                   key={idx}
                   className={`p-4 rounded-2xl border transition-all flex items-start gap-3.5 ${
                     badge.unlocked
-                      ? 'bg-[#0B0F17] border-yellow-500/30 hover:border-yellow-500/60 shadow-lg'
+                      ? 'bg-[#0B0F17] shadow-lg'
                       : 'bg-[#0B0F17]/40 border-[#1F293D] opacity-60'
                   }`}
+                  style={
+                    badge.unlocked
+                      ? {
+                          borderColor: activePalette.tokens.primary + '50',
+                        }
+                      : {}
+                  }
                 >
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border ${
-                      badge.unlocked ? 'bg-yellow-500/15 border-yellow-500/40 shadow' : 'bg-slate-800 border-slate-700'
-                    }`}
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border"
+                    style={{
+                      backgroundColor: badge.unlocked ? activePalette.tokens.badgeBg : '#1E293B',
+                      borderColor: badge.unlocked ? activePalette.tokens.badgeBorder : '#334155',
+                    }}
                   >
                     {badge.icon}
                   </div>
@@ -318,13 +335,13 @@ export default function MenteePortalPage() {
             </div>
           </div>
 
-          {/* Matriz dos 5 Pilares Rocket */}
+          {/* Matriz dos 5 Pilares de Negócios */}
           <div className="p-5 sm:p-6 rounded-3xl bg-[#111728]/80 border border-[#1F293D] space-y-4">
             <h3
               className="text-xs font-black uppercase tracking-wider flex items-center gap-2"
               style={{ color: activePalette.tokens.primary }}
             >
-              <TrendingUp size={16} /> Maturidade nos 5 Pilares Rocket
+              <TrendingUp size={16} /> Maturidade nos 5 Pilares Estratégicos
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
@@ -366,7 +383,14 @@ export default function MenteePortalPage() {
                 Clique nas tarefas para marcar como concluídas e acumular XP.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-yellow-400 bg-yellow-500/10 px-3 py-1 rounded-xl border border-yellow-500/20">
+            <span
+              className="text-xs font-mono font-bold px-3 py-1 rounded-xl border"
+              style={{
+                backgroundColor: activePalette.tokens.badgeBg,
+                color: activePalette.tokens.primary,
+                borderColor: activePalette.tokens.badgeBorder,
+              }}
+            >
               +{completedGoalsCount * 250} XP Ganhos
             </span>
           </div>
@@ -418,7 +442,12 @@ export default function MenteePortalPage() {
                   >
                     {goal.done ? 'Concluída' : 'Em Execução'}
                   </span>
-                  <span className="font-mono text-xs font-black text-yellow-400">+{goal.xp} XP</span>
+                  <span
+                    className="font-mono text-xs font-black"
+                    style={{ color: activePalette.tokens.primary }}
+                  >
+                    +{goal.xp} XP
+                  </span>
                 </div>
               </div>
             ))}
@@ -426,7 +455,7 @@ export default function MenteePortalPage() {
         </div>
       )}
 
-      {/* TAB 3: ROCKET ACADEMY */}
+      {/* TAB 3: ACADEMY */}
       {activeTab === 'academy' && (
         <div className="p-5 sm:p-6 rounded-3xl bg-[#111728]/80 border border-[#1F293D] space-y-5">
           <div className="flex items-center justify-between">
@@ -483,10 +512,17 @@ export default function MenteePortalPage() {
             ].map((lesson, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] hover:border-yellow-500/40 transition-all flex flex-col justify-between space-y-3"
+                className="p-4 rounded-2xl bg-[#0B0F17] border border-[#1F293D] hover:border-slate-500 transition-all flex flex-col justify-between space-y-3"
               >
                 <div className="space-y-1.5">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-yellow-500/10 text-yellow-300 border border-yellow-500/20">
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                    }}
+                  >
                     {lesson.tag}
                   </span>
                   <h4 className="text-xs sm:text-sm font-extrabold text-slate-100">{lesson.title}</h4>
@@ -503,15 +539,22 @@ export default function MenteePortalPage() {
                     </div>
                     <div className="w-full h-1.5 bg-[#1F293D] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-yellow-400"
-                        style={{ width: `${lesson.progress}%` }}
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${lesson.progress}%`,
+                          backgroundColor: activePalette.tokens.primary,
+                        }}
                       />
                     </div>
                   </div>
 
                   <Link
                     href="/academy"
-                    className="px-3 py-1.5 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs font-bold flex items-center gap-1 shrink-0"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 shadow-sm"
+                    style={{
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }}
                   >
                     <Play size={12} />
                     <span>Assistir</span>
@@ -523,7 +566,7 @@ export default function MenteePortalPage() {
         </div>
       )}
 
-      {/* TAB 4: DIAGNÓSTICO ROCKET AI */}
+      {/* TAB 4: DIAGNÓSTICO IA */}
       {activeTab === 'diagnosis' && (
         <div className="space-y-6">
           {aiReport ? (
@@ -541,7 +584,7 @@ export default function MenteePortalPage() {
                   </div>
                   <div>
                     <h3 className="text-sm sm:text-base font-black text-slate-100">
-                      Relatório Executivo Rocket AI Co-Pilot
+                      Relatório Executivo AI Co-Pilot
                     </h3>
                     <p className="text-xs text-slate-400">
                       Diagnóstico 360° gerado para {aiReport.companyName}
@@ -554,8 +597,14 @@ export default function MenteePortalPage() {
               </div>
 
               {/* Resumo */}
-              <div className="p-4 rounded-2xl bg-[#0B0F17] border border-yellow-500/30 space-y-1.5">
-                <span className="text-[10px] font-black uppercase text-yellow-400 tracking-wider block">
+              <div
+                className="p-4 rounded-2xl bg-[#0B0F17] border space-y-1.5"
+                style={{ borderColor: activePalette.tokens.primary + '50' }}
+              >
+                <span
+                  className="text-[10px] font-black uppercase tracking-wider block"
+                  style={{ color: activePalette.tokens.primary }}
+                >
                   Parecer do Co-Pilot:
                 </span>
                 <p className="text-xs text-slate-200 leading-relaxed">{aiReport.executiveSummary}</p>
@@ -574,13 +623,23 @@ export default function MenteePortalPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span className="font-extrabold text-xs text-slate-100">{act.title}</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                          style={{
+                            backgroundColor: activePalette.tokens.badgeBg,
+                            color: activePalette.tokens.primary,
+                            border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                          }}
+                        >
                           +{act.xpReward} XP
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 leading-relaxed">{act.description}</p>
                       {act.recommendedLesson && (
-                        <div className="pt-2 border-t border-[#1F293D] flex items-center justify-between text-[11px] text-yellow-400">
+                        <div
+                          className="pt-2 border-t border-[#1F293D] flex items-center justify-between text-[11px]"
+                          style={{ color: activePalette.tokens.primary }}
+                        >
                           <span>🎓 Aula Sugerida: {act.recommendedLesson.title}</span>
                           <Link href="/academy" className="underline font-bold">
                             Abrir Aula
@@ -594,16 +653,21 @@ export default function MenteePortalPage() {
             </div>
           ) : (
             <div className="p-12 rounded-3xl bg-[#111728]/50 border border-[#1F293D] text-center space-y-3">
-              <Sparkles size={36} className="mx-auto text-yellow-400" />
+              <Sparkles size={36} className="mx-auto" style={{ color: activePalette.tokens.primary }} />
               <h3 className="text-base font-bold text-slate-200">Nenhum diagnóstico gerado ainda</h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
                 Clique no botão abaixo para gerar uma análise inteligente personalizada com base nos 5 pilares do seu negócio.
               </p>
               <button
                 onClick={handleRunAiDiagnosis}
-                className="px-5 py-2.5 rounded-xl font-bold text-xs bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow-lg shadow-yellow-500/20 transition-all"
+                className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                }}
               >
-                Gerar Diagnóstico Rocket AI
+                Gerar Diagnóstico AI Co-Pilot
               </button>
             </div>
           )}
@@ -634,19 +698,32 @@ export default function MenteePortalPage() {
             <div className="p-5 rounded-2xl bg-[#0B0F17] border border-[#1F293D] space-y-2">
               <span className="text-xs text-slate-400">Valor da Mensalidade:</span>
               <div className="text-2xl font-black text-slate-100">R$ 5.000,00</div>
-              <p className="text-[11px] text-slate-500">Ciclo Anual Rocket Club VIP</p>
+              <p className="text-[11px] text-slate-500">Ciclo Anual de Aceleração</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-[#0B0F17] border border-yellow-500/30 space-y-3 md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div
+              className="p-5 rounded-2xl bg-[#0B0F17] border space-y-3 md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4"
+              style={{ borderColor: activePalette.tokens.primary + '50' }}
+            >
               <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs font-bold text-yellow-400 uppercase">Pagamento Instantâneo via Pix:</span>
+                <span
+                  className="text-xs font-bold uppercase"
+                  style={{ color: activePalette.tokens.primary }}
+                >
+                  Pagamento Instantâneo via Pix:
+                </span>
                 <p className="text-xs text-slate-300">
                   Liberação e pontuação de XP imediata na confirmação do pagamento.
                 </p>
               </div>
               <Link
                 href="/financial"
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-black text-xs shadow-lg hover:scale-105 transition-all flex items-center gap-2 shrink-0"
+                className="px-4 py-2.5 rounded-xl font-black text-xs shadow-lg hover:scale-105 transition-all flex items-center gap-2 shrink-0"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                }}
               >
                 <QrCode size={16} />
                 <span>Pagar via Pix / Cartão</span>

@@ -411,18 +411,27 @@ export default function DashboardPage() {
             ].map((item, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-[#131926]/90 border border-[#1F293D] hover:border-yellow-500/40 transition-all flex items-start justify-between gap-3"
+                className="p-4 rounded-2xl bg-[#131926]/90 border border-[#1F293D] hover:border-slate-500 transition-all flex items-start justify-between gap-3"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-xs text-slate-100">{item.mentee}</span>
                     <span className="text-[10px] text-slate-500">({item.company})</span>
                   </div>
-                  <div className="text-xs font-bold text-yellow-400">{item.badge}</div>
+                  <div className="text-xs font-bold" style={{ color: activePalette.tokens.primary }}>
+                    {item.badge}
+                  </div>
                   <p className="text-[11px] text-slate-400">{item.desc}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="px-2 py-0.5 rounded-md bg-yellow-500/15 text-yellow-300 font-mono text-[10px] font-bold border border-yellow-500/30">
+                  <span
+                    className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold border"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
                     {item.xp}
                   </span>
                   <span className="text-[10px] text-slate-500 block mt-1">{item.date}</span>
@@ -439,7 +448,11 @@ export default function DashboardPage() {
               <Calendar size={18} style={{ color: activePalette.tokens.primary }} />
               <span>Próximas Imersões</span>
             </h2>
-            <Link href="/events" className="text-xs font-bold text-yellow-400 hover:underline">
+            <Link
+              href="/events"
+              className="text-xs font-bold hover:underline"
+              style={{ color: activePalette.tokens.primary }}
+            >
               Ver todos
             </Link>
           </div>
@@ -471,10 +484,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Birthday Block (Trimestral) */}
-      <Card className="p-5 sm:p-6 space-y-5 border-yellow-500/20 bg-gradient-to-b from-[#131926] to-[#0B0F17]">
+      <Card
+        className="p-5 sm:p-6 space-y-5 bg-gradient-to-b from-[#131926] to-[#0B0F17]"
+        style={{ borderColor: activePalette.tokens.primary + '30' }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1F293D]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 flex items-center justify-center">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center border"
+              style={{
+                backgroundColor: activePalette.tokens.badgeBg,
+                color: activePalette.tokens.primary,
+                borderColor: activePalette.tokens.badgeBorder,
+              }}
+            >
               <Gift size={18} />
             </div>
             <div>
@@ -498,18 +521,25 @@ export default function DashboardPage() {
                 onClick={() => setSelectedMonthTab(idx)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
                   selectedMonthTab === idx
-                    ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+                    ? 'shadow-md font-extrabold'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-[#131926]'
                 }`}
+                style={
+                  selectedMonthTab === idx
+                    ? {
+                        backgroundColor: activePalette.tokens.primary,
+                        color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                      }
+                    : {}
+                }
               >
                 <span>{tab.name}</span>
                 {tab.isCurrent && (
                   <span
-                    className={`text-[9px] px-1 py-0.2 rounded-full ${
-                      selectedMonthTab === idx
-                        ? 'bg-slate-950/20 text-slate-950 font-black'
-                        : 'bg-yellow-500/20 text-yellow-300'
-                    }`}
+                    className="text-[9px] px-1 py-0.2 rounded-full font-black opacity-80"
+                    style={{
+                      backgroundColor: isLightMode ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
+                    }}
                   >
                     Atual
                   </span>
@@ -522,7 +552,7 @@ export default function DashboardPage() {
         {/* Birthday Members List */}
         {currentMonthBirthdays.length === 0 ? (
           <div className="p-8 rounded-2xl bg-[#0B0F17] border border-[#1F293D] text-center space-y-2">
-            <PartyPopper size={32} className="mx-auto text-yellow-400/50" />
+            <PartyPopper size={32} className="mx-auto opacity-50" style={{ color: activePalette.tokens.primary }} />
             <p className="text-sm font-semibold text-slate-300">
               Nenhum aniversariante cadastrado em {targetMonths[selectedMonthTab]?.name}.
             </p>
@@ -532,11 +562,18 @@ export default function DashboardPage() {
             {currentMonthBirthdays.map((member) => (
               <Card
                 key={member.id}
-                className="p-4 bg-[#0B0F17]/80 hover:bg-[#0B0F17] border-[#1F293D] hover:border-yellow-500/40 transition-all flex flex-col justify-between space-y-3 group"
+                className="p-4 bg-[#0B0F17]/80 hover:bg-[#0B0F17] border-[#1F293D] transition-all flex flex-col justify-between space-y-3 group"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-base shadow border border-yellow-400/50 overflow-hidden shrink-0">
+                    <div
+                      className="w-12 h-12 rounded-2xl font-bold flex items-center justify-center text-base shadow border overflow-hidden shrink-0"
+                      style={{
+                        backgroundColor: activePalette.tokens.badgeBg,
+                        color: activePalette.tokens.primary,
+                        borderColor: activePalette.tokens.badgeBorder,
+                      }}
+                    >
                       {member.avatar ? (
                         <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                       ) : (
@@ -545,7 +582,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="space-y-0.5">
-                      <h3 className="text-sm font-bold text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">
+                      <h3 className="text-sm font-bold text-slate-100 transition-colors line-clamp-1">
                         {member.name}
                       </h3>
                       <p className="text-xs text-slate-400 line-clamp-1">{member.companyName}</p>
@@ -554,7 +591,14 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Day Badge */}
-                  <div className="px-2.5 py-1 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-center shrink-0">
+                  <div
+                    className="px-2.5 py-1 rounded-xl text-center shrink-0 border"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
                     <span className="text-[10px] font-bold uppercase block">{member.monthShort}</span>
                     <span className="text-base font-black leading-none">{member.day}</span>
                   </div>
@@ -563,7 +607,12 @@ export default function DashboardPage() {
                 <div className="pt-2 border-t border-[#1F293D] flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleOpenBirthdayCard(member)}
-                    className="flex-1 py-1.5 px-2.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
+                    className="flex-1 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
                   >
                     <Sparkles size={13} />
                     <span>Gerar Card Comemorativo</span>

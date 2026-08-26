@@ -33,14 +33,14 @@ export async function GET(request: Request) {
 
   const sanitizedFileName = memberId
     ? `Ficha_${members[0]?.name ? members[0].name.replace(/[^a-zA-Z0-9_\-]/g, '_') : 'Mentorado'}.pdf`
-    : `Members_Book_Rocket_Club_${new Date().getFullYear()}.pdf`;
+    : `Members_Book_${new Date().getFullYear()}.pdf`;
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${memberId ? `Ficha — ${members[0]?.name || 'Mentorado'}` : 'Members Book — Rocket Club'}</title>
+  <title>${memberId ? `Ficha — ${members[0]?.name || 'Mentorado'}` : 'Members Book — Programa de Mentoria'}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

@@ -48,6 +48,7 @@ import { Lead, LEAD_STAGES, LeadLog } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { maskPhone } from '@/lib/masks';
+import { useTheme } from '@/lib/theme-context';
 
 interface LeadSheetProps {
   lead: Lead | null;
@@ -63,25 +64,25 @@ const WHATSAPP_TEMPLATES = [
     id: 'diag',
     title: '1. Diagnóstico & Sessão Estratégica',
     text: (name: string, company: string) =>
-      `Olá ${name}! Aqui é da equipe executiva do Rocket Club. Analisamos o perfil da ${company} e identificamos grande potencial de escala. Quando você tem 20 minutos para uma sessão de alinhamento com nosso Comandante? 🚀`,
+      `Olá ${name}! Aqui é da equipe executiva de Mentoria. Analisamos o perfil da ${company} e identificamos grande potencial de escala. Quando você tem 20 minutos para uma sessão estratégica de alinhamento? 🚀`,
   },
   {
     id: 'pitch',
-    title: '2. Envio do Book Executivo',
+    title: '2. Envio da Apresentação Executiva',
     text: (name: string, company: string) =>
-      `Olá ${name}! Segue o material executivo e a esteira de aceleração do Rocket Club preparada para a ${company}. Confira os cases de sucesso e as imersões: https://rocketclub.com.br/apresentacao`,
+      `Olá ${name}! Segue o material executivo e a esteira do Programa de Mentoria preparada para a ${company}. Vamos acelerar seus resultados!`,
   },
   {
     id: 'followup',
     title: '3. Follow-up de Proposta',
     text: (name: string, company: string) =>
-      `Olá ${name}, tudo bem? Passando para saber se você conseguiu avaliar a proposta de mentoria para a ${company} e se deseja tirar alguma dúvida antes de fecharmos as vagas do lote atual.`,
+      `Olá ${name}, tudo bem? Passando para saber se você conseguiu avaliar a proposta de mentoria para a ${company} e se deseja tirar alguma dúvida antes de fecharmos as vagas do ciclo atual.`,
   },
   {
     id: 'closing',
     title: '4. Boas-Vindas & Onboarding',
     text: (name: string, company: string) =>
-      `Parabéns ${name}! 🎉 É uma honra ter a ${company} na tripulação Rocket Club! Seu acesso à plataforma e à Academy foi liberado. Vamos iniciar seu onboarding agora mesmo. 🚀✨`,
+      `Parabéns ${name}! 🎉 É uma grande honra ter você e a ${company} no nosso programa de aceleração! Seu acesso ao portal e aos conteúdos foi liberado. Vamos iniciar seu onboarding agora mesmo! 🚀✨`,
   },
 ];
 
@@ -93,6 +94,7 @@ export function LeadSheet({
   onDelete,
   onConvertToMember,
 }: LeadSheetProps) {
+  const { isLightMode, activePalette } = useTheme();
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [activeTab, setActiveTab] = useState<'overview' | 'diagnostic' | 'timeline' | 'whatsapp'>('overview');
   const [isSaving, setIsSaving] = useState(false);
@@ -371,9 +373,19 @@ export function LeadSheet({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`py-2 px-2 rounded-xl text-[11px] sm:text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all border text-center truncate ${
                     isActive
-                      ? 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-md shadow-yellow-500/20 font-black'
+                      ? 'shadow-md font-black'
                       : 'bg-[#111728]/80 border-[#1F293D] text-slate-400 hover:text-slate-200 hover:bg-[#1A2234]'
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: activePalette.tokens.primary,
+                          color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                          borderColor: activePalette.tokens.primary,
+                          boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                        }
+                      : {}
+                  }
                 >
                   <Icon size={13} className="shrink-0" />
                   <span className="truncate">{tab.label}</span>
@@ -975,7 +987,12 @@ export function LeadSheet({
               type="button"
               onClick={() => handleFormSubmit()}
               disabled={isSaving}
-              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-extrabold text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-extrabold text-xs shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+              }}
             >
               <Save size={14} />
               <span>{isSaving ? 'Salvando...' : 'Salvar Lead'}</span>

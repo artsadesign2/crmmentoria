@@ -56,7 +56,7 @@ export default function FinancialPage() {
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'info' | 'warning' } | null>(null);
 
   // Form State for New Transaction / Billing
-  const [description, setDescription] = useState('Mensalidade Programa Rocket');
+  const [description, setDescription] = useState('Mensalidade do Programa de Mentoria');
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [customMemberName, setCustomMemberName] = useState('');
   const [amount, setAmount] = useState('2500');
@@ -325,7 +325,12 @@ export default function FinancialPage() {
 
           <button
             onClick={() => setIsBillingRulesModalOpen(true)}
-            className="px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 transition-all flex items-center gap-1.5"
+            className="px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
+            style={{
+              backgroundColor: activePalette.tokens.badgeBg,
+              color: activePalette.tokens.primary,
+              border: `1px solid ${activePalette.tokens.badgeBorder}`,
+            }}
           >
             <Zap size={15} />
             <span>Régua de Cobrança IA</span>

@@ -43,6 +43,7 @@ import { Modal } from '@/components/ui/modal';
 import { Course, MOCK_COURSES } from '@/lib/mock-data';
 import { useNotifications } from '@/lib/notification-context';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
+import { useTheme } from '@/lib/theme-context';
 
 export interface Lesson {
   id: string;
@@ -174,6 +175,7 @@ function isDirectVideo(url: string): boolean {
 }
 
 export default function AcademyPage() {
+  const { isLightMode, activePalette } = useTheme();
   const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('TODAS');
@@ -1278,13 +1280,13 @@ export default function AcademyPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <Badge variant="default" className="mb-2">
-                <GraduationCap size={14} className="mr-1.5" /> Rocket Academy — Sala de Aula
+                <GraduationCap size={14} className="mr-1.5" /> Academy — Sala de Aula & Cursos
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
-                Trilhas de <span className="gold-gradient-text">Conhecimento & Escala</span>
+                Trilhas de <span className="theme-gradient-text">Conhecimento & Escala</span>
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Gerencie e assista às aulas, metodologias e materiais exclusivos do ecossistema.
+              <p className={`text-xs sm:text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                Gerencie e assista às aulas, metodologias e materiais exclusivos do programa de mentoria.
               </p>
             </div>
 
@@ -1292,15 +1294,20 @@ export default function AcademyPage() {
             <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
               <button
                 onClick={() => setIsManageCategoriesModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-[#131926] hover:bg-[#1F293D] text-slate-300 hover:text-yellow-400 border border-[#1F293D] font-bold text-xs transition-all flex items-center gap-2 shadow"
+                className="px-4 py-2.5 rounded-xl bg-[#131926] hover:bg-[#1F293D] text-slate-300 border border-[#1F293D] font-bold text-xs transition-all flex items-center gap-2 shadow"
               >
-                <Tag size={15} className="text-yellow-400" />
+                <Tag size={15} style={{ color: activePalette.tokens.primary }} />
                 <span>Gerenciar Categorias</span>
               </button>
 
               <button
                 onClick={() => setIsCreateCourseModalOpen(true)}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl font-black text-xs shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                }}
               >
                 <Plus size={16} />
                 <span>Criar Novo Curso</span>
@@ -1314,24 +1321,41 @@ export default function AcademyPage() {
               onClick={() => setSelectedCategoryFilter('TODAS')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 selectedCategoryFilter === 'TODAS'
-                  ? 'bg-yellow-500 text-slate-950 shadow-md font-black'
+                  ? 'shadow-md font-black'
                   : 'bg-[#131926] text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
               }`}
+              style={
+                selectedCategoryFilter === 'TODAS'
+                  ? {
+                      backgroundColor: activePalette.tokens.primary,
+                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                    }
+                  : {}
+              }
             >
               Todas as Trilhas ({courses.length})
             </button>
 
             {categories.map((cat) => {
               const count = courses.filter((c) => c.category === cat).length;
+              const isSelected = selectedCategoryFilter === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategoryFilter(cat)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                    selectedCategoryFilter === cat
-                      ? 'bg-yellow-500 text-slate-950 shadow-md font-black'
+                    isSelected
+                      ? 'shadow-md font-black'
                       : 'bg-[#131926] text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
                   }`}
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: activePalette.tokens.primary,
+                          color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                        }
+                      : {}
+                  }
                 >
                   {cat} {count > 0 && <span className="text-[10px] opacity-75 font-mono">({count})</span>}
                 </button>

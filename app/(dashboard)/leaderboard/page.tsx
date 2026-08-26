@@ -23,6 +23,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { useTheme } from '@/lib/theme-context';
+import { DEFAULT_TENANT } from '@/lib/tenant';
 
 interface LeaderboardMentee {
   id: string;
@@ -45,8 +46,14 @@ export default function LeaderboardPage() {
   const [selectedQuarter, setSelectedQuarter] = useState<'Q3-2026' | 'Q2-2026' | 'ALL'>('Q3-2026');
   const [search, setSearch] = useState('');
   const [selectedTier, setSelectedTier] = useState<string>('ALL');
+  const [brandName, setBrandName] = useState(DEFAULT_TENANT.company.tradeName);
 
   useEffect(() => {
+    try {
+      const savedName = localStorage.getItem('rocket_club_company_tradename');
+      if (savedName) setBrandName(savedName);
+    } catch {}
+
     async function load() {
       try {
         const res = await fetch('/api/members');
@@ -114,13 +121,13 @@ export default function LeaderboardPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <Badge variant="default" className="py-1">
-              <Trophy size={14} className="mr-1.5" /> Quadro de Honra & Gamificação Rocket Club
+              <Trophy size={14} className="mr-1.5" /> Quadro de Honra & Gamificação
             </Badge>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-100 tracking-tight">
-              Leaderboard & <span className="theme-gradient-text">Ranking de Elite</span> 🏆
+              Leaderboard & <span className="theme-gradient-text">Ranking da Comunidade</span> 🏆
             </h1>
             <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
-              Reconhecimento contínuo aos tripulantes com maior pontuação de XP, metas superadas e maturação nos 5 pilares do método.
+              Reconhecimento contínuo aos empresários com maior pontuação de XP, metas superadas e maturação estratégica.
             </p>
           </div>
 
@@ -187,8 +194,14 @@ export default function LeaderboardPage() {
               boxShadow: `0 10px 30px ${activePalette.tokens.glow}`,
             }}
           >
-            <div className="absolute -top-3 px-3 py-0.5 rounded-full bg-gradient-to-r from-yellow-500 to-amber-400 text-slate-950 font-black text-[10px] uppercase shadow-lg">
-              👑 Campeão do Trimestre
+            <div
+              className="absolute -top-3 px-3 py-0.5 rounded-full font-black text-[10px] uppercase shadow-lg"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              👑 1º Lugar Geral
             </div>
             <div
               className="w-12 h-12 rounded-full font-black flex items-center justify-center text-base border mt-2"
@@ -263,8 +276,8 @@ export default function LeaderboardPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar comandante ou empresa..."
-              className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-yellow-500"
+              placeholder="Buscar mentorado ou empresa..."
+              className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-theme-primary"
             />
           </div>
 
@@ -275,9 +288,17 @@ export default function LeaderboardPage() {
                 onClick={() => setSelectedTier(t)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   selectedTier === t
-                    ? 'bg-yellow-500 text-slate-950 font-black'
+                    ? 'font-black shadow-md'
                     : 'bg-[#0B0F17] text-slate-400 hover:text-slate-200 border border-[#1F293D]'
                 }`}
+                style={
+                  selectedTier === t
+                    ? {
+                        backgroundColor: activePalette.tokens.primary,
+                        color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                      }
+                    : {}
+                }
               >
                 {t === 'ALL' ? 'Todas as Patentes' : t}
               </button>
@@ -296,7 +317,14 @@ export default function LeaderboardPage() {
                 <span className="w-7 text-center font-mono font-black text-xs text-slate-400">
                   #{mentee.rank}
                 </span>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-sm shadow shrink-0 overflow-hidden">
+                <div
+                  className="w-10 h-10 rounded-xl font-bold flex items-center justify-center text-sm shadow shrink-0 overflow-hidden"
+                  style={{
+                    backgroundColor: activePalette.tokens.badgeBg,
+                    color: activePalette.tokens.primary,
+                    border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                  }}
+                >
                   {mentee.avatar ? (
                     <img src={mentee.avatar} alt={mentee.name} className="w-full h-full object-cover" />
                   ) : (
@@ -319,16 +347,26 @@ export default function LeaderboardPage() {
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
                     mentee.tier === 'Diamante'
                       ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
-                      : mentee.tier === 'Ouro'
-                      ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
                       : 'bg-slate-500/15 text-slate-300 border-slate-500/30'
                   }`}
+                  style={
+                    mentee.tier === 'Ouro'
+                      ? {
+                          backgroundColor: activePalette.tokens.badgeBg,
+                          color: activePalette.tokens.primary,
+                          borderColor: activePalette.tokens.badgeBorder,
+                        }
+                      : {}
+                  }
                 >
                   {mentee.tier}
                 </span>
 
                 <div className="text-right min-w-[80px]">
-                  <span className="font-mono text-sm font-black text-yellow-400 block">
+                  <span
+                    className="font-mono text-sm font-black block"
+                    style={{ color: activePalette.tokens.primary }}
+                  >
                     {mentee.xp} XP
                   </span>
                   <span className="text-[10px] font-bold text-emerald-400">+{mentee.growthPercent}%</span>

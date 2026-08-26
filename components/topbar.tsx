@@ -60,13 +60,20 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<string>('TODOS');
 
-  // Profile Form State
   const [profileName, setProfileName] = useState(currentUser.name);
   const [profileEmail, setProfileEmail] = useState(currentUser.email);
   const [profilePhone, setProfilePhone] = useState(currentUser.phone || '(11) 98888-9999');
   const [profileSaved, setProfileSaved] = useState(false);
+  const [tenantName, setTenantName] = useState(DEFAULT_TENANT.company?.tradeName || DEFAULT_TENANT.name);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const savedName = localStorage.getItem('rocket_club_company_tradename');
+      if (savedName) setTenantName(savedName);
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     setProfileName(currentUser.name);
@@ -167,7 +174,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
           }`}
         >
           <Building2 size={14} style={{ color: activePalette.tokens.primary }} className="shrink-0" />
-          <span className="truncate hidden xs:inline">{tenant.name}</span>
+          <span className="truncate hidden xs:inline">{tenantName}</span>
           <span
             className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0"
             style={{

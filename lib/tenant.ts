@@ -131,9 +131,9 @@ export const DEFAULT_ACCESS_LEVELS: AccessLevel[] = [
 ];
 
 export const DEFAULT_TENANT: OrganizationContext = {
-  id: 'org-rocket-club-master',
-  name: 'Rocket Club Ecossistema',
-  slug: 'rocket-club',
+  id: 'org-mentoria-master',
+  name: 'Mentoria & CRM Hub',
+  slug: 'mentoria-hub',
   plan: 'ENTERPRISE',
   primaryColor: '#EAB308',
   logoUrl: '',
@@ -150,14 +150,14 @@ export const DEFAULT_TENANT: OrganizationContext = {
     ai_copilot: true,
   },
   company: {
-    companyName: 'Rocket Club Treinamento & Mentoria Empresarial LTDA',
-    tradeName: 'Rocket Club Ecossistema',
+    companyName: 'Plataforma de Gestão de Mentorias & CRM LTDA',
+    tradeName: 'Mentoria & CRM Hub',
     cnpj: '45.123.890/0001-99',
     stateRegistration: '112.334.556.789',
-    email: 'contato@rocketclub.com.br',
-    phone: '(11) 98765-4321',
-    website: 'https://rocketclub.com.br',
-    segment: 'Aceleração de Negócios & Mentoria Executiva High-Ticket',
+    email: 'contato@mentorias.com.br',
+    phone: '(11) 99530-2672',
+    website: 'https://mentorias.com.br',
+    segment: 'Aceleração de Negócios, Gestão & Mentoria Executiva',
     address: {
       street: 'Av. Paulista',
       number: '1800 - Conjunto 142',
