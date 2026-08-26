@@ -31,7 +31,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function getSessionUserId(): string {
+function getSessionUserId(initialFallback?: string | null): string {
+  if (initialFallback && initialFallback.trim()) return initialFallback.trim();
   if (typeof document !== 'undefined') {
     // 1. Check session cookie first (isolated per tab/window mode)
     const match = document.cookie.match(/(?:^|;\s*)rocket_session=([^;]+)/);
@@ -50,7 +51,13 @@ function getSessionUserId(): string {
   return 'usr-master-1';
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+  initialUserId,
+}: {
+  children: React.ReactNode;
+  initialUserId?: string | null;
+}) {
   const pathname = usePathname();
 
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>(() => {
@@ -66,7 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return INITIAL_SYSTEM_USERS;
   });
 
-  const [activeUserId, setActiveUserId] = useState<string>(() => getSessionUserId());
+  const [activeUserId, setActiveUserId] = useState<string>(() =>
+    getSessionUserId(initialUserId)
+  );
 
   const [rolePermissions, setRolePermissions] = useState<Record<UserRole, RolePermissions>>(() => {
     if (typeof window !== 'undefined') {
@@ -91,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSystemUsers(currentUsers);
         }
 
-        const sessionUser = getSessionUserId();
+        const sessionUser = getSessionUserId(initialUserId);
         const matched = currentUsers.find(
           (u) =>
             u.id === sessionUser ||
@@ -116,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for storage events across tabs
     window.addEventListener('storage', syncUserSession);
     return () => window.removeEventListener('storage', syncUserSession);
-  }, [pathname]);
+  }, [pathname, initialUserId]);
 
   // Resolve current active user dynamically
   const currentUser: SystemUser = React.useMemo(() => {
