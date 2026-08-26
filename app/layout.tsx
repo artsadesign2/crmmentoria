@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { cookies } from 'next/headers';
 import './globals.css';
+import { PaletteId } from '@/lib/theme-constants';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast-context';
@@ -16,11 +18,15 @@ export const metadata: Metadata = {
   description: 'Plataforma All-in-One para gestão de membros, vendas, cursos, wiki e eventos.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const sessionUser = cookieStore.get('rocket_session')?.value || null;
+  const themeCookie = (cookieStore.get('rocket_theme')?.value as PaletteId) || null;
+
   return (
     <html lang="pt-BR" className={`${jakarta.variable} dark theme-dark`} suppressHydrationWarning>
       <head>
@@ -70,8 +76,8 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased selection:bg-[var(--primary-color)]/30 selection:text-[var(--primary-color)]">
-        <ThemeProvider>
-          <AuthProvider>
+        <ThemeProvider initialPaletteId={themeCookie}>
+          <AuthProvider initialUserId={sessionUser}>
             <ToastProvider>
               {children}
               <ToastContainer />

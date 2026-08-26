@@ -5,11 +5,12 @@ import {
   PaletteId,
   ColorPalette,
   COLOR_PALETTES,
+  RAW_COLOR_PALETTES,
   DEFAULT_PALETTE_ID,
 } from './theme-constants';
 
 export type { PaletteId, ColorPalette };
-export { COLOR_PALETTES, DEFAULT_PALETTE_ID };
+export { COLOR_PALETTES, RAW_COLOR_PALETTES, DEFAULT_PALETTE_ID };
 
 interface ThemeContextType {
   activePaletteId: PaletteId;
@@ -77,20 +78,20 @@ export function ThemeProvider({
     if (typeof document === 'undefined') return;
 
     const root = document.documentElement;
-    const tokens = activePalette.tokens;
+    const rawTokens = activePalette.rawTokens;
 
-    root.style.setProperty('--primary-color', tokens.primary);
-    root.style.setProperty('--primary-glow', tokens.glow);
-    root.style.setProperty('--primary-gradient', tokens.primaryGradient);
-    root.style.setProperty('--accent-color', tokens.accent);
-    root.style.setProperty('--theme-bg', tokens.background);
-    root.style.setProperty('--theme-surface', tokens.surface);
-    root.style.setProperty('--theme-border', tokens.surfaceBorder);
-    root.style.setProperty('--theme-text-primary', tokens.textPrimary);
-    root.style.setProperty('--theme-text-secondary', tokens.textSecondary);
-    root.style.setProperty('--theme-badge-bg', tokens.badgeBg);
-    root.style.setProperty('--theme-badge-text', tokens.badgeText);
-    root.style.setProperty('--theme-badge-border', tokens.badgeBorder);
+    root.style.setProperty('--primary-color', rawTokens.primary);
+    root.style.setProperty('--primary-glow', rawTokens.glow);
+    root.style.setProperty('--primary-gradient', rawTokens.primaryGradient);
+    root.style.setProperty('--accent-color', rawTokens.accent);
+    root.style.setProperty('--theme-bg', rawTokens.background);
+    root.style.setProperty('--theme-surface', rawTokens.surface);
+    root.style.setProperty('--theme-border', rawTokens.surfaceBorder);
+    root.style.setProperty('--theme-text-primary', rawTokens.textPrimary);
+    root.style.setProperty('--theme-text-secondary', rawTokens.textSecondary);
+    root.style.setProperty('--theme-badge-bg', rawTokens.badgeBg);
+    root.style.setProperty('--theme-badge-text', rawTokens.badgeText);
+    root.style.setProperty('--theme-badge-border', rawTokens.badgeBorder);
 
     if (isLightMode) {
       document.body.classList.add('theme-light');
@@ -104,8 +105,8 @@ export function ThemeProvider({
       root.classList.remove('theme-light');
     }
 
-    document.body.style.backgroundColor = tokens.background;
-    document.body.style.color = tokens.textPrimary;
+    document.body.style.backgroundColor = rawTokens.background;
+    document.body.style.color = rawTokens.textPrimary;
   }, [activePaletteId, activePalette, isLightMode]);
 
   const setPalette = (id: PaletteId) => {

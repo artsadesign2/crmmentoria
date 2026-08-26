@@ -61,23 +61,10 @@ import { maskPhone } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 
-function getInitialMembers(): (Member & { excludeFromBook?: boolean })[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_members');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-  }
-  return INITIAL_MEMBERS.map((m) => ({ ...m, excludeFromBook: false }));
-}
-
 export default function MentoradosPage() {
   const { isLightMode, activePalette } = useTheme();
   const [members, setMembers] = useState<(Member & { excludeFromBook?: boolean })[]>(() =>
-    getInitialMembers()
+    INITIAL_MEMBERS.map((m) => ({ ...m, excludeFromBook: false }))
   );
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -107,6 +94,15 @@ export default function MentoradosPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_members');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembers(parsed);
+        }
+      }
+    } catch (e) {}
   }, []);
 
   const showToast = (text: string, type: 'success' | 'info' | 'warning' = 'success') => {

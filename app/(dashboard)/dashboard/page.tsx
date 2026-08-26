@@ -66,37 +66,11 @@ const MONTH_SHORTS = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
 ];
 
-function getDashboardCachedMembers(): Member[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_members');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-  }
-  return INITIAL_MEMBERS;
-}
-
-function getDashboardCachedFinancial(): DbTransaction[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_financial');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-  }
-  return [];
-}
-
 export default function DashboardPage() {
   const { isLightMode, activePalette } = useTheme();
   const { currentUser, currentRole, isMaster, isAdmin } = useAuth();
-  const [members, setMembers] = useState<Member[]>(() => getDashboardCachedMembers());
-  const [transactions, setTransactions] = useState<DbTransaction[]>(() => getDashboardCachedFinancial());
+  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
+  const [transactions, setTransactions] = useState<DbTransaction[]>([]);
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -117,6 +91,13 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    try {
+      const cachedM = localStorage.getItem('rocket_club_cached_members');
+      if (cachedM) setMembers(JSON.parse(cachedM));
+      const cachedF = localStorage.getItem('rocket_club_cached_financial');
+      if (cachedF) setTransactions(JSON.parse(cachedF));
+    } catch (e) {}
+
     // Fetch fresh data in parallel in background
     Promise.all([
       fetch('/api/members').then((r) => r.json()).catch(() => ({})),
@@ -289,9 +270,9 @@ export default function DashboardPage() {
               )}
             </h1>
             <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
-              Bem-vindo, <strong style={{ color: activePalette.tokens.primary }}>{currentUser.name}</strong>!{' '}
+              Bem-vindo, <strong style={{ color: activePalette.tokens.primary }} suppressHydrationWarning>{currentUser.name}</strong>!{' '}
               Acompanhe a evolução de{' '}
-              <strong style={{ color: activePalette.tokens.primary }}>
+              <strong style={{ color: activePalette.tokens.primary }} suppressHydrationWarning>
                 {loading ? '...' : totalMembers} empresários
               </strong>{' '}
               em aceleração, faturamento recorrente, metas do método e eventos exclusivos.
@@ -341,7 +322,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-100">{loading ? '...' : totalMembers}</span>
+            <span className="text-3xl font-black text-slate-100" suppressHydrationWarning>{loading ? '...' : totalMembers}</span>
             <span className="text-xs font-bold text-emerald-400 flex items-center">
               100% ativos <ArrowUpRight size={14} />
             </span>
@@ -357,7 +338,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-400">
+            <span className="text-2xl sm:text-3xl font-black text-emerald-400" suppressHydrationWarning>
               R$ {totalIncomePaid.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
             </span>
           </div>
@@ -372,7 +353,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-blue-400">
+            <span className="text-2xl sm:text-3xl font-black text-blue-400" suppressHydrationWarning>
               R$ {mrr > 0 ? mrr.toLocaleString('pt-BR', { minimumFractionDigits: 0 }) : '35.000'}
             </span>
             <span className="text-xs font-bold text-blue-400">/mês</span>
@@ -395,7 +376,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black" style={{ color: activePalette.tokens.primary }}>
+            <span className="text-3xl font-black" style={{ color: activePalette.tokens.primary }} suppressHydrationWarning>
               {healthScore}%
             </span>
             <span className="text-xs font-bold text-emerald-400">Nível Ouro</span>

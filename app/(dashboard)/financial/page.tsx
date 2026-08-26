@@ -39,22 +39,9 @@ import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 import { sendEvolutionWhatsAppMessage } from '@/lib/evolution-api';
 
-function getInitialFinancial(): DbTransaction[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_financial');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-  }
-  return [];
-}
-
 export default function FinancialPage() {
   const { isLightMode, activePalette } = useTheme();
-  const [transactions, setTransactions] = useState<DbTransaction[]>(() => getInitialFinancial());
+  const [transactions, setTransactions] = useState<DbTransaction[]>([]);
   const [membersList, setMembersList] = useState<Member[]>(INITIAL_MEMBERS);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
@@ -93,6 +80,16 @@ export default function FinancialPage() {
 
   // Background DB fetch
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_financial');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTransactions(parsed);
+        }
+      }
+    } catch (e) {}
+
     // Load members for select dropdown
     fetch('/api/members')
       .then((r) => r.json())

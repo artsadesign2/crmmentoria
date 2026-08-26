@@ -1,5 +1,21 @@
 export type PaletteId = 'rocket-gold' | 'hyper-emerald' | 'galactic-indigo' | 'rose-luxury';
 
+export interface PaletteTokens {
+  primary: string;
+  primaryGradient: string;
+  accent: string;
+  background: string;
+  surface: string;
+  surfaceBorder: string;
+  cardBg: string;
+  textPrimary: string;
+  textSecondary: string;
+  glow: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+}
+
 export interface ColorPalette {
   id: PaletteId;
   name: string;
@@ -7,24 +23,19 @@ export interface ColorPalette {
   mode: 'dark' | 'light';
   requiresLightBg: boolean;
   previewColors: string[];
-  tokens: {
-    primary: string;
-    primaryGradient: string;
-    accent: string;
-    background: string;
-    surface: string;
-    surfaceBorder: string;
-    cardBg: string;
-    textPrimary: string;
-    textSecondary: string;
-    glow: string;
-    badgeBg: string;
-    badgeText: string;
-    badgeBorder: string;
-  };
+  rawTokens: PaletteTokens;
+  tokens: PaletteTokens;
 }
 
-export const COLOR_PALETTES: Record<PaletteId, ColorPalette> = {
+export const RAW_COLOR_PALETTES: Record<PaletteId, {
+  id: PaletteId;
+  name: string;
+  subtitle: string;
+  mode: 'dark' | 'light';
+  requiresLightBg: boolean;
+  previewColors: string[];
+  tokens: PaletteTokens;
+}> = {
   'rocket-gold': {
     id: 'rocket-gold',
     name: 'Rocket Gold (Cyberpunk Amber)',
@@ -116,6 +127,46 @@ export const COLOR_PALETTES: Record<PaletteId, ColorPalette> = {
       badgeText: '#BE123C',
       badgeBorder: 'rgba(225, 29, 72, 0.3)',
     },
+  },
+};
+
+// CSS-Variable based tokens guarantee 100% SSR Hydration Match
+const CSS_VARIABLE_TOKENS: PaletteTokens = {
+  primary: 'var(--primary-color)',
+  primaryGradient: 'var(--primary-gradient)',
+  accent: 'var(--accent-color)',
+  background: 'var(--theme-bg)',
+  surface: 'var(--theme-surface)',
+  surfaceBorder: 'var(--theme-border)',
+  cardBg: 'var(--theme-surface)',
+  textPrimary: 'var(--theme-text-primary)',
+  textSecondary: 'var(--theme-text-secondary)',
+  glow: 'var(--primary-glow)',
+  badgeBg: 'var(--theme-badge-bg)',
+  badgeText: 'var(--theme-badge-text)',
+  badgeBorder: 'var(--theme-badge-border)',
+};
+
+export const COLOR_PALETTES: Record<PaletteId, ColorPalette> = {
+  'rocket-gold': {
+    ...RAW_COLOR_PALETTES['rocket-gold'],
+    rawTokens: RAW_COLOR_PALETTES['rocket-gold'].tokens,
+    tokens: CSS_VARIABLE_TOKENS,
+  },
+  'hyper-emerald': {
+    ...RAW_COLOR_PALETTES['hyper-emerald'],
+    rawTokens: RAW_COLOR_PALETTES['hyper-emerald'].tokens,
+    tokens: CSS_VARIABLE_TOKENS,
+  },
+  'galactic-indigo': {
+    ...RAW_COLOR_PALETTES['galactic-indigo'],
+    rawTokens: RAW_COLOR_PALETTES['galactic-indigo'].tokens,
+    tokens: CSS_VARIABLE_TOKENS,
+  },
+  'rose-luxury': {
+    ...RAW_COLOR_PALETTES['rose-luxury'],
+    rawTokens: RAW_COLOR_PALETTES['rose-luxury'].tokens,
+    tokens: CSS_VARIABLE_TOKENS,
   },
 };
 

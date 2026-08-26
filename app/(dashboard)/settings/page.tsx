@@ -1033,8 +1033,8 @@ export default function SettingsPage() {
                     style={
                       isSelected
                         ? {
-                            borderColor: pal.tokens.primary,
-                            boxShadow: `0 10px 30px -10px ${pal.tokens.glow}`,
+                            borderColor: pal.rawTokens.primary,
+                            boxShadow: `0 10px 30px -10px ${pal.rawTokens.glow}`,
                           }
                         : {}
                     }
@@ -1042,7 +1042,7 @@ export default function SettingsPage() {
                     {/* Ambient Glow */}
                     <div
                       className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-25 group-hover:opacity-40 transition-opacity"
-                      style={{ background: pal.tokens.primary }}
+                      style={{ background: pal.rawTokens.primary }}
                     />
 
                     <div className="flex items-start justify-between gap-3 relative z-10">
@@ -1056,9 +1056,9 @@ export default function SettingsPage() {
                               variant="outline"
                               className="text-[10px] py-0.5 px-2 font-black uppercase"
                               style={{
-                                backgroundColor: pal.tokens.badgeBg,
-                                color: pal.tokens.primary,
-                                borderColor: pal.tokens.badgeBorder,
+                                backgroundColor: pal.rawTokens.badgeBg,
+                                color: pal.rawTokens.primary,
+                                borderColor: pal.rawTokens.badgeBorder,
                               }}
                             >
                               ✓ Ativa
@@ -1108,7 +1108,7 @@ export default function SettingsPage() {
                             ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                             : 'bg-[#1F293D] text-slate-300 hover:bg-slate-700'
                         }`}
-                        style={isSelected ? { backgroundColor: pal.tokens.primary } : {}}
+                        style={isSelected ? { backgroundColor: pal.rawTokens.primary } : {}}
                       >
                         {isSelected ? 'Em Uso' : 'Aplicar Paleta'}
                       </button>
