@@ -32,6 +32,9 @@ import {
   Settings as SettingsIcon,
   Menu,
   Zap,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useNotifications } from '@/lib/notification-context';
@@ -42,6 +45,7 @@ import { Modal } from '@/components/ui/modal';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { ROLE_HIERARCHIES, UserRole } from '@/lib/permissions';
+import { PasswordStrengthMeter } from '@/components/password-strength-meter';
 
 interface TopbarProps {
   onOpenCommandPalette: () => void;
@@ -63,6 +67,8 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   const [profileName, setProfileName] = useState(currentUser.name);
   const [profileEmail, setProfileEmail] = useState(currentUser.email);
   const [profilePhone, setProfilePhone] = useState(currentUser.phone || '(11) 98888-9999');
+  const [profilePassword, setProfilePassword] = useState('');
+  const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [tenantName, setTenantName] = useState(DEFAULT_TENANT.company?.tradeName || DEFAULT_TENANT.name);
 
@@ -83,11 +89,17 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser(currentUser.id, {
+    const updates: Partial<typeof currentUser> = {
       name: profileName,
       email: profileEmail,
       phone: profilePhone,
-    });
+    };
+    if (profilePassword.trim()) {
+      updates.password = profilePassword.trim();
+    }
+    updateUser(currentUser.id, updates);
+    setProfilePassword('');
+    setShowProfilePassword(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
   };
@@ -616,6 +628,50 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Troca de Senha do Perfil */}
+              <div className={`pt-3 border-t space-y-2.5 ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold flex items-center gap-1.5" style={{ color: isLightMode ? '#334155' : '#E2E8F0' }}>
+                    <Lock size={14} style={{ color: activePalette.tokens.primary }} />
+                    <span>Nova Senha de Acesso</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    (Deixe em branco para manter a atual)
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showProfilePassword ? 'text' : 'password'}
+                    value={profilePassword}
+                    onChange={(e) => setProfilePassword(e.target.value)}
+                    placeholder="Digite uma nova senha para sua conta..."
+                    className={`w-full border rounded-xl pl-3.5 pr-10 py-2.5 focus:outline-none ${
+                      isLightMode
+                        ? 'bg-white border-slate-300 text-slate-900'
+                        : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowProfilePassword(!showProfilePassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition-colors"
+                    title={showProfilePassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showProfilePassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+
+                {/* Medidor de Força de Senha */}
+                {profilePassword && (
+                  <PasswordStrengthMeter
+                    password={profilePassword}
+                    isLightMode={isLightMode}
+                    showSuggestions={true}
+                  />
+                )}
               </div>
             </div>
 

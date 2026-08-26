@@ -329,6 +329,7 @@ export interface SystemUser {
   name: string;
   email: string;
   phone?: string;
+  password?: string;
   role: UserRole;
   avatar?: string;
   status: 'ATIVO' | 'INATIVO' | 'BLOQUEADO';

@@ -55,6 +55,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
+import { PasswordStrengthMeter } from '@/components/password-strength-meter';
 import {
   DEFAULT_TENANT,
   DEFAULT_ACCESS_LEVELS,
@@ -142,9 +143,15 @@ export default function SettingsPage() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [newUserRole, setNewUserRole] = useState<UserRole>('Administrador');
   const [newUserDept, setNewUserDept] = useState('Operacional');
   const [userActionError, setUserActionError] = useState<string | null>(null);
+
+  // Edit User Form State
+  const [editingUserPassword, setEditingUserPassword] = useState('');
+  const [showEditingUserPassword, setShowEditingUserPassword] = useState(false);
 
   // 5 Pillars
   const [pillars, setPillars] = useState([
@@ -447,6 +454,7 @@ export default function SettingsPage() {
       name: newUserName,
       email: newUserEmail,
       phone: newUserPhone,
+      password: newUserPassword || undefined,
       role: newUserRole,
       department: newUserDept,
       status: 'ATIVO',
@@ -458,6 +466,8 @@ export default function SettingsPage() {
       setNewUserName('');
       setNewUserEmail('');
       setNewUserPhone('');
+      setNewUserPassword('');
+      setShowNewUserPassword(false);
       setNewUserRole('Administrador');
     } else {
       setUserActionError(result.error || 'Erro ao criar usuário.');
@@ -470,9 +480,23 @@ export default function SettingsPage() {
     if (!editingUser) return;
     setUserActionError(null);
 
-    const result = updateUser(editingUser.id, editingUser);
+    const updates: Partial<SystemUser> = {
+      name: editingUser.name,
+      email: editingUser.email,
+      phone: editingUser.phone,
+      role: editingUser.role,
+      status: editingUser.status,
+    };
+
+    if (editingUserPassword.trim()) {
+      updates.password = editingUserPassword.trim();
+    }
+
+    const result = updateUser(editingUser.id, updates);
     if (result.success) {
       setEditingUser(null);
+      setEditingUserPassword('');
+      setShowEditingUserPassword(false);
     } else {
       setUserActionError(result.error || 'Erro ao editar usuário.');
     }
@@ -1398,6 +1422,8 @@ export default function SettingsPage() {
                 <button
                   onClick={() => {
                     setUserActionError(null);
+                    setNewUserPassword('');
+                    setShowNewUserPassword(false);
                     setIsNewUserModalOpen(true);
                   }}
                   className="px-4 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
@@ -1524,6 +1550,8 @@ export default function SettingsPage() {
                               <button
                                 onClick={() => {
                                   setUserActionError(null);
+                                  setEditingUserPassword('');
+                                  setShowEditingUserPassword(false);
                                   setEditingUser(usr);
                                 }}
                                 className="p-2 rounded-lg bg-[#0B0F17] hover:bg-[#1F293D] text-slate-400 hover:text-slate-200 border border-[#1F293D] transition-colors"
@@ -2743,6 +2771,46 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Senha Inicial de Acesso */}
+          <div className="pt-3 border-t border-[#1F293D]/80 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-slate-300 font-bold flex items-center gap-1.5">
+                <Lock size={14} style={{ color: activePalette.tokens.primary }} />
+                <span>Senha de Acesso</span>
+              </label>
+              <span className="text-[10px] text-slate-500 font-medium">
+                (Opcional - padrão: 123456)
+              </span>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showNewUserPassword ? 'text' : 'password'}
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="Crie uma senha de acesso..."
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-3.5 pr-10 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewUserPassword(!showNewUserPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition-colors"
+                title={showNewUserPassword ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {showNewUserPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+
+            {/* Medidor de Força de Senha */}
+            {newUserPassword && (
+              <PasswordStrengthMeter
+                password={newUserPassword}
+                isLightMode={isLightMode}
+                showSuggestions={true}
+              />
+            )}
+          </div>
+
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1F293D]">
             <button
               type="button"
@@ -2773,7 +2841,7 @@ export default function SettingsPage() {
           isOpen={Boolean(editingUser)}
           onClose={() => setEditingUser(null)}
           title={`Editar Usuário: ${editingUser.name}`}
-          subtitle="Atualize os dados e perfil de acesso deste membro da equipe"
+          subtitle="Atualize os dados, perfil de acesso e senha deste membro da equipe"
           icon={<Edit2 size={20} />}
           size="md"
         >
@@ -2847,6 +2915,46 @@ export default function SettingsPage() {
                   <option value="BLOQUEADO">Bloqueado</option>
                 </select>
               </div>
+            </div>
+
+            {/* Seção de Troca de Senha */}
+            <div className="pt-3 border-t border-[#1F293D]/80 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-slate-300 font-bold flex items-center gap-1.5">
+                  <Lock size={14} style={{ color: activePalette.tokens.primary }} />
+                  <span>Trocar Senha de Acesso</span>
+                </label>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  (Deixe em branco para manter a atual)
+                </span>
+              </div>
+
+              <div className="relative">
+                <input
+                  type={showEditingUserPassword ? 'text' : 'password'}
+                  value={editingUserPassword}
+                  onChange={(e) => setEditingUserPassword(e.target.value)}
+                  placeholder="Digite uma nova senha para atualizar..."
+                  className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-3.5 pr-10 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEditingUserPassword(!showEditingUserPassword)}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition-colors"
+                  title={showEditingUserPassword ? 'Ocultar senha' : 'Ver senha'}
+                >
+                  {showEditingUserPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+
+              {/* Medidor de Força de Senha */}
+              {editingUserPassword && (
+                <PasswordStrengthMeter
+                  password={editingUserPassword}
+                  isLightMode={isLightMode}
+                  showSuggestions={true}
+                />
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1F293D]">
