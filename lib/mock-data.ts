@@ -110,6 +110,7 @@ export interface EventItem {
   maxAttendees: number;
   price: number;
   status: 'UPCOMING' | 'LIVE' | 'FINISHED';
+  coverImage?: string;
 }
 
 export const INITIAL_MEMBERS: Member[] = [
@@ -405,6 +406,7 @@ export const MOCK_EVENTS: EventItem[] = [
     maxAttendees: 50,
     price: 5000,
     status: 'UPCOMING',
+    coverImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 'e2',
@@ -416,6 +418,7 @@ export const MOCK_EVENTS: EventItem[] = [
     maxAttendees: 60,
     price: 0,
     status: 'UPCOMING',
+    coverImage: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
   },
 ];
 

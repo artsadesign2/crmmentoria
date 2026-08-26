@@ -26,6 +26,11 @@ import {
   Radio,
   AlertCircle,
   Megaphone,
+  Image as ImageIcon,
+  Search,
+  CheckSquare,
+  Square,
+  ShieldCheck,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +70,7 @@ export default function EventsPage() {
   const [maxAttendees, setMaxAttendees] = useState('50');
   const [price, setPrice] = useState('0');
   const [status, setStatus] = useState<EventItem['status']>('UPCOMING');
+  const [coverImage, setCoverImage] = useState('');
   const [autoBroadcastOnCreate, setAutoBroadcastOnCreate] = useState(true);
 
   // Edit Form State
@@ -75,13 +81,18 @@ export default function EventsPage() {
   const [editMaxAttendees, setEditMaxAttendees] = useState('50');
   const [editPrice, setEditPrice] = useState('0');
   const [editStatus, setEditStatus] = useState<EventItem['status']>('UPCOMING');
+  const [editCoverImage, setEditCoverImage] = useState('');
 
   // WhatsApp Broadcast Modal State
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [isConfirmBroadcastModalOpen, setIsConfirmBroadcastModalOpen] = useState(false);
   const [broadcastTargetEvent, setBroadcastTargetEvent] = useState<EventItem | null>(null);
   const [customBroadcastMsg, setCustomBroadcastMsg] = useState('');
   const [broadcastDelayMs, setBroadcastDelayMs] = useState(2000);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [sendToAll, setSendToAll] = useState(true);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [broadcastProgress, setBroadcastProgress] = useState<{
     current: number;
     total: number;
@@ -140,9 +151,8 @@ export default function EventsPage() {
     });
 
     saveEventsList(updatedEvents);
-
-    setToastMsg(`Presença confirmada no evento "${targetEvent?.title || 'Selecionado'}"! 🎉`);
-    setTimeout(() => setToastMsg(null), 4000);
+    setToastMsg(`Presença confirmada no evento: "${targetEvent?.title || 'Encontro'}"!`);
+    setTimeout(() => setToastMsg(null), 3000);
 
     addNotification({
       type: 'success',
@@ -181,11 +191,55 @@ export default function EventsPage() {
     setBroadcastTargetEvent(event);
     setBroadcastProgress(null);
     setCustomBroadcastMsg('');
+    setSendToAll(true);
+    setSelectedMemberIds(membersList.map((m) => m.id));
+    setMemberSearchQuery('');
+    setIsConfirmBroadcastModalOpen(false);
     setIsBroadcastModalOpen(true);
+  };
+
+  const handleToggleMember = (memberId: string) => {
+    if (selectedMemberIds.includes(memberId)) {
+      setSelectedMemberIds(selectedMemberIds.filter((id) => id !== memberId));
+    } else {
+      setSelectedMemberIds([...selectedMemberIds, memberId]);
+    }
+  };
+
+  const handleSelectAllMembers = () => {
+    setSelectedMemberIds(membersList.map((m) => m.id));
+  };
+
+  const handleDeselectAllMembers = () => {
+    setSelectedMemberIds([]);
+  };
+
+  const handleRequestBroadcast = () => {
+    const recipients = sendToAll
+      ? membersList
+      : membersList.filter((m) => selectedMemberIds.includes(m.id));
+
+    if (recipients.length === 0) {
+      setToastMsg('Selecione ao menos 1 mentorado para receber a mensagem.');
+      setTimeout(() => setToastMsg(null), 3000);
+      return;
+    }
+    setIsConfirmBroadcastModalOpen(true);
   };
 
   const handleStartBroadcast = async () => {
     if (!broadcastTargetEvent) return;
+
+    const recipientsToSend = sendToAll
+      ? membersList
+      : membersList.filter((m) => selectedMemberIds.includes(m.id));
+
+    if (recipientsToSend.length === 0) {
+      setToastMsg('Nenhum mentorado selecionado para o disparo.');
+      setTimeout(() => setToastMsg(null), 3000);
+      return;
+    }
+
     setIsBroadcasting(true);
 
     const eventTemplate =
@@ -203,7 +257,7 @@ export default function EventsPage() {
     });
 
     const res = await sendWhatsAppBroadcastToAll(
-      membersList,
+      recipientsToSend,
       messageToUse,
       {
         delayMs: broadcastDelayMs,
@@ -237,6 +291,7 @@ export default function EventsPage() {
       maxAttendees: parseInt(maxAttendees, 10) || 50,
       price: parseFloat(price) || 0,
       status,
+      coverImage: coverImage.trim() || undefined,
     };
 
     const updated = [newEvent, ...events];
@@ -246,6 +301,7 @@ export default function EventsPage() {
     setDescription('');
     setLocation('');
     setDate('');
+    setCoverImage('');
     setIsAddModalOpen(false);
 
     setToastMsg(`Novo evento "${newEvent.title}" cadastrado com sucesso!`);
@@ -265,12 +321,13 @@ export default function EventsPage() {
     setEditMaxAttendees(event.maxAttendees.toString());
     setEditPrice(event.price.toString());
     setEditStatus(event.status);
+    setEditCoverImage(event.coverImage || '');
     setIsEditModalOpen(true);
   };
 
   const handleSaveEventEdits = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEvent || !editTitle.trim()) return;
+    if (!selectedEvent) return;
 
     const updated = events.map((ev) => {
       if (ev.id === selectedEvent.id) {
@@ -279,10 +336,11 @@ export default function EventsPage() {
           title: editTitle.trim(),
           description: editDescription.trim(),
           location: editLocation.trim(),
-          date: editDate || ev.date,
-          maxAttendees: parseInt(editMaxAttendees, 10) || ev.maxAttendees,
+          date: editDate ? new Date(editDate).toISOString() : ev.date,
+          maxAttendees: parseInt(editMaxAttendees, 10) || 50,
           price: parseFloat(editPrice) || 0,
           status: editStatus,
+          coverImage: editCoverImage.trim() || undefined,
         };
       }
       return ev;
@@ -291,99 +349,143 @@ export default function EventsPage() {
     saveEventsList(updated);
     setIsEditModalOpen(false);
     setSelectedEvent(null);
-    setToastMsg('Alterações salvas com sucesso!');
+    setToastMsg('Evento atualizado com sucesso!');
     setTimeout(() => setToastMsg(null), 3000);
   };
 
   const handleConfirmDeleteEvent = () => {
     if (!deleteTargetEvent) return;
-    const updated = events.filter((e) => e.id !== deleteTargetEvent.id);
+
+    const updated = events.filter((ev) => ev.id !== deleteTargetEvent.id);
     saveEventsList(updated);
     setDeleteTargetEvent(null);
     setIsEditModalOpen(false);
     setSelectedEvent(null);
+
     setToastMsg('Evento removido com sucesso.');
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const filteredEvents = events.filter((e) => {
+  const filteredEvents = events.filter((ev) => {
     if (selectedFilter === 'ALL') return true;
-    return e.status === selectedFilter;
+    return ev.status === selectedFilter;
   });
 
+  const totalAttendeesAll = events.reduce((acc, ev) => acc + ev.attendeesCount, 0);
+
+  // Filtered mentees in the selection modal
+  const filteredMenteesForBroadcast = membersList.filter((m) => {
+    const q = memberSearchQuery.toLowerCase();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      (m.companyName && m.companyName.toLowerCase().includes(q)) ||
+      (m.phone && m.phone.includes(q))
+    );
+  });
+
+  const targetRecipientsCount = sendToAll ? membersList.length : selectedMemberIds.length;
+
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6">
       {/* Toast Notification */}
       {toastMsg && (
-        <div
-          className="fixed top-6 right-6 z-50 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top duration-300 font-bold text-xs"
-          style={{
-            backgroundColor: isLightMode ? '#0F172A' : '#131926',
-            color: '#F8FAFC',
-            border: `1px solid ${activePalette.tokens.primary}`,
-          }}
-        >
-          <CheckCircle2 size={18} style={{ color: activePalette.tokens.primary }} />
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-300 text-xs font-bold">
+          <CheckCircle2 size={16} className="text-emerald-400" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Top Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <Badge variant="default" className="mb-2">
-            <Calendar size={14} className="mr-1.5" /> Agenda Executiva Oficial
-          </Badge>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Eventos, <span className="theme-gradient-text">Imersões & Hotseats</span>
+          <h1
+            className={`text-2xl font-bold tracking-tight ${
+              isLightMode ? 'text-slate-900' : 'text-slate-100'
+            }`}
+          >
+            Agenda de Eventos & Imersões
           </h1>
-          <p className={`text-xs sm:text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
-            Confirme sua presença nos encontros presenciais e imersões de alta performance.
+          <p className={`text-sm mt-1 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+            Acompanhe a agenda de imersões presenciais, masterminds e confirmação de presença dos mentorados.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center gap-2 shrink-0 self-start md:self-auto"
+          className="px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
           style={{
             backgroundColor: activePalette.tokens.primary,
             color: isLightMode ? '#FFFFFF' : '#0B0F17',
           }}
         >
           <Plus size={16} />
-          <span>Cadastrar Evento</span>
+          <span>Cadastrar Novo Evento</span>
         </button>
       </div>
 
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <Card className="p-5 flex items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold"
+            style={{
+              backgroundColor: `${activePalette.tokens.primary}20`,
+              color: activePalette.tokens.primary,
+            }}
+          >
+            <Calendar size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total de Eventos</p>
+            <h3 className={`text-2xl font-black mt-0.5 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+              {events.length}
+            </h3>
+          </div>
+        </Card>
+
+        <Card className="p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+            <Users size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total de Presenças</p>
+            <h3 className={`text-2xl font-black mt-0.5 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+              {totalAttendeesAll}
+            </h3>
+          </div>
+        </Card>
+
+        <Card className="p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">
+            <Ticket size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Próxima Imersão</p>
+            <h3 className={`text-sm font-black mt-0.5 truncate max-w-[200px] ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+              {events[0]?.title || 'Nenhum agendado'}
+            </h3>
+          </div>
+        </Card>
+      </div>
+
       {/* Filter Tabs */}
-      <div className={`flex items-center gap-2 overflow-x-auto pb-2 border-b ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
+      <div className="flex items-center gap-2 overflow-x-auto pb-2">
         {[
-          { key: 'ALL', label: 'Todos os Encontros' },
-          { key: 'UPCOMING', label: 'Próximos / Confirmados' },
-          { key: 'LIVE', label: 'Ao Vivo Agora' },
-          { key: 'FINISHED', label: 'Encerrados' },
+          { id: 'ALL', label: 'Todos os Encontros' },
+          { id: 'UPCOMING', label: 'Confirmados / Futuros' },
+          { id: 'LIVE', label: 'Ao Vivo Agora' },
+          { id: 'FINISHED', label: 'Concluídos' },
         ].map((tab) => {
-          const isSel = selectedFilter === tab.key;
+          const isActive = selectedFilter === tab.id;
           return (
             <button
-              key={tab.key}
-              onClick={() => setSelectedFilter(tab.key as any)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 border ${
-                isSel
-                  ? 'shadow-sm'
-                  : isLightMode
-                  ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                  : 'bg-[#131926]/60 text-slate-400 border-[#1F293D] hover:bg-[#1F293D]'
+              key={tab.id}
+              onClick={() => setSelectedFilter(tab.id as any)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                isActive
+                  ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
               }`}
-              style={
-                isSel
-                  ? {
-                      backgroundColor: activePalette.tokens.badgeBg,
-                      color: activePalette.tokens.primary,
-                      borderColor: activePalette.tokens.badgeBorder,
-                    }
-                  : {}
-              }
             >
               {tab.label}
             </button>
@@ -400,51 +502,75 @@ export default function EventsPage() {
           return (
             <Card
               key={event.id}
-              className={`p-6 flex flex-col justify-between transition-all group ${
+              className={`flex flex-col justify-between transition-all group overflow-hidden ${
                 isConfirmed
                   ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/5'
                   : 'hover:border-slate-600'
               }`}
             >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-2">
+              {/* Event Cover Image / Header Banner (Height ~ 190px) */}
+              <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-slate-900 via-[#111827] to-slate-950 border-b border-[#1F293D]">
+                {event.coverImage ? (
+                  <img
+                    src={event.coverImage}
+                    alt={event.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-tr from-[#0F172A] via-[#1E293B] to-[#0A0E1A]">
+                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#F59E0B_1px,transparent_1px)] [background-size:16px_16px]" />
+                    <Sparkles className="w-10 h-10 text-amber-400/60 mb-1 animate-pulse" />
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                      Rocket Club Exclusive
+                    </span>
+                  </div>
+                )}
+
+                {/* Dark Gradient Overlay for optimal badge contrast */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-transparent to-black/50" />
+
+                {/* Overlaid Badges and Action buttons */}
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                   <span
-                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg backdrop-blur-md pointer-events-auto ${
                       event.status === 'LIVE'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                        ? 'bg-red-500/90 text-white border border-red-400/50 animate-pulse'
                         : event.status === 'UPCOMING'
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
+                        ? 'bg-emerald-500/90 text-white border border-emerald-400/50'
+                        : 'bg-slate-800/90 text-slate-200 border border-slate-700/50'
                     }`}
                   >
                     {event.status === 'LIVE' ? '🔴 Ao Vivo' : event.status === 'UPCOMING' ? '📅 Confirmado' : 'Concluído'}
                   </span>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 pointer-events-auto">
                     <button
                       onClick={() => handleOpenBroadcastModal(event)}
-                      className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all hover:scale-105 flex items-center gap-1"
-                      title="Disparar Convite no WhatsApp para Todos os Mentorados"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 border border-emerald-300 font-black text-[11px] shadow-lg shadow-emerald-500/20 backdrop-blur-md transition-all hover:scale-105 flex items-center gap-1.5 cursor-pointer"
+                      title="Disparar Convite no WhatsApp para Mentorados"
                     >
-                      <Megaphone size={13} />
-                      <span className="text-[10px] font-extrabold hidden sm:inline">Disparar WhatsApp</span>
+                      <Megaphone size={12} />
+                      <span>WhatsApp</span>
                     </button>
 
                     <button
                       onClick={() => handleOpenEditModal(event)}
-                      className="p-1.5 rounded-lg bg-[#0B0F17] hover:bg-[#1F293D] text-slate-400 hover:text-slate-200 border border-[#1F293D] transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-700 text-white border border-white/20 backdrop-blur-md transition-colors shadow-md cursor-pointer"
                       title="Editar Evento"
                     >
                       <Pencil size={13} />
                     </button>
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <h3 className={`text-base font-bold transition-colors ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
+              {/* Event Body */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <h3 className={`text-base font-bold transition-colors line-clamp-1 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
                     {event.title}
                   </h3>
-                  <p className={`text-xs mt-1 leading-relaxed line-clamp-2 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <p className={`text-xs leading-relaxed line-clamp-2 ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
                     {event.description}
                   </p>
                 </div>
@@ -452,7 +578,15 @@ export default function EventsPage() {
                 <div className="space-y-2 pt-2 text-xs text-slate-400">
                   <div className="flex items-center gap-2">
                     <Clock size={14} style={{ color: activePalette.tokens.primary }} />
-                    <span>{new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>
+                      {new Date(event.date).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin size={14} style={{ color: activePalette.tokens.primary }} />
@@ -465,38 +599,38 @@ export default function EventsPage() {
                     </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Button */}
-              <div className="pt-5 border-t border-slate-800/40 mt-4">
-                {isConfirmed ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5">
-                      <CheckCircle2 size={15} />
-                      <span>Presença Confirmada!</span>
+                {/* Action Button */}
+                <div className="pt-4 border-t border-slate-800/40">
+                  {isConfirmed ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5">
+                        <CheckCircle2 size={15} />
+                        <span>Presença Confirmada!</span>
+                      </div>
+                      <button
+                        onClick={() => handleCancelRsvp(event.id)}
+                        className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-colors"
+                        title="Cancelar Presença"
+                      >
+                        Cancelar
+                      </button>
                     </div>
+                  ) : (
                     <button
-                      onClick={() => handleCancelRsvp(event.id)}
-                      className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold"
-                      title="Cancelar Presença"
+                      onClick={() => handleConfirmRsvp(event.id)}
+                      disabled={isFull}
+                      className="w-full py-2.5 rounded-xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                      style={{
+                        backgroundColor: activePalette.tokens.primary,
+                        color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                      }}
                     >
-                      Cancelar
+                      <UserCheck size={16} />
+                      <span>{isFull ? 'Vagas Esgotadas' : 'Confirmar Minha Presença'}</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleConfirmRsvp(event.id)}
-                    disabled={isFull}
-                    className="w-full py-2.5 rounded-xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
-                    style={{
-                      backgroundColor: activePalette.tokens.primary,
-                      color: isLightMode ? '#FFFFFF' : '#0B0F17',
-                    }}
-                  >
-                    <UserCheck size={16} />
-                    <span>{isFull ? 'Vagas Esgotadas' : 'Confirmar Minha Presença'}</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </Card>
           );
@@ -509,7 +643,7 @@ export default function EventsPage() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           title="Editar Evento ou Imersão"
-          subtitle="Atualize as informações de horário, local e vagas do encontro"
+          subtitle="Atualize as informações de horário, local, imagem de capa e vagas do encontro"
           icon={<Pencil size={20} />}
           size="lg"
         >
@@ -540,6 +674,28 @@ export default function EventsPage() {
                 />
               </div>
 
+              {/* Cover Image URL Field with Preview */}
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                  <ImageIcon size={13} className="text-amber-400" />
+                  <span>URL da Imagem de Capa (Recomendado 1200x600 px)</span>
+                </label>
+                <input
+                  type="url"
+                  value={editCoverImage}
+                  onChange={(e) => setEditCoverImage(e.target.value)}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                    isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                  }`}
+                />
+                {editCoverImage && (
+                  <div className="mt-2 relative w-full h-28 rounded-xl overflow-hidden border border-[#1F293D]">
+                    <img src={editCoverImage} alt="Prévia da Capa" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">Localização / Link</label>
                 <input
@@ -565,7 +721,7 @@ export default function EventsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas Máximas)</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Capacidade (Vagas)</label>
                   <input
                     type="number"
                     value={editMaxAttendees}
@@ -579,18 +735,18 @@ export default function EventsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Preço do Ingresso (R$)</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Preço / Ingresso (R$)</label>
                   <input
                     type="number"
                     value={editPrice}
                     onChange={(e) => setEditPrice(e.target.value)}
-                    className={`w-full border rounded-xl px-3.5 py-2.5 font-bold focus:outline-none ${
+                    className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
                       isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
                     }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Status</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Status do Evento</label>
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as any)}
@@ -677,6 +833,28 @@ export default function EventsPage() {
               />
             </div>
 
+            {/* Cover Image URL Field with Preview */}
+            <div>
+              <label className="block text-slate-400 font-semibold mb-1 flex items-center gap-1.5">
+                <ImageIcon size={13} className="text-amber-400" />
+                <span>URL da Imagem de Capa (Opcional)</span>
+              </label>
+              <input
+                type="url"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                placeholder="https://images.unsplash.com/photo-..."
+                className={`w-full border rounded-xl px-3.5 py-2.5 focus:outline-none ${
+                  isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                }`}
+              />
+              {coverImage && (
+                <div className="mt-2 relative w-full h-24 rounded-xl overflow-hidden border border-[#1F293D]">
+                  <img src={coverImage} alt="Prévia da Capa" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-slate-400 font-semibold mb-1">Localização / Link</label>
               <input
@@ -725,7 +903,7 @@ export default function EventsPage() {
                     Disparo Automático no WhatsApp
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    Abrir envio em massa para todos os mentorados ({membersList.length} contatos)
+                    Abrir envio em massa para mentorados após salvar
                   </span>
                 </div>
               </div>
@@ -768,7 +946,7 @@ export default function EventsPage() {
             if (!isBroadcasting) setIsBroadcastModalOpen(false);
           }}
           title="📢 Disparo em Massa - Convite de Evento"
-          subtitle={`Disparo oficial no WhatsApp para todos os ${membersList.length} mentorados cadastrados`}
+          subtitle={`Envio de mensagens personalizadas no WhatsApp com controle de destinatários`}
           icon={<Megaphone size={20} className="text-emerald-400" />}
           size="lg"
         >
@@ -785,8 +963,122 @@ export default function EventsPage() {
                 </p>
               </div>
               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs px-2.5 py-1">
-                👥 {membersList.length} Destinatários
+                👥 {targetRecipientsCount} Selecionados
               </Badge>
+            </div>
+
+            {/* Recipient Mode Selector: All vs Custom Selection */}
+            <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-slate-200 block text-xs">Destinatários do Disparo</span>
+                  <span className="text-[10px] text-slate-400">
+                    {sendToAll
+                      ? `Enviando para todos os ${membersList.length} mentorados da base`
+                      : `Seleção personalizada: ${selectedMemberIds.length} de ${membersList.length} mentorados`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer bg-[#131A2B] px-3 py-1.5 rounded-xl border border-[#1F293D]">
+                    <input
+                      type="checkbox"
+                      checked={sendToAll}
+                      disabled={isBroadcasting}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSendToAll(checked);
+                        if (checked) {
+                          setSelectedMemberIds(membersList.map((m) => m.id));
+                        }
+                      }}
+                      className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 bg-[#0B0F17] border-[#1F293D] cursor-pointer"
+                    />
+                    <span className="font-bold text-slate-200 text-xs">Disparar para Todos</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Custom Mentee Multi-Select Table / List when sendToAll is false */}
+              {!sendToAll && (
+                <div className="pt-2 border-t border-slate-800/40 space-y-2">
+                  {/* Search and Quick Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search size={13} className="absolute left-3 top-2.5 text-slate-500" />
+                      <input
+                        type="text"
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        placeholder="Buscar por nome, empresa ou telefone..."
+                        className="w-full bg-[#131A2B] border border-[#1F293D] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllMembers}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-300 font-bold text-[11px] border border-[#1F293D]"
+                    >
+                      Selecionar Todos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeselectAllMembers}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#131A2B] hover:bg-[#1E293B] text-slate-400 font-bold text-[11px] border border-[#1F293D]"
+                    >
+                      Desmarcar Todos
+                    </button>
+                  </div>
+
+                  {/* Scrollable Mentee List */}
+                  <div className="max-h-48 overflow-y-auto space-y-1 p-1 bg-[#070A12] rounded-xl border border-[#1F293D]">
+                    {filteredMenteesForBroadcast.length === 0 ? (
+                      <p className="p-3 text-center text-slate-500 text-xs">Nenhum mentorado encontrado.</p>
+                    ) : (
+                      filteredMenteesForBroadcast.map((mentee) => {
+                        const isSelected = selectedMemberIds.includes(mentee.id);
+                        return (
+                          <div
+                            key={mentee.id}
+                            onClick={() => !isBroadcasting && handleToggleMember(mentee.id)}
+                            className={`p-2 rounded-lg flex items-center justify-between gap-2 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-emerald-500/10 border border-emerald-500/30 text-slate-100'
+                                : 'hover:bg-[#131A2B] border border-transparent text-slate-400'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 truncate">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                readOnly
+                                className="w-3.5 h-3.5 rounded text-emerald-500 bg-[#0B0F17] border-[#1F293D] pointer-events-none"
+                              />
+                              <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-[10px] text-amber-400 shrink-0">
+                                {mentee.name[0]}
+                              </div>
+                              <div className="truncate text-left">
+                                <strong className="text-xs text-slate-200 block truncate">{mentee.name}</strong>
+                                <span className="text-[10px] text-slate-400 truncate block">
+                                  {mentee.companyName || 'Mentorado'} • {mentee.phone || 'Sem fone'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                isSelected ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                              }`}
+                            >
+                              {isSelected ? 'Incluído' : 'Não selecionado'}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Anti-Ban Interval Control */}
@@ -862,7 +1154,7 @@ export default function EventsPage() {
                 value={customBroadcastMsg}
                 onChange={(e) => setCustomBroadcastMsg(e.target.value)}
                 disabled={isBroadcasting}
-                placeholder="Se preencher aqui, este texto exato será usado..."
+                placeholder="Se preencher aqui, este texto exato será usado no lugar do template padrão..."
                 className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 resize-none disabled:opacity-50"
               />
             </div>
@@ -904,16 +1196,16 @@ export default function EventsPage() {
                 type="button"
                 onClick={() => setIsBroadcastModalOpen(false)}
                 disabled={isBroadcasting}
-                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D] disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D] disabled:opacity-50 cursor-pointer"
               >
                 {broadcastProgress?.isFinished ? 'Fechar' : 'Cancelar'}
               </button>
 
               <button
                 type="button"
-                onClick={handleStartBroadcast}
-                disabled={isBroadcasting}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                onClick={handleRequestBroadcast}
+                disabled={isBroadcasting || targetRecipientsCount === 0}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {isBroadcasting ? (
                   <>
@@ -923,9 +1215,61 @@ export default function EventsPage() {
                 ) : (
                   <>
                     <Send size={14} />
-                    <span>Iniciar Disparo em Massa ({membersList.length} Mentorados)</span>
+                    <span>Iniciar Disparo ({targetRecipientsCount} Mentorados)</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Pre-Broadcast Confirmation Modal */}
+      {isConfirmBroadcastModalOpen && broadcastTargetEvent && (
+        <Modal
+          isOpen={isConfirmBroadcastModalOpen}
+          onClose={() => setIsConfirmBroadcastModalOpen(false)}
+          title="Confirmar Disparo em Massa"
+          subtitle="Valide as informações antes de iniciar o envio no WhatsApp"
+          icon={<ShieldCheck size={20} className="text-emerald-400" />}
+          size="md"
+        >
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-300 font-extrabold text-sm">
+                <Megaphone size={16} />
+                <span>Pronto para iniciar o envio oficial?</span>
+              </div>
+              <p className="text-slate-300 leading-relaxed text-xs">
+                Você está prestes a disparar o convite do evento{' '}
+                <strong className="text-emerald-400">"{broadcastTargetEvent.title}"</strong> para{' '}
+                <strong className="text-white underline">{targetRecipientsCount} mentorado(s) selecionado(s)</strong>.
+              </p>
+              <div className="pt-2 text-[11px] text-slate-400 flex items-center gap-4">
+                <span>⏱️ Intervalo Anti-Ban: <strong>{(broadcastDelayMs / 1000).toFixed(1)}s</strong></span>
+                <span>📱 Canal: <strong>Evolution API WhatsApp</strong></span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800/40">
+              <button
+                type="button"
+                onClick={() => setIsConfirmBroadcastModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D]"
+              >
+                Voltar e Ajustar
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsConfirmBroadcastModalOpen(false);
+                  await handleStartBroadcast();
+                }}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 hover:scale-105 transition-all flex items-center gap-2"
+              >
+                <Send size={14} />
+                <span>Sim, Iniciar Disparo Agora 🚀</span>
               </button>
             </div>
           </div>
