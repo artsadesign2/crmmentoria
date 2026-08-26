@@ -119,12 +119,6 @@ function LoginForm() {
     }, 150);
   };
 
-  const handleFillQuickDemo = (userEmail: string, userPass: string) => {
-    setEmail(userEmail);
-    setPassword(userPass);
-    setErrorMessage(null);
-  };
-
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden transition-colors"
@@ -231,43 +225,6 @@ function LoginForm() {
             )}
           </button>
         </form>
-
-        {/* Quick Demo Access Badges */}
-        <div className="pt-2 border-t border-[#1F293D]/60 space-y-2">
-          <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider text-center">
-            Acesso Rápido para Demonstração:
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleFillQuickDemo('master@rocketclub.com.br', '123456')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/20 transition-all"
-            >
-              👑 Comandante Master
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillQuickDemo('admin@rocketclub.com.br', '123456')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-all"
-            >
-              🛡️ Administrador
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillQuickDemo('editor@rocketclub.com.br', '123456')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 transition-all"
-            >
-              📝 Editor
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillQuickDemo('cliente@rocketclub.com.br', '123456')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
-            >
-              🚀 Mentorado VIP
-            </button>
-          </div>
-        </div>
 
         <div className="text-center pt-2 border-t border-[#1F293D]/60">
           <span className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
