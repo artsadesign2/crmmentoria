@@ -49,6 +49,7 @@ export default function FinancialPage() {
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBillingRulesModalOpen, setIsBillingRulesModalOpen] = useState(false);
   const [selectedTxForPix, setSelectedTxForPix] = useState<DbTransaction | null>(null);
   const [copiedPix, setCopiedPix] = useState(false);
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
@@ -320,6 +321,14 @@ export default function FinancialPage() {
             title="Atualizar dados do banco"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          <button
+            onClick={() => setIsBillingRulesModalOpen(true)}
+            className="px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 transition-all flex items-center gap-1.5"
+          >
+            <Zap size={15} />
+            <span>Régua de Cobrança IA</span>
           </button>
 
           <button
@@ -978,6 +987,111 @@ export default function FinancialPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal: Régua de Cobrança Automática Inteligente */}
+      <Modal
+        isOpen={isBillingRulesModalOpen}
+        onClose={() => setIsBillingRulesModalOpen(false)}
+        title="Régua de Cobrança Inteligente & Automação WhatsApp"
+      >
+        <div className="space-y-4 text-left">
+          <p className="text-xs text-slate-300">
+            A régua automatiza o envio de cobranças nos momentos estratégicos do ciclo, reduzindo a inadimplência com links de Pix Copia e Cola instantâneos.
+          </p>
+
+          <div className="space-y-2.5">
+            {[
+              {
+                trigger: 'D-3 (3 dias antes)',
+                title: 'Lembrete Preventivo',
+                desc: 'Mensagem cordial de planejamento financeiro com chave Pix.',
+                time: '09:30',
+                badge: 'Ativo',
+              },
+              {
+                trigger: 'D-0 (Dia do Vencimento)',
+                title: 'Cobrança do Dia',
+                desc: 'Aviso de vencimento com QR Code Pix e link de quitação rápida.',
+                time: '10:00',
+                badge: 'Ativo',
+              },
+              {
+                trigger: 'D+3 (3 dias após)',
+                title: 'Follow-up de Suporte',
+                desc: 'Notificação amigável consultando se houve algum problema operacional.',
+                time: '14:00',
+                badge: 'Ativo',
+              },
+            ].map((rule, idx) => (
+              <div
+                key={idx}
+                className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-start justify-between gap-3"
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-yellow-400">{rule.trigger}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">• {rule.title}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">{rule.desc}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    {rule.badge}
+                  </span>
+                  <span className="text-[9px] text-slate-500 block mt-1">Horário: {rule.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-start gap-2">
+            <ShieldCheck size={16} className="shrink-0 mt-0.5 text-amber-400" />
+            <span>
+              <strong>Modo de Teste Seguro Ativo:</strong> Todos os testes de disparo da régua serão enviados exclusivamente para <strong>(11) 99530-2672</strong>, sem impactar nenhum cliente real.
+            </span>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1F293D]">
+            <button
+              onClick={() => setIsBillingRulesModalOpen(false)}
+              className="px-4 py-2 rounded-xl bg-[#0B0F17] border border-[#1F293D] text-xs font-semibold text-slate-300 hover:text-slate-100"
+            >
+              Fechar
+            </button>
+
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/financial/billing-bot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      ruleId: 'rule-d3',
+                      recipientPhone: '11995302672',
+                      menteeName: 'Carlos Eduardo Mendes',
+                      amount: 5000,
+                      dueDate: '10/09/2026',
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.ok) {
+                    showToast('Disparo da régua de cobrança testado com sucesso no WhatsApp 11995302672!', 'success');
+                    setIsBillingRulesModalOpen(false);
+                  } else {
+                    showToast(data.error || 'Falha ao testar régua.', 'warning');
+                  }
+                } catch {
+                  showToast('Erro de comunicação com a régua.', 'warning');
+                }
+              }}
+              className="px-4 py-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold text-xs shadow-lg transition-all flex items-center gap-1.5"
+            >
+              <Zap size={14} />
+              <span>Simular Disparo Seguro da Régua</span>
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

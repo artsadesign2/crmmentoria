@@ -18,6 +18,8 @@ import {
   Target,
   Users,
   X,
+  Trophy,
+  Award,
 } from 'lucide-react';
 import { DEFAULT_TENANT, hasFeature } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth-context';
@@ -38,6 +40,12 @@ export const NAVIGATION_ITEMS: {
     permissionKey: 'viewDashboard',
   },
   {
+    name: 'Portal do Mentorado',
+    href: '/portal',
+    icon: Rocket,
+    permissionKey: 'viewMembers',
+  },
+  {
     name: 'CRM (Novos Leads)',
     href: '/crm',
     icon: Target,
@@ -47,6 +55,18 @@ export const NAVIGATION_ITEMS: {
     name: 'Mentorados',
     href: '/mentorados',
     icon: Users,
+    permissionKey: 'viewMembers',
+  },
+  {
+    name: 'Leaderboard & Ranking',
+    href: '/leaderboard',
+    icon: Trophy,
+    permissionKey: 'viewMembers',
+  },
+  {
+    name: 'Certificados Digitais',
+    href: '/certificates',
+    icon: Award,
     permissionKey: 'viewMembers',
   },
   {
