@@ -78,10 +78,56 @@ body.theme-light .glass-card:hover {
 
 .gold-badge,
 .theme-badge {
-  background: var(--primary-glow);
-  border: 1px solid var(--primary-color);
+  background: var(--theme-badge-bg, var(--primary-glow));
+  border: 1px solid var(--theme-badge-border, var(--primary-color));
+  color: var(--theme-badge-text, var(--primary-color));
+}
+
+.bg-theme-primary {
+  background-color: var(--primary-color);
+}
+
+.text-theme-primary {
   color: var(--primary-color);
 }
+
+.border-theme-primary {
+  border-color: var(--primary-color);
+}
+
+.bg-theme-glow {
+  background-color: var(--primary-glow);
+}
+
+.bg-theme-surface {
+  background-color: var(--theme-surface);
+}
+
+.bg-theme-bg {
+  background-color: var(--theme-bg);
+}
+
+.border-theme-border {
+  border-color: var(--theme-border);
+}
+
+.shadow-theme {
+  box-shadow: 0 10px 25px -5px var(--primary-glow);
+}
+
+.btn-theme-primary {
+  background: var(--primary-gradient);
+  color: #0B0F17;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.btn-theme-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--primary-glow);
+}
+
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {

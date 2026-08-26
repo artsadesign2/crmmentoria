@@ -41,6 +41,7 @@ import {
 import { Member, KANBAN_STAGES } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { maskCpf, maskCnpj, maskPhone, maskRg } from '@/lib/masks';
+import { useTheme } from '@/lib/theme-context';
 import {
   getAllWhatsAppTemplates,
   sendWhatsAppWithTemplate,
@@ -68,8 +69,9 @@ export function MenteeSheet({
   onDownloadPdf,
   onToggleBook,
 }: MenteeSheetProps) {
+  const { isLightMode, activePalette } = useTheme();
   const [formData, setFormData] = useState<Partial<Member & { excludeFromBook?: boolean }>>({});
-  const [activeTab, setActiveTab] = useState<'profile' | 'contacts' | 'mentorship' | 'personal' | 'notes'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'contacts' | 'method' | 'achievements' | 'personal' | 'notes'>('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -455,18 +457,19 @@ export function MenteeSheet({
           </div>
         </div>
 
-        {/* Tab Navigation Grid (No horizontal scroll, clean wrap on all resolutions) */}
+        {/* Tab Navigation Grid */}
         <div className="px-3 sm:px-6 py-2 border-b border-[#1F293D] bg-[#0D121F] shrink-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 w-full">
             {[
               { id: 'profile', label: '1. Atuação & PJ', icon: Briefcase },
               { id: 'contacts', label: '2. Contatos & Redes', icon: Phone },
-              { id: 'mentorship', label: '3. Diagnóstico & Metas', icon: Target },
-              { id: 'personal', label: '4. Vida Pessoal & Família', icon: Heart },
-              { id: 'notes', label: '5. Anotações do Mentor', icon: Activity },
+              { id: 'method', label: '3. Método & Evolução', icon: Sparkles },
+              { id: 'achievements', label: '4. Mural & Metas', icon: Award },
+              { id: 'personal', label: '5. Vida Pessoal', icon: Heart },
+              { id: 'notes', label: '6. Anotações', icon: Activity },
             ].map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+              const isActive = activeTab === (tab.id as any);
               return (
                 <button
                   key={tab.id}
@@ -474,9 +477,19 @@ export function MenteeSheet({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`py-2 px-2 rounded-xl text-[11px] sm:text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all border text-center truncate ${
                     isActive
-                      ? 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-md shadow-yellow-500/20 font-black'
+                      ? 'shadow-md font-black'
                       : 'bg-[#111728]/80 border-[#1F293D] text-slate-400 hover:text-slate-200 hover:bg-[#1A2234]'
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: activePalette.tokens.primary,
+                          color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                          borderColor: activePalette.tokens.primary,
+                          boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                        }
+                      : {}
+                  }
                 >
                   <Icon size={13} className="shrink-0" />
                   <span className="truncate">{tab.label}</span>
@@ -715,109 +728,387 @@ export function MenteeSheet({
             </div>
           )}
 
-          {/* TAB 3: DIAGNÓSTICO & METAS DA MENTORIA */}
-          {activeTab === 'mentorship' && (
-            <div className="space-y-5 animate-in fade-in duration-150">
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">
-                <h4 className="text-xs font-extrabold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Target size={14} /> Direcionamento Estratégico & Escala
+          {/* TAB 3: APLICAÇÃO DO MÉTODO & EVOLUÇÃO (5 PILARES ROCKET) */}
+          {activeTab === 'method' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              {/* Maturity Scorecard Banner */}
+              <div
+                className="p-5 rounded-2xl border space-y-3 relative overflow-hidden"
+                style={{
+                  backgroundColor: activePalette.tokens.surface,
+                  borderColor: activePalette.tokens.surfaceBorder,
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shrink-0"
+                      style={{
+                        backgroundColor: activePalette.tokens.badgeBg,
+                        color: activePalette.tokens.primary,
+                        borderColor: activePalette.tokens.badgeBorder,
+                        borderWidth: 1,
+                      }}
+                    >
+                      🚀
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-100">
+                          Matriz de Maturidade Rocket Club
+                        </h4>
+                        <span
+                          className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
+                          style={{
+                            backgroundColor: activePalette.tokens.badgeBg,
+                            color: activePalette.tokens.primary,
+                            border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                          }}
+                        >
+                          Nível de Escala
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        Avaliação contínua dos 5 pilares do método de aceleração para escala previsível.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5 Pillars Quick Visual Progress */}
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-2">
+                  {[
+                    { name: '1. Oferta & Posicionamento', score: 8.5, color: 'text-amber-400', bg: 'bg-amber-400' },
+                    { name: '2. Tráfego & Funis', score: 7.0, color: 'text-blue-400', bg: 'bg-blue-400' },
+                    { name: '3. Comercial & Vendas', score: 8.0, color: 'text-emerald-400', bg: 'bg-emerald-400' },
+                    { name: '4. Entrega & LTV', score: 9.0, color: 'text-purple-400', bg: 'bg-purple-400' },
+                    { name: '5. Gestão & Escala', score: 6.5, color: 'text-rose-400', bg: 'bg-rose-400' },
+                  ].map((p, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex flex-col justify-between space-y-2"
+                    >
+                      <span className="text-[10px] font-bold text-slate-300 leading-tight truncate">
+                        {p.name}
+                      </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-mono font-black">
+                          <span className={p.color}>Nota {p.score}</span>
+                          <span className="text-slate-500">/ 10</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-[#1F293D] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${p.bg}`}
+                            style={{ width: `${p.score * 10}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Strategic Pillars In-Depth Assessment */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-5">
+                <h4
+                  className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
+                  style={{ color: activePalette.tokens.primary }}
+                >
+                  <Target size={14} /> Diagnóstico Estratégico do Negócio
                 </h4>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-yellow-400 mb-1.5 flex items-center gap-1">
-                    <Target size={12} /> Objetivo Principal na Mentoria Rocket Club
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
+                    <Target size={12} style={{ color: activePalette.tokens.primary }} /> Objetivo Principal no Ciclo
                   </label>
                   <input
                     type="text"
                     value={formData.mainGoal || ''}
                     onChange={(e) => updateField('mainGoal', e.target.value)}
-                    placeholder="Ex: Escalar operação de R$ 80k para R$ 250k/mês e contratar equipe comercial"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20"
+                    placeholder="Ex: Escalar operação de R$ 80k para R$ 250k/mês e estruturar time comercial"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/60"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-red-400 mb-1.5 flex items-center gap-1">
-                    <Flame size={12} /> Maior Desafio / Gargalo Atual
+                    <Flame size={12} /> Principal Gargalo / Desafio Atual
                   </label>
                   <textarea
                     rows={2}
                     value={formData.biggestChallenge || ''}
                     onChange={(e) => updateField('biggestChallenge', e.target.value)}
                     placeholder="O que está impedindo a empresa de crescer mais rápido agora?"
-                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20 resize-none leading-relaxed"
+                    className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60 resize-none leading-relaxed"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
-                      Interesses Específicos na Mentoria
+                      Frentes de Mentoria com Maior Foco
                     </label>
                     <input
                       type="text"
                       value={formData.mentorshipInterest || ''}
                       onChange={(e) => updateField('mentorshipInterest', e.target.value)}
-                      placeholder="Ex: Tráfego perpétuo, contratação e governança"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20"
+                      placeholder="Ex: Tráfego perpétuo, contratação de Closer e SDR, DRE"
+                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">
-                      Disponibilidade de Tempo Semanal
+                      Disponibilidade Semanal de Execução
                     </label>
                     <input
                       type="text"
                       value={formData.weeklyAvailability || ''}
                       onChange={(e) => updateField('weeklyAvailability', e.target.value)}
-                      placeholder="Ex: 5 a 10 horas semanais"
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20"
+                      placeholder="Ex: 10 horas semanais de dedicação estratégica"
+                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-yellow-500/60"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Como nos Conheceu</label>
-                    <select
-                      value={formData.howDidYouFindUs || ''}
-                      onChange={(e) => updateField('howDidYouFindUs', e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20 cursor-pointer"
-                    >
-                      <option value="" disabled className="bg-[#111728] text-slate-500">Selecione a origem...</option>
-                      <option value="Instagram (Perfil Oficial / Mentor)" className="bg-[#111728]">Instagram (Perfil Oficial / Mentor)</option>
-                      <option value="Indicação de Membro / Mentorado" className="bg-[#111728]">Indicação de Membro / Mentorado</option>
-                      <option value="Evento Presencial / Imersão VIP" className="bg-[#111728]">Evento Presencial / Imersão VIP</option>
-                      <option value="Tráfego Pago (Meta Ads / Google)" className="bg-[#111728]">Tráfego Pago (Meta Ads / Google)</option>
-                      <option value="YouTube / Podcast" className="bg-[#111728]">YouTube / Podcast</option>
-                      <option value="LinkedIn / Artigo Executivo" className="bg-[#111728]">LinkedIn / Artigo Executivo</option>
-                      <option value="WhatsApp Direct / Prospecção Comercial" className="bg-[#111728]">WhatsApp Direct / Prospecção Comercial</option>
-                      <option value="Outros / Assessoria de Imprensa" className="bg-[#111728]">Outros / Assessoria de Imprensa</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">Formato de Aprendizado</label>
-                    <select
-                      value={formData.contentConsumption || ''}
-                      onChange={(e) => updateField('contentConsumption', e.target.value)}
-                      className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/20 cursor-pointer"
-                    >
-                      <option value="" disabled className="bg-[#111728] text-slate-500">Selecione o formato de preferência...</option>
-                      <option value="Híbrido (Imersões Presenciais + Encontros Online)" className="bg-[#111728]">Híbrido (Imersões Presenciais + Encontros Online)</option>
-                      <option value="Imersões Presenciais & Networking VIP" className="bg-[#111728]">Imersões Presenciais & Networking VIP</option>
-                      <option value="Hotseats & Mentorias Coletivas ao Vivo (Zoom)" className="bg-[#111728]">Hotseats & Mentorias Coletivas ao Vivo (Zoom)</option>
-                      <option value="Sessões Individuais 1 on 1 com o Mentor" className="bg-[#111728]">Sessões Individuais 1 on 1 com o Mentor</option>
-                      <option value="Plataforma Gravada (Academy & Aulas On-Demand)" className="bg-[#111728]">Plataforma Gravada (Academy & Aulas On-Demand)</option>
-                      <option value="Mastermind / Grupos de Negócios Fechados" className="bg-[#111728]">Mastermind / Grupos de Negócios Fechados</option>
-                      <option value="Acompanhamento Direto via WhatsApp / Canal VIP" className="bg-[#111728]">Acompanhamento Direto via WhatsApp / Canal VIP</option>
-                    </select>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 4: VIDA PESSOAL & FAMÍLIA */}
+          {/* TAB 4: METAS, DESAFIOS & MURAL DE CONQUISTAS */}
+          {activeTab === 'achievements' && (
+            <div className="space-y-6 animate-in fade-in duration-150">
+              {/* Gamification Level & Rank Header */}
+              <div
+                className="p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                style={{
+                  backgroundColor: activePalette.tokens.surface,
+                  borderColor: activePalette.tokens.surfaceBorder,
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-xl shrink-0"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                      boxShadow: `0 8px 25px ${activePalette.tokens.glow}`,
+                    }}
+                  >
+                    🏆
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-black text-slate-100">
+                        Comandante Rocket (Nível 3)
+                      </h3>
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
+                        style={{
+                          backgroundColor: activePalette.tokens.badgeBg,
+                          color: activePalette.tokens.primary,
+                          border: `1px solid ${activePalette.tokens.badgeBorder}`,
+                        }}
+                      >
+                        1.850 XP
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Falta 650 XP para a patente <strong>Almirante de Frota</strong>.
+                    </p>
+                    <div className="w-48 sm:w-64 h-2 bg-[#0B0F17] rounded-full mt-2 overflow-hidden border border-[#1F293D]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: '74%',
+                          backgroundColor: activePalette.tokens.primary,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rocket Academy Consumption Link */}
+                <div className="p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center gap-3 self-stretch sm:self-auto">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 shrink-0">
+                    🎓
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-slate-300">Rocket Academy</div>
+                    <div className="text-xs font-black text-purple-400">14 de 18 aulas concluídas (78%)</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mural de Conquistas (Badges Wall) */}
+              <div className="p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4
+                      className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
+                      style={{ color: activePalette.tokens.primary }}
+                    >
+                      <Award size={15} /> Mural de Conquistas & Insígnias do Mentorado
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Conquistas desbloqueadas durante a trajetória no ecossistema Rocket Club.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-emerald-400">5 / 6 Conquistados</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: '100k',
+                      title: 'Primeiro 100k',
+                      desc: 'Faturamento mensal de 6 dígitos batido no ciclo',
+                      icon: '🥇',
+                      unlocked: true,
+                      date: '15/07/2026',
+                    },
+                    {
+                      id: 'offer',
+                      title: 'Oferta High Ticket Validada',
+                      desc: 'Funil comercial gerando vendas com previsibilidade',
+                      icon: '⚡',
+                      unlocked: true,
+                      date: '02/08/2026',
+                    },
+                    {
+                      id: 'closer',
+                      title: 'Closer de Elite',
+                      desc: 'Taxa de fechamento comercial acima de 30%',
+                      icon: '🎯',
+                      unlocked: true,
+                      date: '10/08/2026',
+                    },
+                    {
+                      id: 'academy',
+                      title: 'Academy Master',
+                      desc: 'Mais de 75% dos cursos e módulos consumidos',
+                      icon: '🎓',
+                      unlocked: true,
+                      date: '20/08/2026',
+                    },
+                    {
+                      id: 'community',
+                      title: 'Presença VIP Mastermind',
+                      desc: 'Participação ativa nas imersões presenciais',
+                      icon: '🌟',
+                      unlocked: true,
+                      date: '24/08/2026',
+                    },
+                    {
+                      id: '500k',
+                      title: 'Escala 500k+',
+                      desc: 'Operação faturando meio milhão com processos',
+                      icon: '🛸',
+                      unlocked: false,
+                      date: 'Em progresso',
+                    },
+                  ].map((badge) => (
+                    <div
+                      key={badge.id}
+                      className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
+                        badge.unlocked
+                          ? 'bg-[#0B0F17] border-yellow-500/30 hover:border-yellow-500/60 shadow-md'
+                          : 'bg-[#0B0F17]/40 border-[#1F293D] opacity-60'
+                      }`}
+                    >
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 border ${
+                          badge.unlocked
+                            ? 'bg-yellow-500/15 border-yellow-500/40'
+                            : 'bg-slate-800/40 border-slate-700'
+                        }`}
+                      >
+                        {badge.icon}
+                      </div>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-extrabold text-xs text-slate-100 truncate">
+                            {badge.title}
+                          </span>
+                          {badge.unlocked && <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />}
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {badge.desc}
+                        </p>
+                        <span className="text-[9px] font-mono text-slate-500 block">
+                          {badge.unlocked ? `Conquistado em ${badge.date}` : '🔒 Bloqueado'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Metas do Ciclo & Desafios Semanais */}
+              <div className="p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4
+                    className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: activePalette.tokens.primary }}
+                  >
+                    <CheckCircle2 size={15} /> Metas Smart do Ciclo Atual
+                  </h4>
+                  <span className="text-[11px] text-slate-400">Checkpoints de Aceleração</span>
+                </div>
+
+                <div className="space-y-2">
+                  {[
+                    { title: 'Contratar e treinar 1 SDR para qualificação de leads', status: 'Concluída', xp: '+250 XP', done: true },
+                    { title: 'Validar novo script de apresentação High Ticket no Zoom', status: 'Concluída', xp: '+200 XP', done: true },
+                    { title: 'Testar 5 criativos em vídeo no Meta Ads com orçamento de R$ 100/dia', status: 'Em Andamento', xp: '+150 XP', done: false },
+                    { title: 'Implementar DRE mensal com o financeiro', status: 'A Fazer', xp: '+300 XP', done: false },
+                  ].map((goal, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-between gap-3 hover:border-slate-600 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
+                            goal.done
+                              ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                              : 'bg-transparent border-slate-600 text-transparent'
+                          }`}
+                        >
+                          <Check size={12} />
+                        </button>
+                        <span
+                          className={`text-xs font-semibold ${
+                            goal.done ? 'text-slate-400 line-through' : 'text-slate-200'
+                          }`}
+                        >
+                          {goal.title}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            goal.done
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          }`}
+                        >
+                          {goal.status}
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">
+                          {goal.xp}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: VIDA PESSOAL & FAMÍLIA */}
           {activeTab === 'personal' && (
             <div className="space-y-5 animate-in fade-in duration-150">
               <div className="p-4 sm:p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">

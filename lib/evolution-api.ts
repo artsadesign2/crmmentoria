@@ -268,20 +268,46 @@ export async function fetchEvolutionQRCode(
     };
   }
 
-  return {
-    success: false,
-    error: 'Falha inesperada ao solicitar QR Code.',
-  };
+    return {
+      success: false,
+      error: 'Falha inesperada ao solicitar QR Code.',
+    };
+}
+
+export const SAFE_TEST_PHONE = '5511995302672';
+const TEST_MODE_KEY = 'rocket_club_whatsapp_test_mode';
+
+/**
+ * Checks if WhatsApp Safety Test Mode is enabled (defaults to true to protect real client data)
+ */
+export function isWhatsAppTestModeEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const saved = localStorage.getItem(TEST_MODE_KEY);
+    if (saved !== null) {
+      return saved === 'true';
+    }
+  } catch (e) {}
+  return true; // Safe default
+}
+
+export function setWhatsAppTestMode(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(TEST_MODE_KEY, String(enabled));
+  } catch (e) {}
 }
 
 /**
- * Sends a real text message via Evolution API to a WhatsApp contact (CORS-free)
+ * Sends a real text message via Evolution API to a WhatsApp contact (CORS-free).
+ * If Test Mode is enabled, it automatically redirects the message to the user's test phone (11995302672)
+ * so that real clients are NEVER spammed with test messages.
  */
 export async function sendEvolutionWhatsAppMessage(
   phone: string,
   message: string,
   configOverride?: EvolutionApiConfig
-): Promise<{ success: boolean; messageId?: string; error?: string }> {
+): Promise<{ success: boolean; messageId?: string; error?: string; isTestRedirected?: boolean }> {
   const config = configOverride || getEvolutionConfig();
 
   if (!config.serverUrl || !config.apiKey || !config.instanceName) {
@@ -296,13 +322,25 @@ export async function sendEvolutionWhatsAppMessage(
     return { success: false, error: 'Número de telefone inválido para envio de WhatsApp.' };
   }
 
+  const isTestMode = isWhatsAppTestModeEnabled();
+  let targetNumber = cleanPhone;
+  let finalMessage = message;
+  let isTestRedirected = false;
+
+  // SAFETY GUARDRAIL: Redirect to verified administrator test phone (11995302672)
+  if (isTestMode && cleanPhone !== SAFE_TEST_PHONE) {
+    targetNumber = SAFE_TEST_PHONE;
+    isTestRedirected = true;
+    finalMessage = `🚨 *[MODO DE TESTE SEGURO - ROCKET CLUB]*\n_Mensagem interceptada com segurança para não disparar para cliente real._\n\n🎯 *Destinatário Original:* +${cleanPhone}\n━━━━━━━━━━━━━━━━━━\n\n${message}`;
+  }
+
   const res = await callEvolutionProxy(
     config,
     `/message/sendText/${config.instanceName}`,
     'POST',
     {
-      number: cleanPhone,
-      text: message,
+      number: targetNumber,
+      text: finalMessage,
       options: {
         delay: 1200,
         presence: 'composing',
@@ -323,6 +361,7 @@ export async function sendEvolutionWhatsAppMessage(
   return {
     success: true,
     messageId,
+    isTestRedirected,
   };
 }
 

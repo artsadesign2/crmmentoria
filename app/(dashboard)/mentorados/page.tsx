@@ -96,7 +96,21 @@ export default function MentoradosPage() {
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  // Fetch members
+  // Instant client-side cached load
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_members');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembers(parsed);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  // Background Fetch members
   useEffect(() => {
     async function loadMembers() {
       try {
@@ -108,6 +122,9 @@ export default function MentoradosPage() {
             excludeFromBook: typeof m.excludeFromBook === 'boolean' ? m.excludeFromBook : false,
           }));
           setMembers(list);
+          try {
+            localStorage.setItem('rocket_club_cached_members', JSON.stringify(list));
+          } catch (e) {}
 
           if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);

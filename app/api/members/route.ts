@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchAllMembersFromDb, queryNeon } from '@/lib/neon-db';
+import { fetchAllMembersFromDb, queryNeon, invalidateMembersCache } from '@/lib/neon-db';
 import { INITIAL_MEMBERS } from '@/lib/mock-data';
 
 function sanitizeStr(val: any, maxLength = 500): string | null {
@@ -13,11 +13,18 @@ export async function GET() {
   try {
     const dbMembers = await fetchAllMembersFromDb();
     if (dbMembers && dbMembers.length > 0) {
-      return NextResponse.json({
-        ok: true,
-        source: 'neon_postgres',
-        members: dbMembers,
-      });
+      return NextResponse.json(
+        {
+          ok: true,
+          source: 'neon_postgres',
+          members: dbMembers,
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=45',
+          },
+        }
+      );
     }
   } catch (error) {
     console.error('Failed to fetch members from Neon DB, falling back to mock data:', error);
@@ -131,6 +138,8 @@ export async function POST(request: Request) {
       emergencyContact || null,
       coverImage || null,
     ]);
+
+    invalidateMembersCache();
 
     return NextResponse.json({
       ok: true,
@@ -297,6 +306,8 @@ export async function PUT(request: Request) {
       typeof excludeFromBook === 'boolean' ? excludeFromBook : null,
     ]);
 
+    invalidateMembersCache();
+
     return NextResponse.json({
       ok: true,
       member: updated[0] || body,
@@ -317,6 +328,7 @@ export async function DELETE(request: Request) {
     }
 
     await queryNeon('DELETE FROM members WHERE id = $1', [id]);
+    invalidateMembersCache();
 
     return NextResponse.json({
       ok: true,

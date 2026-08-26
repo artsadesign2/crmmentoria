@@ -134,16 +134,15 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [activePaletteId, setActivePaletteId] = useState<PaletteId>('rocket-gold');
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
-      if (saved && COLOR_PALETTES[saved]) {
-        setActivePaletteId(saved);
-      }
-    } catch (e) {}
-  }, []);
+  const [activePaletteId, setActivePaletteId] = useState<PaletteId>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
+        if (saved && COLOR_PALETTES[saved]) return saved;
+      } catch (e) {}
+    }
+    return 'rocket-gold';
+  });
 
   const activePalette = COLOR_PALETTES[activePaletteId] || COLOR_PALETTES['rocket-gold'];
   const isLightMode = activePalette.mode === 'light';
@@ -164,15 +163,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--theme-border', tokens.surfaceBorder);
     root.style.setProperty('--theme-text-primary', tokens.textPrimary);
     root.style.setProperty('--theme-text-secondary', tokens.textSecondary);
+    root.style.setProperty('--theme-badge-bg', tokens.badgeBg);
+    root.style.setProperty('--theme-badge-text', tokens.badgeText);
+    root.style.setProperty('--theme-badge-border', tokens.badgeBorder);
 
     if (isLightMode) {
       document.body.classList.add('theme-light');
       document.body.classList.remove('theme-dark');
-      root.classList.remove('dark');
+      root.classList.add('theme-light');
+      root.classList.remove('dark', 'theme-dark');
     } else {
       document.body.classList.add('theme-dark');
       document.body.classList.remove('theme-light');
-      root.classList.add('dark');
+      root.classList.add('dark', 'theme-dark');
+      root.classList.remove('theme-light');
     }
 
     document.body.style.backgroundColor = tokens.background;

@@ -7,8 +7,23 @@ const NEON_CONN_STRING = NEON_HOST && NEON_USER
   ? `postgresql://${NEON_USER}:${encodeURIComponent(NEON_PASS)}@${NEON_HOST}/${NEON_DB}?sslmode=require`
   : '';
 
+// High-speed In-Memory Server-Side Caching
+let cachedMembers: { data: any[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 30000; // 30 seconds TTL
+
+export function invalidateMembersCache() {
+  cachedMembers = null;
+}
+
 export async function queryNeon<T = any>(sql: string, params: any[] = []): Promise<T[]> {
+  if (!NEON_HOST || !NEON_USER) {
+    return [];
+  }
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s fast timeout
+
     const response = await fetch(`https://${NEON_HOST}/sql`, {
       method: 'POST',
       headers: {
@@ -20,8 +35,11 @@ export async function queryNeon<T = any>(sql: string, params: any[] = []): Promi
         query: sql,
         params: params.map((v) => (v === null ? null : typeof v === 'number' || typeof v === 'boolean' ? v : String(v))),
       }),
+      signal: controller.signal,
       cache: 'no-store',
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -38,12 +56,16 @@ export async function queryNeon<T = any>(sql: string, params: any[] = []): Promi
     if (!data.rows) return [];
     return data.rows as T[];
   } catch (error) {
-    console.error('Neon DB HTTP fetch failed:', error);
+    console.error('Neon DB HTTP fetch failed or timed out:', error);
     return [];
   }
 }
 
 export async function fetchAllMembersFromDb() {
+  if (cachedMembers && Date.now() - cachedMembers.timestamp < CACHE_TTL_MS) {
+    return cachedMembers.data;
+  }
+
   const rawMembers = await queryNeon<any>(
     `SELECT 
       id, 
@@ -98,7 +120,7 @@ export async function fetchAllMembersFromDb() {
 
   if (!rawMembers || rawMembers.length === 0) return [];
 
-  return rawMembers.map((m: any) => {
+  const mapped = rawMembers.map((m: any) => {
     let mappedStatus: 'cinza' | 'azul' | 'verde' | 'amarelo' | 'vermelha' = 'cinza';
     const s = (m.status || '').toLowerCase();
     if (s.includes('azul') || s.includes('iniciant')) mappedStatus = 'azul';
@@ -156,6 +178,13 @@ export async function fetchAllMembersFromDb() {
       position: m.position || 0,
     };
   });
+
+  cachedMembers = {
+    data: mapped,
+    timestamp: Date.now(),
+  };
+
+  return mapped;
 }
 
 export async function fetchAllCoursesFromDb() {

@@ -14,9 +14,11 @@ import { Sidebar } from '@/components/sidebar';
 import { Topbar } from '@/components/topbar';
 import { CommandPalette } from '@/components/command-palette';
 import { NotificationProvider } from '@/lib/notification-context';
+import { useTheme } from '@/lib/theme-context';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isLightMode, activePalette } = useTheme();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,7 +30,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <NotificationProvider>
-      <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col antialiased selection:bg-yellow-500 selection:text-slate-950">
+      <div
+        className={`min-h-screen flex flex-col antialiased transition-colors duration-300 ${
+          isLightMode ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#0B0F17] text-slate-100'
+        }`}
+        style={{
+          backgroundColor: activePalette.tokens.background,
+          color: activePalette.tokens.textPrimary,
+        }}
+      >
         {/* Main Sidebar (Fixed Desktop + Slide-over Mobile) */}
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -56,7 +66,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Mobile Bottom Navigation Bar (Ultra-Convenient Thumb Navigation for Phones) */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#131926]/95 backdrop-blur-2xl border-t border-[#1F293D] px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb">
+        <div
+          className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb ${
+            isLightMode ? 'bg-white/95 border-slate-200' : 'bg-[#131926]/95 border-[#1F293D]'
+          }`}
+          style={{
+            backgroundColor: activePalette.tokens.surface + 'f2',
+            borderColor: activePalette.tokens.surfaceBorder,
+          }}
+        >
           {[
             { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
             { name: 'CRM', href: '/crm', icon: Target },
@@ -71,12 +89,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 key={nav.href}
                 href={nav.href}
                 className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
-                  isActive
-                    ? 'text-yellow-400 font-bold scale-105'
-                    : 'text-slate-400 hover:text-slate-200'
+                  isActive ? 'font-bold scale-105' : 'text-slate-400 hover:text-slate-200'
                 }`}
+                style={isActive ? { color: activePalette.tokens.primary } : {}}
               >
-                <Icon size={18} className={isActive ? 'text-yellow-400' : 'text-slate-400'} />
+                <Icon
+                  size={18}
+                  style={isActive ? { color: activePalette.tokens.primary } : {}}
+                  className={!isActive ? (isLightMode ? 'text-slate-500' : 'text-slate-400') : ''}
+                />
                 <span className="text-[10px] mt-0.5 tracking-tight">{nav.name}</span>
               </Link>
             );
@@ -85,7 +106,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* More / Menu Drawer Toggle on Bottom Bar */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-400 hover:text-yellow-400 transition-all"
+            className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-400 transition-all"
+            style={{ color: activePalette.tokens.textSecondary }}
           >
             <Menu size={18} />
             <span className="text-[10px] mt-0.5 tracking-tight">Mais</span>
