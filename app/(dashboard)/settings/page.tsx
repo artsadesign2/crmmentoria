@@ -65,7 +65,7 @@ import {
   FeatureFlags,
 } from '@/lib/tenant';
 import { maskCnpj, maskPhone } from '@/lib/masks';
-import { useTheme, COLOR_PALETTES, PaletteId } from '@/lib/theme-context';
+import { useTheme, COLOR_PALETTES, PaletteId, DEFAULT_PALETTE_ID } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 import {
   UserRole,
@@ -117,6 +117,11 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<
     'design' | 'permissions' | 'users' | 'whatsapp' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
   >('design');
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Company / Whitelabel State
   const [company, setCompany] = useState<CompanyData>(DEFAULT_TENANT.company);
@@ -1014,15 +1019,16 @@ export default function SettingsPage() {
             </div>
 
             {/* 4 Color Palette Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5" suppressHydrationWarning>
               {(Object.keys(COLOR_PALETTES) as PaletteId[]).map((paletteKey) => {
                 const pal = COLOR_PALETTES[paletteKey];
-                const isSelected = activePaletteId === paletteKey;
+                const isSelected = (mounted ? activePaletteId : DEFAULT_PALETTE_ID) === paletteKey;
 
                 return (
                   <div
                     key={paletteKey}
                     onClick={() => setPalette(paletteKey)}
+                    suppressHydrationWarning
                     className={`p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden group ${
                       isSelected
                         ? 'ring-2 scale-[1.02] shadow-2xl'
@@ -1045,7 +1051,7 @@ export default function SettingsPage() {
                       style={{ background: pal.rawTokens.primary }}
                     />
 
-                    <div className="flex items-start justify-between gap-3 relative z-10">
+                    <div className="flex items-start justify-between gap-3 relative z-10" suppressHydrationWarning>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className={`text-base font-extrabold ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>

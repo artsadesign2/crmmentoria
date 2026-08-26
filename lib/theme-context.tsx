@@ -38,27 +38,6 @@ function getSessionUser(): string | null {
   return null;
 }
 
-function getInitialPalette(fallback?: PaletteId): PaletteId {
-  if (typeof window !== 'undefined') {
-    try {
-      const themeMatch = document.cookie.match(/(?:^|;\s*)rocket_theme=([^;]+)/);
-      if (themeMatch && themeMatch[1]) {
-        const decoded = decodeURIComponent(themeMatch[1]) as PaletteId;
-        if (decoded && COLOR_PALETTES[decoded]) return decoded;
-      }
-
-      const user = getSessionUser();
-      if (user) {
-        const userSaved = localStorage.getItem(`rocket_club_color_palette_${user}`) as PaletteId;
-        if (userSaved && COLOR_PALETTES[userSaved]) return userSaved;
-      }
-      const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
-      if (saved && COLOR_PALETTES[saved]) return saved;
-    } catch (e) {}
-  }
-  return fallback || DEFAULT_PALETTE_ID;
-}
-
 export function ThemeProvider({
   children,
   initialPaletteId,
@@ -67,8 +46,35 @@ export function ThemeProvider({
   initialPaletteId?: PaletteId;
 }) {
   const [activePaletteId, setActivePaletteId] = useState<PaletteId>(() =>
-    getInitialPalette(initialPaletteId)
+    initialPaletteId && COLOR_PALETTES[initialPaletteId] ? initialPaletteId : DEFAULT_PALETTE_ID
   );
+
+  // Sync client-saved palette from cookie / localStorage on mount without causing hydration mismatch
+  useEffect(() => {
+    try {
+      const themeMatch = document.cookie.match(/(?:^|;\s*)rocket_theme=([^;]+)/);
+      if (themeMatch && themeMatch[1]) {
+        const decoded = decodeURIComponent(themeMatch[1]) as PaletteId;
+        if (decoded && COLOR_PALETTES[decoded]) {
+          setActivePaletteId(decoded);
+          return;
+        }
+      }
+
+      const user = getSessionUser();
+      if (user) {
+        const userSaved = localStorage.getItem(`rocket_club_color_palette_${user}`) as PaletteId;
+        if (userSaved && COLOR_PALETTES[userSaved]) {
+          setActivePaletteId(userSaved);
+          return;
+        }
+      }
+      const saved = localStorage.getItem('rocket_club_color_palette') as PaletteId;
+      if (saved && COLOR_PALETTES[saved]) {
+        setActivePaletteId(saved);
+      }
+    } catch (e) {}
+  }, []);
 
   const activePalette = COLOR_PALETTES[activePaletteId] || COLOR_PALETTES[DEFAULT_PALETTE_ID];
   const isLightMode = activePalette.mode === 'light';
