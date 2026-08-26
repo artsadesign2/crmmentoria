@@ -41,6 +41,7 @@ import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 import { ROLE_HIERARCHIES } from '@/lib/permissions';
 import { sendEvolutionWhatsAppMessage } from '@/lib/evolution-api';
+import { BirthdayCardModal, BirthdayMemberData } from '@/components/birthday-card-modal';
 
 interface BirthdayMember {
   id: string;
@@ -655,66 +656,12 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {/* Modal: Card de Aniversário & Disparo Seguro WhatsApp */}
-      <Modal
+      {/* Official Luxury Birthday Card Flyer Modal */}
+      <BirthdayCardModal
+        member={selectedBirthdayMember}
         isOpen={Boolean(selectedBirthdayMember)}
         onClose={() => setSelectedBirthdayMember(null)}
-        title="Comemoração & Mensagem de Aniversário"
-      >
-        {selectedBirthdayMember && (
-          <div className="space-y-4 text-left">
-            <div className="p-4 rounded-2xl bg-[#0B0F17] border border-yellow-500/30 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-black text-lg flex items-center justify-center shadow shrink-0">
-                🎉
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-100">{selectedBirthdayMember.name}</h4>
-                <p className="text-xs text-slate-400">{selectedBirthdayMember.companyName}</p>
-                <span className="text-[10px] text-yellow-400 font-bold">
-                  Dia {selectedBirthdayMember.day} de {selectedBirthdayMember.monthName}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
-                Mensagem Personalizada de Parabéns:
-              </label>
-              <textarea
-                rows={4}
-                value={customBirthdayMessage}
-                onChange={(e) => setCustomBirthdayMessage(e.target.value)}
-                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-yellow-500 leading-relaxed resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1F293D]">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(customBirthdayMessage);
-                  setCopiedText(true);
-                  setTimeout(() => setCopiedText(false), 2500);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-[#0B0F17] border border-[#1F293D] text-xs font-bold text-slate-300 hover:text-slate-100 flex items-center gap-1.5"
-              >
-                {copiedText ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copiedText ? 'Copiado!' : 'Copiar Texto'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSendSafeBirthdayWhatsApp(selectedBirthdayMember)}
-                disabled={isSendingWhatsApp}
-                className="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2"
-              >
-                <MessageCircle size={15} />
-                <span>{isSendingWhatsApp ? 'Enviando...' : 'Enviar no WhatsApp (Modo Seguro)'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      />
     </div>
   );
 }
