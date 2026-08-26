@@ -72,10 +72,12 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [tenantName, setTenantName] = useState(DEFAULT_TENANT.company?.tradeName || DEFAULT_TENANT.name);
+  const [mounted, setMounted] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     try {
       const savedName = localStorage.getItem('rocket_club_company_tradename');
       if (savedName) setTenantName(savedName);
@@ -486,9 +488,9 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
             }}
           >
             <UserCheck size={14} />
-            <span className="hidden sm:inline">{currentUser.name.split(' ')[0]}</span>
+            <span className="hidden sm:inline">{mounted ? currentUser.name.split(' ')[0] : 'Usuário'}</span>
             <span className="px-1 py-0.2 rounded text-[9px] font-black uppercase" style={{ backgroundColor: roleInfo.color + '30', color: roleInfo.color }}>
-              {currentRole}
+              {mounted ? currentRole : ''}
             </span>
           </button>
 

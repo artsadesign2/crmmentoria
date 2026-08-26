@@ -122,8 +122,10 @@ export function Sidebar({
   const [logoUrl, setLogoUrl] = useState(DEFAULT_TENANT.company?.logoUrl || DEFAULT_TENANT.logoUrl || '');
   const [iconUrl, setIconUrl] = useState(DEFAULT_TENANT.company?.iconUrl || DEFAULT_TENANT.iconUrl || '');
   const [tradeName, setTradeName] = useState(DEFAULT_TENANT.company?.tradeName || DEFAULT_TENANT.name);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     try {
       const savedLogo = localStorage.getItem('rocket_club_company_logo');
       const savedIcon = localStorage.getItem('rocket_club_company_icon');
@@ -428,17 +430,17 @@ export function Sidebar({
                     border: `1px solid ${roleInfo.color}60`,
                   }}
                 >
-                  {currentUser.name.charAt(0)}
+                  {mounted ? currentUser.name.charAt(0) : 'U'}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className={`text-xs font-semibold truncate ${isLightMode ? 'text-slate-900' : 'text-slate-200'}`}>
-                    {currentUser.name}
+                    {mounted ? currentUser.name : 'Usuário'}
                   </span>
                   <span
                     className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
                     style={{ color: roleInfo.color }}
                   >
-                    <ShieldCheck size={10} /> {currentRole}
+                    <ShieldCheck size={10} /> {mounted ? currentRole : ''}
                   </span>
                 </div>
               </div>
