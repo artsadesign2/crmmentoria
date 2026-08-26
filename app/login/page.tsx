@@ -17,6 +17,7 @@ import {
 import { useTheme } from '@/lib/theme-context';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { INITIAL_SYSTEM_USERS, SystemUser } from '@/lib/permissions';
+import { ForgotPasswordModal } from '@/components/forgot-password-modal';
 
 function LoginForm() {
   const router = useRouter();
@@ -32,6 +33,7 @@ function LoginForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [brandName, setBrandName] = useState(DEFAULT_TENANT.company.tradeName);
   const [focusedInput, setFocusedInput] = useState<'email' | 'password' | null>(null);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   // 3D Card tilt motion values
   const mouseX = useMotionValue(0);
@@ -377,12 +379,8 @@ function LoginForm() {
                       </label>
                       <button
                         type="button"
-                        onClick={() =>
-                          alert(
-                            'Para redefinir sua senha, entre em contato com o Administrador ou Comandante Master da sua mentoria.'
-                          )
-                        }
-                        className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors"
+                        onClick={() => setIsForgotPasswordOpen(true)}
+                        className="text-[11px] text-slate-400 hover:text-yellow-400 transition-colors font-medium"
                       >
                         Esqueceu?
                       </button>
@@ -488,6 +486,17 @@ function LoginForm() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Forgot Password Recovery Modal with Email Confirmation */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        onSuccess={(updatedEmail) => {
+          setEmail(updatedEmail);
+          setPassword('');
+        }}
+        initialEmail={email}
+      />
     </div>
   );
 }
