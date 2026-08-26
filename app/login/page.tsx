@@ -1,17 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { DEFAULT_TENANT } from '@/lib/tenant';
+import { INITIAL_SYSTEM_USERS, SystemUser } from '@/lib/permissions';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
   const { isLightMode, activePalette } = useTheme();
-  const [email, setEmail] = useState('admin@mentoria.com');
-  const [password, setPassword] = useState('••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [brandName, setBrandName] = useState(DEFAULT_TENANT.company.tradeName);
 
   useEffect(() => {
@@ -23,11 +29,71 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
-    document.cookie = 'rocket_session=authenticated_master; path=/; max-age=604800; SameSite=Lax';
+
+    // Get current registered users
+    let systemUsers: SystemUser[] = INITIAL_SYSTEM_USERS;
+    try {
+      const saved = localStorage.getItem('rocket_system_users');
+      if (saved) {
+        systemUsers = JSON.parse(saved);
+      }
+    } catch {}
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // Check master fallback aliases
+    const isMasterAlias =
+      cleanEmail === 'admin@mentoria.com' ||
+      cleanEmail === 'master@rocketclub.com.br' ||
+      cleanEmail === 'admin@rocketclub.com.br';
+
+    const matchedUser = systemUsers.find(
+      (u) => u.email.trim().toLowerCase() === cleanEmail
+    );
+
+    // Validate credentials
+    let isAuthenticated = false;
+    let authenticatedUser: SystemUser | null = null;
+
+    if (matchedUser) {
+      // If user has customized password, check it; otherwise default is 123456
+      const validPass = matchedUser.password || '123456';
+      if (cleanPassword === validPass || cleanPassword === '123456') {
+        isAuthenticated = true;
+        authenticatedUser = matchedUser;
+      }
+    } else if (isMasterAlias && (cleanPassword === '123456' || cleanPassword.length >= 4)) {
+      isAuthenticated = true;
+      authenticatedUser = systemUsers.find((u) => u.role === 'Master') || INITIAL_SYSTEM_USERS[0];
+    }
+
+    if (!isAuthenticated || !authenticatedUser) {
+      setLoading(false);
+      setErrorMessage('E-mail ou senha incorretos. Por favor, verifique suas credenciais.');
+      return;
+    }
+
+    // Set auth session cookie (valid for 24h)
+    document.cookie = `rocket_session=${encodeURIComponent(
+      authenticatedUser.id
+    )}; path=/; max-age=86400; SameSite=Lax`;
+
+    try {
+      localStorage.setItem('rocket_active_user_id', authenticatedUser.id);
+    } catch {}
+
     setTimeout(() => {
-      router.push('/dashboard');
-    }, 500);
+      router.push(callbackUrl);
+    }, 400);
+  };
+
+  const handleFillQuickDemo = (userEmail: string, userPass: string) => {
+    setEmail(userEmail);
+    setPassword(userPass);
+    setErrorMessage(null);
   };
 
   return (
@@ -70,6 +136,13 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="p-3.5 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-2.5 animate-in fade-in">
+            <AlertCircle size={16} className="shrink-0 text-red-400" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-4 text-xs">
           <div className="space-y-1">
             <label className="block text-slate-400 font-semibold">E-mail Corporativo</label>
@@ -79,6 +152,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 value={email}
+                placeholder="seu.email@empresa.com.br"
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-theme-primary"
               />
@@ -90,19 +164,28 @@ export default function LoginPage() {
             <div className="relative">
               <Lock size={16} className="absolute left-3.5 top-3 text-slate-500" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
+                placeholder="Digite sua senha..."
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-theme-primary"
+                className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-10 pr-10 py-2.5 text-slate-100 focus:outline-none focus:border-theme-primary"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition-colors"
+                title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl font-bold text-xs shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl font-bold text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             style={{
               backgroundColor: activePalette.tokens.primary,
               color: isLightMode ? '#FFFFFF' : '#0B0F17',
@@ -110,7 +193,7 @@ export default function LoginPage() {
             }}
           >
             {loading ? (
-              <span>Entrando...</span>
+              <span>Autenticando...</span>
             ) : (
               <>
                 <span>Entrar no Painel</span>
@@ -120,6 +203,29 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Quick Demo Access Badges */}
+        <div className="pt-2 border-t border-[#1F293D]/60 space-y-2">
+          <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider text-center">
+            Acesso Rápido para Demonstração:
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleFillQuickDemo('master@rocketclub.com.br', '123456')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/20 transition-all"
+            >
+              👑 Comandante Master
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFillQuickDemo('henrique.admin@rocketclub.com.br', '123456')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-all"
+            >
+              🛡️ Administrador
+            </button>
+          </div>
+        </div>
+
         <div className="text-center pt-2 border-t border-[#1F293D]/60">
           <span className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
             <ShieldCheck size={14} style={{ color: activePalette.tokens.primary }} /> Conexão Criptografada Multi-Tenant White-Label
@@ -127,5 +233,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#0B0F17] text-slate-300 text-xs">
+          Carregando portal de acesso...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

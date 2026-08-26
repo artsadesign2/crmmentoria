@@ -152,37 +152,44 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   };
 
   const roleInfo = ROLE_HIERARCHIES[currentRole] || ROLE_HIERARCHIES['Usuário'];
+  const handleLogout = () => {
+    document.cookie = 'rocket_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    try {
+      localStorage.removeItem('rocket_active_user_id');
+    } catch {}
+    window.location.href = '/login';
+  };
 
   return (
     <header
-      className={`h-16 sm:h-20 backdrop-blur-xl border-b px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 transition-colors ${
+      className={`sticky top-0 z-30 h-16 sm:h-20 px-3 sm:px-6 flex items-center justify-between border-b backdrop-blur-xl transition-colors ${
         isLightMode
-          ? 'bg-white/85 border-slate-200 text-slate-900'
-          : 'bg-[#131926]/85 border-[#1F293D] text-slate-100'
+          ? 'bg-white/90 border-slate-200 shadow-sm'
+          : 'bg-[#0B0F17]/90 border-[#1F293D]'
       }`}
     >
-      {/* Left: Mobile Hamburger & Tenant Context */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Left: Mobile Toggle & Brand */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {onOpenMobileMenu && (
           <button
+            type="button"
             onClick={onOpenMobileMenu}
-            className={`lg:hidden p-2 rounded-xl border transition-colors ${
+            className={`md:hidden p-2 rounded-xl border transition-colors ${
               isLightMode
-                ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                : 'bg-[#111728] hover:bg-[#1A2234] text-slate-300 border-[#1F293D]'
             }`}
-            title="Abrir Menu de Navegação"
+            title="Abrir Menu Lateral"
           >
-            <Menu size={20} />
+            <Menu size={18} />
           </button>
         )}
 
-        {/* Organization / Tenant Badge */}
         <div
-          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-medium max-w-[140px] sm:max-w-none truncate ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold max-w-[160px] sm:max-w-[240px] truncate ${
             isLightMode
-              ? 'bg-slate-50 text-slate-700 border-slate-200'
-              : 'bg-[#1F293D]/60 text-slate-300 border-[#1F293D]'
+              ? 'bg-slate-100 text-slate-700 border-slate-200'
+              : 'bg-[#111728] text-slate-300 border-[#1F293D]'
           }`}
         >
           <Building2 size={14} style={{ color: activePalette.tokens.primary }} className="shrink-0" />
@@ -199,34 +206,21 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         </div>
       </div>
 
-      {/* Right: Actions, Global Search & User Profile */}
+      {/* Right Actions: Command Palette, Notifications, User Profile & Logout */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border transition-all text-xs w-9 sm:w-60 md:w-64 justify-center sm:justify-between group shadow-inner ${
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-medium border flex items-center gap-2 transition-all ${
             isLightMode
-              ? 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              : 'bg-[#0B0F17]/80 border-[#1F293D] text-slate-400 hover:text-slate-200 hover:border-slate-600'
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200 hover:text-slate-900'
+              : 'bg-[#111728] hover:bg-[#1A2234] text-slate-400 border-[#1F293D] hover:text-slate-200'
           }`}
-          title="Buscar no ecossistema (Ctrl + K)"
         >
-          <div className="flex items-center gap-2">
-            <Search
-              size={14}
-              style={{ color: activePalette.tokens.primary }}
-              className="group-hover:scale-110 transition-transform shrink-0"
-            />
-            <span className="hidden sm:inline">Buscar no ecossistema...</span>
-          </div>
-          <kbd
-            className={`hidden sm:inline px-1.5 py-0.5 rounded text-[10px] font-mono border ${
-              isLightMode
-                ? 'bg-slate-200 text-slate-700 border-slate-300'
-                : 'bg-[#1F293D] text-slate-300 border-slate-700'
-            }`}
-          >
-            Ctrl K
+          <Search size={14} style={{ color: activePalette.tokens.primary }} />
+          <span className="hidden sm:inline">Buscar no sistema...</span>
+          <kbd className={`hidden md:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${isLightMode ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-[#0B0F17] border-[#1F293D] text-slate-400'}`}>
+            Ctrl+K
           </kbd>
         </button>
 
@@ -496,13 +490,14 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
             </span>
           </button>
 
-          <a
-            href="/login"
+          <button
+            type="button"
+            onClick={handleLogout}
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
             title="Sair da Conta"
           >
             <LogOut size={15} />
-          </a>
+          </button>
         </div>
       </div>
 

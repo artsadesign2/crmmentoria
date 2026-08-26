@@ -20,6 +20,7 @@ import {
   X,
   Trophy,
   Award,
+  LogOut,
 } from 'lucide-react';
 import { DEFAULT_TENANT, hasFeature } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth-context';
@@ -378,8 +379,8 @@ export function Sidebar({
           </nav>
         </div>
 
-        {/* Footer User Pill */}
-        <div className={`p-3 border-t ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
+        {/* Footer User Pill & Logout */}
+        <div className={`p-3 border-t space-y-2 ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
           {isCollapsedDesktop ? (
             // Collapsed Footer: Centered Avatar with Floating User Info Tooltip
             <div className="relative group flex justify-center py-1">
@@ -412,33 +413,50 @@ export function Sidebar({
               </div>
             </div>
           ) : (
-            // Expanded Footer: Card with Full User Info
+            // Expanded Footer: Card with Full User Info & Logout Button
             <div
-              className={`flex items-center gap-3 p-2.5 rounded-xl border ${
+              className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border ${
                 isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#0B0F17]/60 border-[#1F293D]'
               }`}
             >
-              <div
-                className="w-9 h-9 rounded-full font-bold flex items-center justify-center text-sm shrink-0 shadow-md"
-                style={{
-                  backgroundColor: roleInfo.color + '25',
-                  color: roleInfo.color,
-                  border: `1px solid ${roleInfo.color}60`,
-                }}
-              >
-                {currentUser.name.charAt(0)}
-              </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className={`text-xs font-semibold truncate ${isLightMode ? 'text-slate-900' : 'text-slate-200'}`}>
-                  {currentUser.name}
-                </span>
-                <span
-                  className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1"
-                  style={{ color: roleInfo.color }}
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div
+                  className="w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs shrink-0 shadow-md"
+                  style={{
+                    backgroundColor: roleInfo.color + '25',
+                    color: roleInfo.color,
+                    border: `1px solid ${roleInfo.color}60`,
+                  }}
                 >
-                  <ShieldCheck size={12} /> {currentRole}
-                </span>
+                  {currentUser.name.charAt(0)}
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className={`text-xs font-semibold truncate ${isLightMode ? 'text-slate-900' : 'text-slate-200'}`}>
+                    {currentUser.name}
+                  </span>
+                  <span
+                    className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
+                    style={{ color: roleInfo.color }}
+                  >
+                    <ShieldCheck size={10} /> {currentRole}
+                  </span>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  document.cookie = 'rocket_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+                  try {
+                    localStorage.removeItem('rocket_active_user_id');
+                  } catch {}
+                  window.location.href = '/login';
+                }}
+                className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors shrink-0"
+                title="Sair da Conta"
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           )}
         </div>
