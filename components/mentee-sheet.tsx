@@ -42,6 +42,7 @@ import { Member, KANBAN_STAGES } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { maskCpf, maskCnpj, maskPhone, maskRg } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 import {
   getAllWhatsAppTemplates,
   sendWhatsAppWithTemplate,
@@ -255,9 +256,11 @@ export function MenteeSheet({
       await onSave(merged);
       setIsDirty(false);
       setSaveSuccess(true);
+      toast.success('Mentorado atualizado com sucesso!', `Os dados e método de "${merged.name}" foram salvos.`);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Erro ao salvar mentorado:', err);
+      toast.error('Erro ao salvar mentorado', 'Não foi possível salvar as alterações. Tente novamente.');
     } finally {
       setIsSaving(false);
     }

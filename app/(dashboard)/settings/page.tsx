@@ -56,6 +56,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
+import { toast } from '@/lib/toast-context';
 import {
   DEFAULT_TENANT,
   DEFAULT_ACCESS_LEVELS,
@@ -236,12 +237,16 @@ export default function SettingsPage() {
       const updated = saveWhatsAppTemplate(current);
       setTemplateList(updated);
       setTemplateSavedFeedback(true);
+      toast.success('Template salvo com sucesso!', `O modelo "${current.title}" foi atualizado.`);
       setTimeout(() => setTemplateSavedFeedback(false), 3000);
     }
   };
 
   const handleCreateNewTemplate = () => {
-    if (!newTemplateForm.title?.trim() || !newTemplateForm.content?.trim()) return;
+    if (!newTemplateForm.title?.trim() || !newTemplateForm.content?.trim()) {
+      toast.warning('Campos incompletos', 'Informe o título e o conteúdo da mensagem.');
+      return;
+    }
     const newTemplate: WhatsAppCustomTemplate = {
       id: `custom_${Date.now()}`,
       title: newTemplateForm.title.trim(),
@@ -264,6 +269,7 @@ export default function SettingsPage() {
       content: 'Olá {nome}! Tudo bem?\n\n',
     });
     setTemplateSavedFeedback(true);
+    toast.success('Novo template criado!', `O modelo "${newTemplate.title}" está pronto para uso.`);
     setTimeout(() => setTemplateSavedFeedback(false), 3000);
   };
 
@@ -273,6 +279,7 @@ export default function SettingsPage() {
     if (selectedTemplateId === templateId) {
       setSelectedTemplateId(updated[0]?.id || 'welcome');
     }
+    toast.info('Template removido', 'O modelo de mensagem foi excluído.');
   };
 
   const handleResetAllTemplates = () => {
@@ -280,6 +287,7 @@ export default function SettingsPage() {
     setTemplateList(defaults);
     setSelectedTemplateId('welcome');
     setTemplateSavedFeedback(true);
+    toast.info('Templates restaurados', 'Os modelos padrão do sistema foram restaurados.');
     setTimeout(() => setTemplateSavedFeedback(false), 3000);
   };
 
@@ -292,6 +300,7 @@ export default function SettingsPage() {
   const handleSaveEvolutionConfig = () => {
     saveEvolutionConfig(evolutionConfig);
     setEvolutionSavedSuccess(true);
+    toast.success('Configurações salvas!', 'As credenciais da Evolution API foram atualizadas.');
     setTimeout(() => setEvolutionSavedSuccess(false), 3000);
     handleCheckEvolutionStatus();
   };
@@ -442,6 +451,7 @@ export default function SettingsPage() {
     } catch (err) {}
 
     setSavedSuccess(true);
+    toast.success('Configurações salvas!', 'Os dados institucionais e permissões foram atualizados com sucesso.');
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
@@ -462,6 +472,7 @@ export default function SettingsPage() {
     });
 
     if (result.success) {
+      toast.success('Usuário cadastrado com sucesso!', `A conta de "${newUserName}" foi criada no sistema.`);
       setIsNewUserModalOpen(false);
       setNewUserName('');
       setNewUserEmail('');
@@ -471,6 +482,7 @@ export default function SettingsPage() {
       setNewUserRole('Administrador');
     } else {
       setUserActionError(result.error || 'Erro ao criar usuário.');
+      toast.error('Erro ao cadastrar usuário', result.error || 'Não foi possível cadastrar o usuário.');
     }
   };
 
@@ -494,11 +506,13 @@ export default function SettingsPage() {
 
     const result = updateUser(editingUser.id, updates);
     if (result.success) {
+      toast.success('Usuário atualizado!', `Os dados e permissões de "${editingUser.name}" foram salvos.`);
       setEditingUser(null);
       setEditingUserPassword('');
       setShowEditingUserPassword(false);
     } else {
       setUserActionError(result.error || 'Erro ao editar usuário.');
+      toast.error('Erro ao salvar usuário', result.error || 'Não foi possível atualizar o usuário.');
     }
   };
 
@@ -518,10 +532,12 @@ export default function SettingsPage() {
     if (!deletingUserTarget) return;
     const res = deleteUser(deletingUserTarget.id);
     if (res.success) {
+      toast.info('Usuário excluído', `A conta de "${deletingUserTarget.name}" foi removida.`);
       setDeletingUserTarget(null);
       setDeleteBlockedReason(null);
     } else {
       setDeleteBlockedReason(res.error || 'Não foi possível excluir.');
+      toast.error('Erro ao excluir usuário', res.error || 'Não foi possível concluir a exclusão.');
     }
   };
 

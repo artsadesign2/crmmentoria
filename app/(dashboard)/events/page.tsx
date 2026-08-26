@@ -41,6 +41,7 @@ import { EventItem, MOCK_EVENTS, INITIAL_MEMBERS, Member, Lead, MOCK_LEADS, LEAD
 import { fetchAllMembersFromDb } from '@/lib/neon-db';
 import { useNotifications } from '@/lib/notification-context';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 import {
   sendWhatsAppBroadcastToAll,
   getAllWhatsAppTemplates,
@@ -157,8 +158,7 @@ export default function EventsPage() {
     });
 
     saveEventsList(updatedEvents);
-    setToastMsg(`Presença confirmada no evento: "${targetEvent?.title || 'Encontro'}"!`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Presença confirmada!', `Você garantiu seu lugar no evento "${targetEvent?.title || 'Encontro'}".`);
 
     addNotification({
       type: 'success',
@@ -189,8 +189,7 @@ export default function EventsPage() {
     });
 
     saveEventsList(updatedEvents);
-    setToastMsg('Confirmação de presença cancelada.');
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.info('Presença cancelada', 'Sua vaga foi liberada.');
   };
 
   const handleOpenBroadcastModal = (event: EventItem) => {
@@ -358,8 +357,7 @@ export default function EventsPage() {
     setCoverImage('');
     setIsAddModalOpen(false);
 
-    setToastMsg(`Novo evento "${newEvent.title}" cadastrado com sucesso!`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Novo evento cadastrado!', `O evento "${newEvent.title}" está disponível na agenda.`);
 
     if (autoBroadcastOnCreate) {
       handleOpenBroadcastModal(newEvent);
@@ -403,8 +401,7 @@ export default function EventsPage() {
     saveEventsList(updated);
     setIsEditModalOpen(false);
     setSelectedEvent(null);
-    setToastMsg('Evento atualizado com sucesso!');
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Evento atualizado!', `As alterações de "${editTitle}" foram salvas.`);
   };
 
   const handleConfirmDeleteEvent = () => {
@@ -416,8 +413,7 @@ export default function EventsPage() {
     setIsEditModalOpen(false);
     setSelectedEvent(null);
 
-    setToastMsg('Evento removido com sucesso.');
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.info('Evento removido', 'O evento foi excluído da agenda.');
   };
 
   const filteredEvents = events.filter((ev) => {
@@ -429,13 +425,6 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 right-6 z-50 bg-slate-900 border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-300 text-xs font-bold">
-          <CheckCircle2 size={16} className="text-emerald-400" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

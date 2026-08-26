@@ -44,6 +44,7 @@ import { Course, MOCK_COURSES } from '@/lib/mock-data';
 import { useNotifications } from '@/lib/notification-context';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 
 export interface Lesson {
   id: string;
@@ -458,8 +459,7 @@ export default function AcademyPage() {
       actionText: 'Ver Categorias',
     });
 
-    setToastMsg(`✅ Categoria "${catName}" cadastrada com sucesso!`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Categoria cadastrada!', `A categoria "${catName}" foi adicionada com sucesso.`);
   };
 
   const handleConfirmDeleteCategory = () => {
@@ -469,8 +469,7 @@ export default function AcademyPage() {
     saveToStorage(undefined, undefined, updated);
     if (selectedCategoryFilter === cat) setSelectedCategoryFilter('TODAS');
     setDeleteTargetCategory(null);
-    setToastMsg(`🗑️ Categoria "${cat}" removida com sucesso.`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.info('Categoria removida', `A categoria "${cat}" foi excluída.`);
   };
 
   // ── COURSE MANAGEMENT (CREATE, EDIT, DELETE) ──
@@ -523,8 +522,7 @@ export default function AcademyPage() {
     setNewCourseTitle('');
     setNewCourseDesc('');
     setIsCreateCourseModalOpen(false);
-    setToastMsg(`🎉 Curso "${newCourse.title}" criado com sucesso!`);
-    setTimeout(() => setToastMsg(null), 3500);
+    toast.success('Novo curso publicado!', `A trilha "${newCourse.title}" foi criada na Academy.`);
   };
 
   const handleOpenEditCourseModal = (course: Course) => {
@@ -566,8 +564,7 @@ export default function AcademyPage() {
     });
 
     setIsEditCourseModalOpen(false);
-    setToastMsg('✅ Dados do curso atualizados com sucesso!');
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Curso atualizado!', 'As alterações do curso foram salvas com sucesso.');
   };
 
   const handleConfirmDeleteCourse = () => {
@@ -582,8 +579,7 @@ export default function AcademyPage() {
     setActiveLesson(null);
     setIsEditCourseModalOpen(false);
     setDeleteTargetCourse(null);
-    setToastMsg(`🗑️ Curso "${deleteTargetCourse.title}" excluído com sucesso.`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.info('Curso excluído', `A trilha "${deleteTargetCourse.title}" foi removida da Academy.`);
   };
 
   // ── LESSON & MODULE MANAGEMENT ──
@@ -642,8 +638,7 @@ export default function AcademyPage() {
     setActiveLesson(newLes);
     setIsAddLessonModalOpen(false);
 
-    setToastMsg(`✅ Aula "${newLes.title}" adicionada com ${validMaterials.length} materiais!`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Aula adicionada com sucesso!', `A aula "${newLes.title}" foi incluída no curso.`);
   };
 
   const handleOpenEditLessonModal = (lesson: Lesson) => {
@@ -702,8 +697,7 @@ export default function AcademyPage() {
     }
 
     setIsEditLessonModalOpen(false);
-    setToastMsg('✅ Aula atualizada com sucesso!');
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Aula atualizada!', 'O conteúdo e materiais da aula foram salvos.');
   };
 
   const handleConfirmDeleteLesson = () => {
@@ -733,8 +727,7 @@ export default function AcademyPage() {
     setIsEditLessonModalOpen(false);
     setEditingLesson(null);
     setDeleteTargetLesson(null);
-    setToastMsg(`🗑️ Aula "${deleteTargetLesson.title}" excluída com sucesso.`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.info('Aula removida', `A aula "${deleteTargetLesson.title}" foi excluída.`);
   };
 
   const handleCreateModule = (e: React.FormEvent) => {
@@ -754,8 +747,7 @@ export default function AcademyPage() {
     saveToStorage(undefined, updatedModules);
     setNewModuleName('');
     setIsAddModuleModalOpen(false);
-    setToastMsg(`✅ Módulo "${newMod.title}" adicionado!`);
-    setTimeout(() => setToastMsg(null), 3000);
+    toast.success('Módulo criado!', `O módulo "${newMod.title}" foi adicionado à trilha.`);
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -777,6 +769,7 @@ export default function AcademyPage() {
     });
 
     setNewComment('');
+    toast.success('Comentário publicado!', 'Sua contribuição foi enviada para a aula.');
   };
 
   // Filtered courses by category
@@ -790,13 +783,6 @@ export default function AcademyPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold flex items-center gap-2.5 shadow-xl animate-in slide-in-from-top duration-300">
-          <CheckCircle size={18} className="text-emerald-400 shrink-0" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
 
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* VIEW 1: SINGLE PAGE COURSE PLAYER VIEW                     */}

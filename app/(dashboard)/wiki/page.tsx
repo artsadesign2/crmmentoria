@@ -16,6 +16,7 @@ import { ArticleCard } from '@/components/ui/blog-post-card';
 import { Modal } from '@/components/ui/modal';
 import { Article, MOCK_ARTICLES } from '@/lib/mock-data';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 
 const DEPARTMENTS = ['Todos', 'Operacional', 'Comercial', 'Financeiro', 'Jurídico'];
 
@@ -63,6 +64,7 @@ export default function WikiPage() {
     setNewSummary('');
     setNewContent('');
     setIsAddModalOpen(false);
+    toast.success('Artigo publicado na Wiki!', `O documento "${article.title}" já está disponível para consulta.`);
   };
 
   return (

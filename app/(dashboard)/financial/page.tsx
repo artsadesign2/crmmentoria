@@ -36,6 +36,7 @@ import { Modal } from '@/components/ui/modal';
 import { DbTransaction } from '@/lib/financial-db';
 import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 import { sendEvolutionWhatsAppMessage } from '@/lib/evolution-api';
 
 export default function FinancialPage() {
@@ -72,8 +73,9 @@ export default function FinancialPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const showToast = (text: string, type: 'success' | 'info' | 'warning' = 'success') => {
-    setToastMsg({ text, type });
-    setTimeout(() => setToastMsg(null), 3500);
+    if (type === 'success') toast.success(text);
+    else if (type === 'info') toast.info(text);
+    else toast.warning(text);
   };
 
   // Instant SWR Load from Local Storage + Background DB fetch

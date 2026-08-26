@@ -49,6 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { maskPhone } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 
 interface LeadSheetProps {
   lead: Lead | null;
@@ -175,9 +176,11 @@ export function LeadSheet({
       await onSave(merged);
       setIsDirty(false);
       setSaveSuccess(true);
+      toast.success('Lead salvo com sucesso!', `As informações de "${merged.name}" foram atualizadas no CRM.`);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Erro ao salvar lead:', err);
+      toast.error('Erro ao salvar lead', 'Ocorreu um erro ao gravar as alterações. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -203,6 +206,7 @@ export function LeadSheet({
     setLogTitle('');
     setLogDescription('');
     setIsAddingLog(false);
+    toast.success('Interação registrada!', 'O novo registro foi adicionado ao histórico da timeline.');
   };
 
   const getDefaultLogTitle = (type: LeadLog['type']) => {

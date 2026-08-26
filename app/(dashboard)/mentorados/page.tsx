@@ -59,6 +59,7 @@ import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { MenteeSheet } from '@/components/mentee-sheet';
 import { maskPhone } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 
 export default function MentoradosPage() {
   const { isLightMode, activePalette } = useTheme();
@@ -94,8 +95,9 @@ export default function MentoradosPage() {
   }, []);
 
   const showToast = (text: string, type: 'success' | 'info' | 'warning' = 'success') => {
-    setToastMsg({ text, type });
-    setTimeout(() => setToastMsg(null), 3500);
+    if (type === 'success') toast.success(text);
+    else if (type === 'info') toast.info(text);
+    else toast.warning(text);
   };
 
   // Instant client-side cached load

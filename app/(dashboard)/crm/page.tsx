@@ -58,6 +58,7 @@ import { useNotifications } from '@/lib/notification-context';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { LeadSheet } from '@/components/lead-sheet';
 import { maskPhone } from '@/lib/masks';
+import { toast } from '@/lib/toast-context';
 
 const WHATSAPP_TEMPLATES = [
   {
@@ -124,8 +125,9 @@ export default function CrmPage() {
   }, []);
 
   const showToast = (text: string, type: 'success' | 'info' | 'warning' = 'success') => {
-    setToastMsg({ text, type });
-    setTimeout(() => setToastMsg(null), 3500);
+    if (type === 'success') toast.success(text);
+    else if (type === 'info') toast.info(text);
+    else toast.warning(text);
   };
 
   // URL query parameter deep linking (?leadId=lead-1)

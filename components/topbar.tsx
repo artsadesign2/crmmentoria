@@ -44,6 +44,7 @@ import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast-context';
 import { ROLE_HIERARCHIES, UserRole } from '@/lib/permissions';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
 
@@ -101,6 +102,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
     setProfilePassword('');
     setShowProfilePassword(false);
     setProfileSaved(true);
+    toast.success('Perfil atualizado com sucesso!', 'Suas alterações cadastrais e credenciais foram salvas.');
     setTimeout(() => setProfileSaved(false), 3000);
   };
 
