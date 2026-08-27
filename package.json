@@ -8,10 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:seed": "tsx prisma/seed-auth.ts"
+    "db:seed": "node --env-file=.env --import tsx prisma/seed-auth.ts",
+    "db:migrate": "node --env-file=.env --import tsx prisma/migrate-f0.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
