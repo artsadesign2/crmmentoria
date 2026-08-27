@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { sendEmail, isEmailConfigured } from '@/lib/email';
+import { passwordResetEmail } from '@/lib/email/templates';
 
 const CODE_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
@@ -44,8 +46,21 @@ export async function POST(request: Request) {
     },
   });
 
-  // TODO(F5): enviar por e-mail. Até lá o código sai no log do servidor.
-  console.log(`[forgot-password] codigo para ${user.email}: ${code}`);
+  const { subject, html, text } = passwordResetEmail(code, user.name ?? '');
+  const envio = await sendEmail({ to: user.email, subject, html, text });
+
+  // A falha de envio vai para o log e a resposta não muda. Distinguir "enviei"
+  // de "não consegui enviar" reabriria o oráculo que o retorno genérico fecha:
+  // quem tenta um e-mail inexistente receberia uma resposta diferente de quem
+  // acerta um cadastrado.
+  if (!envio.ok) {
+    console.error(`[forgot-password] falha ao enviar para ${user.email}: ${envio.error}`);
+    // Sem provedor configurado, o código ainda precisa sair em algum lugar —
+    // caso contrário a recuperação de senha fica impossível em desenvolvimento.
+    if (!isEmailConfigured()) {
+      console.warn(`[forgot-password] codigo para ${user.email}: ${code}`);
+    }
+  }
 
   return generic;
 }
