@@ -228,10 +228,16 @@ model Goal {
 model Department {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organizationId String   @map("organization_id") @db.Uuid
-  /// NOTA: unique global, herdado do schema criado por SQL cru. Deveria ser
-  /// @@unique([organizationId, name]). Corrigir quando a F3 usar setorização.
-  name           String   @unique @db.VarChar(100)
+  name           String   @db.VarChar(100)
   isFixed        Boolean? @default(false) @map("is_fixed")
+  /// Setor por onde entram as conversas novas do WhatsApp. Com número central e
+  /// sem bot, não há como perguntar ao cliente com quem ele quer falar: a
+  /// conversa nasce aqui e o atendente transfere se for o caso.
+  ///
+  /// O banco garante no máximo um por organização com um índice único parcial
+  /// (`departments_default_inbox_key`), que o Prisma não sabe declarar — ele
+  /// vive na migração f3-inbox.
+  isDefaultInbox Boolean  @default(false) @map("is_default_inbox")
 
   organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users         User[]
@@ -241,6 +247,9 @@ model Department {
   dealCards     DealCard[]
   conversations Conversation[]
 
+  /// Era unique global antes da F3: duas organizações não podiam ter um setor
+  /// "Comercial" cada uma.
+  @@unique([organizationId, name], map: "departments_org_name_key")
   @@map("departments")
 }
 
@@ -639,6 +648,12 @@ model Conversation {
   messages     Message[]
 
   @@index([organizationId, status, lastMessageAt(sort: Desc)], map: "conversations_org_status_idx")
+  /// Caixa de um atendente e a contagem que a distribuição por menor carga faz.
+  @@index([organizationId, assignedUserId, status], map: "conversations_org_assigned_idx")
+  /// Cursor do polling do Inbox: "o que mudou desde X", a cada 2 segundos.
+  @@index([organizationId, updatedAt(sort: Desc)], map: "conversations_org_updated_idx")
+  /// Caminho de findOrCreateConversation, em toda mensagem que entra.
+  @@index([organizationId, contactId], map: "conversations_org_contact_idx")
   @@map("conversations")
 }
 
