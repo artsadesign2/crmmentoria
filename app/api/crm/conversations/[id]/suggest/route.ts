@@ -20,7 +20,11 @@ export const POST = withAuth<Ctx>(async (_request, { params }) => {
     return NextResponse.json({ ok: false, error: 'Conversa não encontrada.' }, { status: 404 });
   }
   if (!resultado.ok) {
-    return NextResponse.json({ ok: false, error: resultado.error }, { status: 502 });
+    // 409 e não 502: a IA desligada é configuração, e repetir não muda nada.
+    return NextResponse.json(
+      { ok: false, error: resultado.error },
+      { status: resultado.disabled ? 409 : 502 }
+    );
   }
 
   return NextResponse.json({ ok: true, draft: resultado.draft, model: resultado.model });

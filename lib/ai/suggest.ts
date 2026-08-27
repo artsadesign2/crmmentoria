@@ -21,7 +21,8 @@ import type { SessionPayload } from '@/lib/auth/jwt';
 
 export type SuggestResult =
   | { ok: true; draft: string; model: string }
-  | { ok: false; error: string };
+  /** `disabled` separa configuração de falha: uma não adianta repetir. */
+  | { ok: false; error: string; disabled?: boolean };
 
 export async function suggestReply(
   session: SessionPayload,
@@ -47,7 +48,7 @@ export async function suggestReply(
 
   const configuracao = await getAiSettings(session.organizationId);
   if (!configuracao.available) {
-    return { ok: false, error: 'A IA está desligada nesta organização.' };
+    return { ok: false, error: 'A IA está desligada nesta organização.', disabled: true };
   }
 
   const transcrito = formatConversation(conversa.messages.map(messageToDTO));

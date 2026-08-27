@@ -113,7 +113,10 @@ export async function qualifyConversation(
   session: SessionPayload,
   conversationId: string
 ): Promise<
-  { ok: true; qualification: Qualification; dealCardId: string } | { ok: false; error: string } | null
+  | { ok: true; qualification: Qualification; dealCardId: string }
+  /** `disabled` separa configuração de falha: uma não adianta repetir. */
+  | { ok: false; error: string; disabled?: boolean }
+  | null
 > {
   const setor = await sessionDepartmentId(session);
   const visivel = conversationVisibilityFilter(session, setor);
@@ -134,7 +137,7 @@ export async function qualifyConversation(
 
   const configuracao = await getAiSettings(session.organizationId);
   if (!configuracao.available) {
-    return { ok: false, error: 'A IA está desligada nesta organização.' };
+    return { ok: false, error: 'A IA está desligada nesta organização.', disabled: true };
   }
 
   // A qualificação existe para alimentar o funil. Sem card, ela não teria onde
