@@ -5,6 +5,7 @@ import './globals.css';
 import { PaletteId } from '@/lib/theme-constants';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
+import { SESSION_COOKIE, verifySession } from '@/lib/auth/jwt';
 import { ToastProvider } from '@/lib/toast-context';
 import { ToastContainer } from '@/components/ui/toast-container';
 
@@ -24,8 +25,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const sessionUser = cookieStore.get('rocket_session')?.value || null;
   const themeCookie = (cookieStore.get('rocket_theme')?.value as PaletteId) || null;
+
+  // O cookie de sessão passou a ser httpOnly na F0, então o script inline abaixo
+  // não consegue mais lê-lo pelo document.cookie. O id sai daqui, do servidor,
+  // já validado — e é injetado como literal no script.
+  const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
+  const session = sessionToken ? await verifySession(sessionToken) : null;
+  const sessionUser = session?.userId ?? null;
 
   return (
     <html lang="pt-BR" className={`${jakarta.variable} dark theme-dark`} suppressHydrationWarning>
@@ -35,8 +42,7 @@ export default async function RootLayout({
             __html: `
               (function() {
                 try {
-                  var sessionMatch = document.cookie.match(/(?:^|;\\s*)rocket_session=([^;]+)/);
-                  var user = sessionMatch ? decodeURIComponent(sessionMatch[1]).trim() : (localStorage.getItem('rocket_active_user_id') || '').trim();
+                  var user = ${JSON.stringify(sessionUser ?? '')};
                   var themeMatch = document.cookie.match(/(?:^|;\\s*)rocket_theme=([^;]+)/);
                   var paletteId = (themeMatch && decodeURIComponent(themeMatch[1]).trim()) || (user && localStorage.getItem('rocket_club_color_palette_' + user)) || localStorage.getItem('rocket_club_color_palette') || 'rocket-gold';
                   

@@ -22,40 +22,28 @@ export interface EvolutionQRCodeResponse {
   count?: number;
 }
 
-const STORAGE_KEY = 'rocket_club_evolution_api_config';
-
+/**
+ * As credenciais da Evolution API vivem SOMENTE no servidor
+ * (EVOLUTION_API_URL / EVOLUTION_API_KEY, sem prefixo NEXT_PUBLIC_).
+ *
+ * Antes elas eram lidas de variaveis NEXT_PUBLIC_, o que as embutia no bundle
+ * entregue ao navegador, e guardadas em localStorage. Qualquer visitante do
+ * site conseguia extrair a chave do WhatsApp. Este objeto existe apenas para
+ * satisfazer assinaturas antigas: nao carrega segredo algum.
+ */
 export function getEvolutionConfig(): EvolutionApiConfig {
-  if (typeof window === 'undefined') {
-    return {
-      serverUrl: process.env.NEXT_PUBLIC_EVOLUTION_API_URL || '',
-      apiKey: process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || '',
-      instanceName: process.env.NEXT_PUBLIC_EVOLUTION_INSTANCE_NAME || 'rocket-club-crm',
-    };
-  }
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.error('Error reading Evolution API config from localStorage', e);
-  }
-
-  return {
-    serverUrl: '',
-    apiKey: '',
-    instanceName: 'rocket-club-crm',
-  };
+  return { serverUrl: '', apiKey: '', instanceName: '' };
 }
 
-export function saveEvolutionConfig(config: EvolutionApiConfig): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  } catch (e) {
-    console.error('Error saving Evolution API config to localStorage', e);
-  }
+/**
+ * Mantida como no-op para nao quebrar chamadas existentes. Guardar credenciais
+ * no navegador foi justamente o problema corrigido; a configuracao agora e do
+ * ambiente do servidor.
+ */
+export function saveEvolutionConfig(_config: EvolutionApiConfig): void {
+  console.warn(
+    '[evolution-api] saveEvolutionConfig e no-op: configure EVOLUTION_API_URL e EVOLUTION_API_KEY no servidor.'
+  );
 }
 
 /**
@@ -86,13 +74,8 @@ async function callEvolutionProxy(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        serverUrl: config.serverUrl,
-        apiKey: config.apiKey,
-        endpoint,
-        method,
-        body,
-      }),
+      // serverUrl e apiKey NAO sao enviados: o servidor os resolve do ambiente.
+      body: JSON.stringify({ endpoint, method, body }),
     });
 
     const json = await res.json().catch(() => ({}));

@@ -14,13 +14,11 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
-  Sparkles,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
-import { INITIAL_SYSTEM_USERS, SystemUser } from '@/lib/permissions';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -42,7 +40,6 @@ export function ForgotPasswordModal({
   const [step, setStep] = useState<Step>('EMAIL');
   const [email, setEmail] = useState(initialEmail);
   const [verificationCode, setVerificationCode] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -78,7 +75,6 @@ export function ForgotPasswordModal({
   const handleResetModal = () => {
     setStep('EMAIL');
     setVerificationCode('');
-    setGeneratedCode('');
     setNewPassword('');
     setConfirmPassword('');
     setErrorMsg(null);
@@ -86,8 +82,10 @@ export function ForgotPasswordModal({
     onClose();
   };
 
-  // 1. Submit email and request confirmation code
-  const handleRequestCode = (e: React.FormEvent) => {
+  // 1. Pede o codigo ao servidor.
+  // A resposta e sempre a mesma, exista ou nao o e-mail: o contrario tornaria
+  // esta tela um oraculo para descobrir quais e-mails estao cadastrados.
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setIsLoading(true);
@@ -99,108 +97,89 @@ export function ForgotPasswordModal({
       return;
     }
 
-    // Get current registered users
-    let systemUsers: SystemUser[] = INITIAL_SYSTEM_USERS;
     try {
-      const saved = localStorage.getItem('rocket_system_users');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          systemUsers = parsed;
-        }
-      }
-    } catch {}
-
-    const user = systemUsers.find((u) => u.email.trim().toLowerCase() === cleanEmail);
-
-    setTimeout(() => {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      const data = await response.json().catch(() => ({}));
       setIsLoading(false);
-      if (!user) {
-        setErrorMsg('E-mail não encontrado no sistema. Verifique a grafia ou consulte o Administrador.');
+
+      if (!response.ok || !data.ok) {
+        setErrorMsg(data.error || 'Nao foi possivel solicitar o codigo. Tente novamente.');
         return;
       }
 
-      // Generate 6-digit numeric verification code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedCode(code);
       setStep('CODE');
       setResendTimer(60);
       setCanResend(false);
-      toast.info(`Código de verificação enviado para ${cleanEmail}!`);
-    }, 600);
+      toast.info(`Se ${cleanEmail} estiver cadastrado, o codigo de verificacao foi enviado.`);
+    } catch {
+      setIsLoading(false);
+      setErrorMsg('Nao foi possivel conectar ao servidor. Verifique sua conexao.');
+    }
   };
 
-  // 2. Validate 6-digit code
+  // 2. Confere apenas o formato. O codigo real e validado no servidor junto com
+  // a nova senha, no passo 3 — ele nunca sai do banco, onde vive como hash.
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      if (verificationCode.trim() !== generatedCode.trim() && verificationCode.trim() !== '123456') {
-        setErrorMsg('Código de confirmação incorreto ou expirado. Verifique os 6 dígitos.');
-        return;
-      }
+    if (!/^\d{6}$/.test(verificationCode.trim())) {
+      setErrorMsg('O codigo de confirmacao tem 6 digitos numericos.');
+      return;
+    }
 
-      setStep('NEW_PASSWORD');
-      toast.success('Código validado com sucesso! Crie sua nova senha.');
-    }, 500);
+    setStep('NEW_PASSWORD');
   };
 
-  // 3. Save new password
-  const handleSaveNewPassword = (e: React.FormEvent) => {
+  // 3. Envia codigo e nova senha; o servidor valida os dois de uma vez.
+  const handleSaveNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    setIsLoading(true);
 
     if (!newPassword) {
-      setIsLoading(false);
       setErrorMsg('Por favor, digite a nova senha.');
       return;
     }
-
-    if (newPassword.length < 6) {
-      setIsLoading(false);
-      setErrorMsg('A senha deve ter pelo menos 6 caracteres.');
+    if (newPassword.length < 8) {
+      setErrorMsg('A senha deve ter pelo menos 8 caracteres.');
       return;
     }
-
     if (newPassword !== confirmPassword) {
-      setIsLoading(false);
-      setErrorMsg('As senhas digitadas não coincidem.');
+      setErrorMsg('As senhas digitadas nao coincidem.');
       return;
     }
 
-    // Update in system users
-    let systemUsers: SystemUser[] = INITIAL_SYSTEM_USERS;
+    setIsLoading(true);
     try {
-      const saved = localStorage.getItem('rocket_system_users');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          systemUsers = parsed;
-        }
-      }
-    } catch {}
-
-    const cleanEmail = email.trim().toLowerCase();
-    const updatedUsers = systemUsers.map((u) => {
-      if (u.email.trim().toLowerCase() === cleanEmail) {
-        return { ...u, password: newPassword };
-      }
-      return u;
-    });
-
-    try {
-      localStorage.setItem('rocket_system_users', JSON.stringify(updatedUsers));
-    } catch {}
-
-    setTimeout(() => {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          code: verificationCode.trim(),
+          password: newPassword,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
       setIsLoading(false);
+
+      if (!response.ok || !data.ok) {
+        // Codigo errado leva de volta ao passo anterior, onde ele e digitado.
+        setStep('CODE');
+        setErrorMsg(data.error || 'Codigo invalido ou expirado.');
+        return;
+      }
+
       setStep('SUCCESS');
       toast.success('Senha atualizada com sucesso!');
-    }, 600);
+    } catch {
+      setIsLoading(false);
+      setErrorMsg('Nao foi possivel conectar ao servidor. Verifique sua conexao.');
+    }
   };
 
   const primaryColor = activePalette.rawTokens.primary;
@@ -351,21 +330,6 @@ export function ForgotPasswordModal({
                 Insira o código de 6 dígitos que você recebeu por e-mail para autorizar a troca de senha.
               </p>
 
-              {/* Development helper banner */}
-              {generatedCode && (
-                <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-between text-xs">
-                  <span className="text-yellow-300 font-mono font-bold flex items-center gap-1.5">
-                    <Sparkles size={13} /> Código gerado: <strong>{generatedCode}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setVerificationCode(generatedCode)}
-                    className="px-2 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 font-bold text-[10px]"
-                  >
-                    Preencher Código
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="space-y-1.5 text-center">
@@ -399,8 +363,13 @@ export function ForgotPasswordModal({
                   type="button"
                   disabled={!canResend}
                   onClick={() => {
-                    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-                    setGeneratedCode(newCode);
+                    // Pede um codigo novo ao servidor; o anterior e invalidado la.
+                    void fetch('/api/auth/forgot-password', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+                    });
+                    setVerificationCode('');
                     setResendTimer(60);
                     setCanResend(false);
                     toast.info('Novo código de verificação enviado!');

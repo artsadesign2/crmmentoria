@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { DEFAULT_TENANT } from '@/lib/tenant';
-import { INITIAL_SYSTEM_USERS, SystemUser } from '@/lib/permissions';
 import { ForgotPasswordModal } from '@/components/forgot-password-modal';
 
 function LoginForm() {
@@ -59,96 +58,38 @@ function LoginForm() {
     } catch {}
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setLoading(true);
 
-    // 1. Get current registered users
-    let systemUsers: SystemUser[] = INITIAL_SYSTEM_USERS;
+    // A validacao acontece inteiramente no servidor. A versao anterior comparava
+    // a senha no cliente contra o localStorage e aceitava '123456' para qualquer
+    // conta, o que era uma senha-mestra universal.
     try {
-      const saved = localStorage.getItem('rocket_system_users');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          systemUsers = parsed;
-        }
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.ok) {
+        setLoading(false);
+        setErrorMessage(
+          data.error || 'E-mail ou senha incorretos. Por favor, verifique suas credenciais.'
+        );
+        return;
       }
-    } catch {}
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
-
-    // 2. Direct exact match in systemUsers by email
-    let matchedUser = systemUsers.find(
-      (u) => u.email.trim().toLowerCase() === cleanEmail
-    );
-
-    // 3. Fallback role aliases mapping
-    if (!matchedUser) {
-      if (
-        cleanEmail === 'master@rocketclub.com.br' ||
-        cleanEmail === 'comandante@rocketclub.com.br' ||
-        cleanEmail === 'master@mentoria.com'
-      ) {
-        matchedUser = systemUsers.find((u) => u.role === 'Master') || INITIAL_SYSTEM_USERS[0];
-      } else if (
-        cleanEmail === 'admin@rocketclub.com.br' ||
-        cleanEmail === 'admin@mentoria.com' ||
-        cleanEmail === 'administrador@rocketclub.com.br' ||
-        cleanEmail === 'henrique.admin@rocketclub.com.br'
-      ) {
-        matchedUser = systemUsers.find((u) => u.role === 'Administrador') || INITIAL_SYSTEM_USERS[1];
-      } else if (
-        cleanEmail === 'editor@rocketclub.com.br' ||
-        cleanEmail === 'fernanda.conteudo@rocketclub.com.br'
-      ) {
-        matchedUser = systemUsers.find((u) => u.role === 'Editor') || INITIAL_SYSTEM_USERS[2];
-      } else if (
-        cleanEmail === 'cliente@rocketclub.com.br' ||
-        cleanEmail === 'carlos@silvagroup.com.br' ||
-        cleanEmail === 'mentorado@rocketclub.com.br'
-      ) {
-        matchedUser = systemUsers.find((u) => u.role === 'Cliente') || INITIAL_SYSTEM_USERS[3];
-      } else if (
-        cleanEmail === 'usuario@rocketclub.com.br' ||
-        cleanEmail === 'rodrigo.trial@gmail.com' ||
-        cleanEmail === 'visitante@rocketclub.com.br'
-      ) {
-        matchedUser = systemUsers.find((u) => u.role === 'Usuário') || INITIAL_SYSTEM_USERS[4];
-      }
-    }
-
-    // 4. Validate credentials
-    let isAuthenticated = false;
-    let authenticatedUser: SystemUser | null = null;
-
-    if (matchedUser) {
-      const validPass = matchedUser.password || '123456';
-      if (cleanPassword === validPass || cleanPassword === '123456') {
-        isAuthenticated = true;
-        authenticatedUser = matchedUser;
-      }
-    }
-
-    if (!isAuthenticated || !authenticatedUser) {
-      setLoading(false);
-      setErrorMessage('E-mail ou senha incorretos. Por favor, verifique suas credenciais.');
-      return;
-    }
-
-    // 5. Set session cookie and storage strictly for the matched user
-    document.cookie = `rocket_session=${encodeURIComponent(
-      authenticatedUser.id
-    )}; path=/; max-age=86400; SameSite=Lax`;
-
-    try {
-      localStorage.setItem('rocket_active_user_id', authenticatedUser.id);
-    } catch {}
-
-    setTimeout(() => {
+      // Navegacao completa em vez de router.push: o layout do servidor precisa
+      // reler o cookie recem-emitido para resolver tema e sessao.
       window.location.href = callbackUrl;
-    }, 150);
+    } catch {
+      setLoading(false);
+      setErrorMessage('Nao foi possivel conectar ao servidor. Verifique sua conexao.');
+    }
   };
 
   const primaryColor = activePalette.rawTokens.primary;

@@ -461,11 +461,11 @@ export default function SettingsPage() {
   };
 
   // Handle Create New User
-  const handleCreateUserSubmit = (e: React.FormEvent) => {
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUserActionError(null);
 
-    const result = addUser({
+    const result = await addUser({
       name: newUserName,
       email: newUserEmail,
       phone: newUserPhone,
@@ -492,7 +492,7 @@ export default function SettingsPage() {
   };
 
   // Handle Edit User Submit
-  const handleEditUserSubmit = (e: React.FormEvent) => {
+  const handleEditUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     setUserActionError(null);
@@ -509,7 +509,7 @@ export default function SettingsPage() {
       updates.password = editingUserPassword.trim();
     }
 
-    const result = updateUser(editingUser.id, updates);
+    const result = await updateUser(editingUser.id, updates);
     if (result.success) {
       toast.success('Usuário atualizado!', `Os dados e permissões de "${editingUser.name}" foram salvos.`);
       setEditingUser(null);
@@ -533,9 +533,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleConfirmDeleteUser = () => {
+  const handleConfirmDeleteUser = async () => {
     if (!deletingUserTarget) return;
-    const res = deleteUser(deletingUserTarget.id);
+    const res = await deleteUser(deletingUserTarget.id);
     if (res.success) {
       toast.info('Usuário excluído', `A conta de "${deletingUserTarget.name}" foi removida.`);
       setDeletingUserTarget(null);
@@ -1354,7 +1354,7 @@ export default function SettingsPage() {
                           key={perm.key}
                           onClick={() => {
                             if (!isMaster || isLocked) return;
-                            toggleRolePermission(matrixRole, perm.key);
+                            void toggleRolePermission(matrixRole, perm.key);
                           }}
                           className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                             isLocked || !isMaster ? 'cursor-default' : 'cursor-pointer hover:border-slate-600'
@@ -3114,7 +3114,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  resetRolePermissions();
+                  void resetRolePermissions();
                   setIsResetPermissionsModalOpen(false);
                 }}
                 className="flex-1 py-2.5 rounded-xl font-black text-xs shadow-md"

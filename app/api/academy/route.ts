@@ -1,8 +1,12 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import { queryNeon, fetchAllCoursesFromDb } from '@/lib/neon-db';
 import { MOCK_COURSES } from '@/lib/mock-data';
 
 export async function GET() {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const dbCourses = await fetchAllCoursesFromDb();
     if (dbCourses && dbCourses.length > 0) {
@@ -22,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const { title, description, category = 'Geral', level = 'Geral', coverImage } = body;

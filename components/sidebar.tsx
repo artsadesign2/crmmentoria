@@ -116,7 +116,7 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname();
-  const { currentUser, currentRole, canAccessModule, isMaster } = useAuth();
+  const { currentUser, currentRole, canAccessModule, isMaster, logout } = useAuth();
   const { isLightMode, activePalette } = useTheme();
 
   const [logoUrl, setLogoUrl] = useState(DEFAULT_TENANT.company?.logoUrl || DEFAULT_TENANT.logoUrl || '');
@@ -450,11 +450,8 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => {
-                  document.cookie = 'rocket_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-                  try {
-                    localStorage.removeItem('rocket_active_user_id');
-                  } catch {}
-                  window.location.href = '/login';
+                  // O cookie de sessão é httpOnly: só o servidor consegue limpá-lo.
+                  void logout();
                 }}
                 className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors shrink-0"
                 title="Sair da Conta"

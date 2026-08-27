@@ -1,7 +1,11 @@
+import { guard } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_BILLING_RULES, executeBillingRuleDispatch } from '@/lib/billing-rules';
 
 export async function GET() {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   return NextResponse.json({
     ok: true,
     rules: DEFAULT_BILLING_RULES,
@@ -9,6 +13,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await req.json();
     const { ruleId, recipientPhone, menteeName, amount, dueDate, pixCode } = body;

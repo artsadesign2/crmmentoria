@@ -1,9 +1,13 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import { fetchAllMembersFromDb } from '@/lib/neon-db';
 import { INITIAL_MEMBERS } from '@/lib/mock-data';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 
 export async function GET(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get('member_id') || searchParams.get('id');
   const autoDownload = searchParams.get('download') === '1' || searchParams.get('auto') === 'true';

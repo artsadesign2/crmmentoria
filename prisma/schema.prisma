@@ -1,328 +1,432 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// ---------------------------------------------------------------------------
+// ATENÇÃO: este schema reflete o banco REAL, obtido por introspecção.
+//
+// O banco foi criado por lib/neon-db.ts com SQL cru e usa snake_case. Um
+// schema.prisma anterior descrevia uma estrutura que nunca foi aplicada;
+// `prisma db push` teria destruído os dados. Ele permanece no histórico do git.
+//
+// REGRA: NÃO rode `prisma db push` neste projeto. Alterações de estrutura vão
+// em prisma/migrations/<nome>/migration.sql, escritas à mão e idempotentes,
+// aplicadas por um runner próprio (ver prisma/migrate-f0.ts).
+//
+// Os models de autenticação abaixo usam camelCase com @map, porque o código
+// TypeScript os consome. Os demais mantêm snake_case da introspecção: ainda são
+// servidos por SQL cru e serão convertidos quando cada fase os alcançar.
+// ---------------------------------------------------------------------------
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  SUPER_ADMIN
-  ORG_ADMIN
-  MENTOR
-  MEMBER
-}
-
-enum Plan {
-  STARTER
-  PRO
-  ENTERPRISE
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Organization {
-  id           String   @id @default(uuid())
-  name         String
-  slug         String   @unique
-  domain       String?
-  plan         Plan     @default(STARTER)
-  logoUrl      String?
-  primaryColor String   @default("#EAB308")
-  features     Json     @default("{\"kanban\":true,\"academy\":true,\"wiki\":true,\"financial\":true,\"events\":true}")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  users                  User[]
-  members                Member[]
-  departments            Department[]
-  wikiArticles           WikiArticle[]
-  academyCourses         AcademyCourse[]
-  financialTransactions FinancialTransaction[]
-  events                 Event[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String           @db.VarChar(200)
+  slug            String           @unique @db.VarChar(100)
+  domain          String?          @db.VarChar(200)
+  plan            String           @default("STARTER") @db.VarChar(20)
+  logoUrl         String?          @map("logo_url")
+  primaryColor    String           @default("#EAB308") @map("primary_color") @db.VarChar(20)
+  features        Json             @default("{\"wiki\": true, \"events\": true, \"kanban\": true, \"academy\": true, \"financial\": true}")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime         @default(now()) @map("updated_at") @db.Timestamp(6)
+  departments     Department[]
+  rolePermissions RolePermission[]
+  users           User[]
 
   @@map("organizations")
 }
 
 model User {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  email          String       @unique
-  passwordHash   String
-  name           String
-  role           Role         @default(MEMBER)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  email          String  @db.VarChar(150)
+  /// bcrypt. Os hashes existentes vêm do password_hash() do PHP, com prefixo
+  /// $2y$ — o bcryptjs valida esse prefixo, então as senhas atuais continuam válidas.
+  passwordHash   String  @map("password_hash") @db.VarChar(255)
+  name           String  @db.VarChar(150)
+  /// MASTER | ADMINISTRADOR | EDITOR | CLIENTE | USUARIO.
+  /// VARCHAR em vez de enum do PostgreSQL para não quebrar a camada de SQL cru
+  /// que ainda escreve nesta tabela. A conversão para UserRole da interface fica
+  /// em lib/auth/roles.ts, que é o único ponto que conhece os dois vocabulários.
+  role           String  @default("USUARIO") @db.VarChar(20)
+  phone          String? @db.VarChar(50)
+  avatarUrl      String? @map("avatar_url")
+  /// ATIVO | INATIVO | BLOQUEADO
+  status         String  @default("ATIVO") @db.VarChar(20)
+  /// O Master principal não pode ser excluído nem rebaixado.
+  isPrimaryMaster Boolean   @default(false) @map("is_primary_master")
+  lastActiveAt    DateTime? @map("last_active_at") @db.Timestamp(6)
+  departmentId    String?   @map("department_id") @db.Uuid
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamp(6)
 
-  wikiArticles     WikiArticle[]
-  academyComments  AcademyComment[]
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  department          Department?          @relation(fields: [departmentId], references: [id], onUpdate: NoAction)
+  passwordResetTokens PasswordResetToken[]
+  academy_comments    AcademyComment[]
+  user_permissions    user_permissions[]
+  wiki_articles       WikiArticle[]
 
+  /// Escopado por organização: o mesmo e-mail pode existir em tenants distintos.
+  @@unique([organizationId, email])
+  @@index([organizationId, role])
   @@map("users")
 }
 
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// O código de 6 dígitos nunca é gravado em texto claro.
+  codeHash  String    @map("code_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamp(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, expiresAt], map: "password_reset_tokens_user_expires_idx")
+  @@map("password_reset_tokens")
+}
+
+model RolePermission {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  role           String @db.VarChar(20)
+  /// As 46 chaves de RolePermissions. Json de propósito: a tela de configurações
+  /// as edita em bloco e elas crescem a cada módulo novo do produto.
+  permissions    Json
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organizationId, role])
+  @@map("role_permissions")
+}
+
 model Member {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
-  specialty      String?
-  status         String       @default("cinza")
-  lastContact    DateTime?
-  notes          String?
-  position       Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                       String             @db.VarChar(200)
+  specialty                  String?
+  status                     String             @default("amarela") @db.VarChar(20)
+  last_contact               DateTime?          @db.Date
+  notes                      String?
+  position                   Int?               @default(0)
+  created_at                 DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?          @default(now()) @db.Timestamp(6)
+  age                        String?            @db.VarChar(50)
+  birthdate                  DateTime?          @db.Date
+  birthplace                 String?            @db.VarChar(200)
+  residence                  String?            @db.VarChar(200)
+  phone                      String?            @db.VarChar(50)
+  instagram                  String?            @db.VarChar(200)
+  email                      String?            @db.VarChar(150)
+  interests                  String?
+  hobbies                    String?
+  cover_image                String?
+  cpf                        String?            @db.VarChar(50)
+  rg                         String?            @db.VarChar(50)
+  professional_register      String?            @db.VarChar(300)
+  marital_status             String?            @db.VarChar(100)
+  register_pj                String?            @db.VarChar(100)
+  cnpj                       String?            @db.VarChar(50)
+  company_name               String?            @db.VarChar(200)
+  trade_name                 String?            @db.VarChar(200)
+  municipal_register         String?            @db.VarChar(50)
+  commercial_address         String?            @db.VarChar(300)
+  nationality                String?            @db.VarChar(200)
+  social_media               String?
+  website                    String?            @db.VarChar(200)
+  professional_experience    String?
+  work_locations             String?
+  work_description_hours     String?
+  monthly_revenue            String?
+  mentorship_interest        String?
+  main_goal                  String?
+  biggest_challenge          String?
+  content_consumption        String?
+  weekly_availability        String?
+  how_did_you_find_us        String?
+  spouse_info                String?
+  children_info              String?
+  pets_info                  String?
+  emergency_contact          String?
+  sports_info                String?
+  exclude_from_book          Boolean?           @default(false)
+  linkedin                   String?            @db.VarChar(200)
+  facebook                   String?            @db.VarChar(200)
+  youtube                    String?            @db.VarChar(200)
+  twitter                    String?            @db.VarChar(200)
+  membership_start_date      DateTime?          @db.Date
+  membership_expiration_date DateTime?          @db.Date
+  contract_value             Decimal?           @db.Decimal(10, 2)
+  plan_name                  String?            @db.VarChar(100)
+  card_template_model        String?            @db.VarChar(50)
+  card_photo_align           String?            @db.VarChar(50)
+  members_book_model         String?            @db.VarChar(50)
+  academy_comments           AcademyComment[]
+  academy_progress           academy_progress[]
+  contact_log                contact_log[]
+  goals                      Goal[]
+  member_deals               member_deals[]
+  milestones                 Milestone[]
+  status_history             status_history[]
 
-  // Extended Profile Info
-  age                    String?
-  birthdate              DateTime?
-  birthplace             String?
-  residence              String?
-  phone                  String?
-  instagram              String?
-  email                  String?
-  interests              String?
-  hobbies                String?
-  coverImage             String?
-  cpf                    String?
-  rg                     String?
-  professionalRegister   String?
-  maritalStatus          String?
-  registerPj             String?
-  cnpj                   String?
-  companyName            String?
-  tradeName              String?
-  municipalRegister      String?
-  commercialAddress      String?
-  nationality            String?
-  website                String?
-  linkedin               String?
-  monthlyRevenue         String?
-  mentorshipInterest     String?
-  mainGoal               String?
-  biggestChallenge       String?
-
-  contactLogs            ContactLog[]
-  milestones             Milestone[]
-  goals                  Goal[]
-  statusHistory          StatusHistory[]
-  academyProgresses      AcademyProgress[]
-  academyComments        AcademyComment[]
-  financialTransactions  FinancialTransaction[]
-
-  @@index([organizationId, status, position])
+  @@index([email], map: "idx_members_email")
+  @@index([status, position, name], map: "idx_members_status_pos_name")
   @@map("members")
 }
 
-model ContactLog {
-  id             String   @id @default(uuid())
-  organizationId String
-  memberId       String
-  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  type           String   @default("message")
-  note           String?
-  contactDate    DateTime @default(now())
-  createdAt      DateTime @default(now())
-
-  @@map("contact_logs")
-}
-
 model Milestone {
-  id             String   @id @default(uuid())
-  organizationId String
-  memberId       String
-  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  pillar         Int
-  title          String
-  description    String?
-  achievedAt     DateTime @default(now())
-  createdAt      DateTime @default(now())
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  member_id   String    @db.Uuid
+  pillar      Int
+  title       String    @db.VarChar(300)
+  description String?
+  achieved_at DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  members     Member    @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([member_id], map: "idx_milestones_member")
   @@map("milestones")
 }
 
 model Goal {
-  id             String    @id @default(uuid())
-  organizationId String
-  memberId       String
-  member         Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  pillar         Int
-  title          String
-  description    String?
-  status         String    @default("open")
-  dueDate        DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime  @default(now())
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  member_id    String    @db.Uuid
+  pillar       Int
+  title        String    @db.VarChar(300)
+  description  String?
+  status       String?   @default("open") @db.VarChar(20)
+  due_date     DateTime? @db.Date
+  completed_at DateTime? @db.Date
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  members      Member    @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([member_id], map: "idx_goals_member")
   @@map("goals")
 }
 
-model StatusHistory {
-  id             String   @id @default(uuid())
-  organizationId String
-  memberId       String
-  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  fromStatus     String?
-  toStatus       String
-  reason         String?
-  changedAt      DateTime @default(now())
-
-  @@map("status_histories")
-}
-
 model Department {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
-  isFixed        Boolean      @default(false)
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// NOTA: unique global, herdado do schema criado por SQL cru. Deveria ser
+  /// @@unique([organizationId, name]). Corrigir quando a F3 usar setorização.
+  name           String   @unique @db.VarChar(100)
+  isFixed        Boolean? @default(false) @map("is_fixed")
 
-  wikiArticles   WikiArticle[]
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         User[]
+  wiki_articles WikiArticle[]
 
   @@map("departments")
 }
 
 model WikiArticle {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title          String
-  summary        String?
-  content        String
-  category       String       @default("Geral")
-  departmentId   String?
-  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  isPublic       Boolean      @default(false)
-  viewsCount     Int          @default(0)
-  createdByUserId String?
-  createdBy      User?        @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String      @db.VarChar(200)
+  content       String
+  department_id String?     @db.Uuid
+  is_public     Boolean?    @default(false)
+  created_by    String?     @db.Uuid
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  users         User?       @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+  departments   Department? @relation(fields: [department_id], references: [id], onUpdate: NoAction)
 
+  @@index([department_id, is_public], map: "idx_wiki_articles_dept")
   @@map("wiki_articles")
 }
 
 model AcademyCourse {
-  id             String          @id @default(uuid())
-  organizationId String
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title          String
-  description    String?
-  category       String          @default("Geral")
-  level          String          @default("Iniciante")
-  coverImage     String?
-  bannerImage    String?
-  status         String          @default("published")
-  position       Int             @default(0)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  modules        AcademyModule[]
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String          @db.VarChar(250)
+  description     String?
+  category        String?         @default("Geral") @db.VarChar(100)
+  cover_image     String?
+  banner_image    String?
+  status          String?         @default("published") @db.VarChar(20)
+  position        Int?            @default(0)
+  created_at      DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?       @default(now()) @db.Timestamp(6)
+  level           String?         @default("Geral") @db.VarChar(50)
+  academy_modules AcademyModule[]
 
   @@map("academy_courses")
 }
 
 model AcademyModule {
-  id             String          @id @default(uuid())
-  organizationId String
-  courseId       String
-  course         AcademyCourse   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  title          String
-  description    String?
-  position       Int             @default(0)
-  createdAt      DateTime        @default(now())
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  course_id       String          @db.Uuid
+  title           String          @db.VarChar(250)
+  description     String?
+  position        Int?            @default(0)
+  created_at      DateTime?       @default(now()) @db.Timestamp(6)
+  academy_lessons AcademyLesson[]
+  academy_courses AcademyCourse   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  lessons        AcademyLesson[]
-
+  @@index([course_id, position], map: "idx_academy_modules_course")
   @@map("academy_modules")
 }
 
 model AcademyLesson {
-  id              String            @id @default(uuid())
-  organizationId  String
-  moduleId        String
-  module          AcademyModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  videoProvider   String            @default("youtube")
-  videoUrl        String?
-  durationSeconds Int               @default(0)
-  attachments     String?
-  position        Int               @default(0)
-  isFreePreview   Boolean           @default(false)
-  coverImage      String?
-  createdAt       DateTime          @default(now())
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  module_id        String             @db.Uuid
+  title            String             @db.VarChar(250)
+  description      String?
+  video_provider   String?            @default("youtube") @db.VarChar(30)
+  video_url        String?
+  duration_seconds Int?               @default(0)
+  attachments      String?
+  position         Int?               @default(0)
+  is_free_preview  Boolean?           @default(false)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  cover_image      String?
+  academy_comments AcademyComment[]
+  academy_modules  AcademyModule      @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  academy_progress academy_progress[]
 
-  progresses      AcademyProgress[]
-  comments        AcademyComment[]
-
+  @@index([module_id, position], map: "idx_academy_lessons_module")
   @@map("academy_lessons")
 }
 
-model AcademyProgress {
-  id                String        @id @default(uuid())
-  organizationId    String
-  memberId          String
-  member            Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  lessonId          String
-  lesson            AcademyLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  completed         Boolean       @default(true)
-  lastWatchedSecond Int           @default(0)
-  notes             String?
-  updatedAt         DateTime      @updatedAt
-
-  @@unique([memberId, lessonId])
-  @@map("academy_progresses")
-}
-
 model AcademyComment {
-  id             String         @id @default(uuid())
-  organizationId String
-  lessonId       String
-  lesson         AcademyLesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  userId         String?
-  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  memberId       String?
-  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  parentId       String?
-  parent         AcademyComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies        AcademyComment[] @relation("CommentReplies")
-  content        String
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                     String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lesson_id              String           @db.Uuid
+  user_id                String?          @db.Uuid
+  member_id              String?          @db.Uuid
+  parent_id              String?          @db.Uuid
+  content                String
+  created_at             DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?        @default(now()) @db.Timestamp(6)
+  academy_lessons        AcademyLesson    @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  members                Member?          @relation(fields: [member_id], references: [id], onUpdate: NoAction)
+  academy_comments       AcademyComment?  @relation("academy_commentsToacademy_comments", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_academy_comments AcademyComment[] @relation("academy_commentsToacademy_comments")
+  users                  User?            @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
+  @@index([lesson_id, created_at], map: "idx_academy_comments_lesson")
   @@map("academy_comments")
 }
 
 model FinancialTransaction {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  type           String       // "INCOME" | "EXPENSE"
-  amount         Float
-  category       String
-  description    String
-  date           DateTime     @default(now())
-  status         String       @default("PAID") // "PAID" | "PENDING"
-  memberId       String?
-  member         Member?      @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  createdAt      DateTime     @default(now())
+  id                String    @id @default(uuid()) @db.VarChar(100)
+  description       String
+  amount            Decimal   @default(0) @db.Decimal(12, 2)
+  type              String    @default("INCOME") @db.VarChar(20)
+  category          String    @default("Mensalidade") @db.VarChar(100)
+  status            String    @default("PAID") @db.VarChar(30)
+  date              DateTime  @default(now()) @db.Timestamptz(6)
+  due_date          DateTime? @db.Timestamptz(6)
+  member_id         String?   @db.VarChar(100)
+  member_name       String?   @db.VarChar(255)
+  gateway           String?   @default("MANUAL") @db.VarChar(50)
+  payment_link      String?
+  pix_copia_cola    String?
+  pix_qrcode_base64 String?
+  invoice_url       String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
 
   @@map("financial_transactions")
 }
 
 model Event {
-  id             String       @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title          String
-  description    String?
-  location       String?
-  eventDate      DateTime
-  maxAttendees   Int          @default(100)
-  ticketPrice    Float        @default(0)
-  status         String       @default("UPCOMING") // "UPCOMING" | "LIVE" | "FINISHED"
-  createdAt      DateTime     @default(now())
+  id                String    @id @default(uuid()) @db.VarChar(100)
+  title             String
+  description       String?
+  location          String?
+  event_date        DateTime  @db.Timestamptz(6)
+  end_date          DateTime? @db.Timestamptz(6)
+  time_info         String?   @db.VarChar(50)
+  attendees_count   Int?      @default(0)
+  max_attendees     Int?      @default(100)
+  ticket_price      Decimal?  @default(0) @db.Decimal(12, 2)
+  status            String?   @default("UPCOMING") @db.VarChar(30)
+  banner_image      String?
+  confirmed_members String?   @default("[]")
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
 
   @@map("events")
 }
+
+model academy_progress {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  member_id           String        @db.Uuid
+  lesson_id           String        @db.Uuid
+  completed           Boolean?      @default(true)
+  last_watched_second Int?          @default(0)
+  notes               String?
+  updated_at          DateTime?     @default(now()) @db.Timestamp(6)
+  academy_lessons     AcademyLesson @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  members             Member        @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([member_id, lesson_id], map: "unique_member_lesson")
+  @@index([member_id, lesson_id], map: "idx_academy_progress_member")
+}
+
+model contact_log {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  member_id      String    @db.Uuid
+  type           String?   @default("message") @db.VarChar(50)
+  note           String?
+  contact_date   DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  author_name    String?   @db.VarChar(255)
+  follow_up_date DateTime? @db.Date
+  members        Member    @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([member_id, contact_date(sort: Desc)], map: "idx_contact_log_member_date")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model login_attempts {
+  ip           String    @db.VarChar(50)
+  email        String    @db.VarChar(150)
+  attempted_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([email, ip, attempted_at], map: "idx_login_attempts")
+  @@ignore
+}
+
+model member_deals {
+  id                  String    @id @db.Uuid
+  member_id           String?   @db.Uuid
+  partner_member_name String?   @db.VarChar(255)
+  title               String    @db.VarChar(255)
+  deal_value          Decimal?  @default(0) @db.Decimal(12, 2)
+  deal_date           DateTime? @db.Date
+  notes               String?
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  members             Member?   @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model settings {
+  key   String @id @db.VarChar(100)
+  value String
+}
+
+model status_history {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  member_id   String    @db.Uuid
+  from_status String?   @db.VarChar(20)
+  to_status   String    @db.VarChar(20)
+  reason      String?
+  changed_at  DateTime? @default(now()) @db.Timestamp(6)
+  author_name String?   @db.VarChar(255)
+  members     Member    @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([member_id, changed_at(sort: Desc)], map: "idx_status_history_member")
+}
+
+model user_permissions {
+  user_id    String @db.Uuid
+  permission String @db.VarChar(50)
+  users      User   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, permission])
+}
+
+

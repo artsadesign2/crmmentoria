@@ -55,7 +55,7 @@ interface TopbarProps {
 
 export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) {
   const tenant = DEFAULT_TENANT;
-  const { currentUser, currentRole, switchRoleSimulation, updateUser } = useAuth();
+  const { currentUser, currentRole, switchRoleSimulation, updateUser, logout } = useAuth();
   const { isLightMode, activePalette } = useTheme();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, clearAll } =
@@ -90,7 +90,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
     if (currentUser.phone) setProfilePhone(currentUser.phone);
   }, [currentUser]);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updates: Partial<typeof currentUser> = {
       name: profileName,
@@ -100,7 +100,14 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
     if (profilePassword.trim()) {
       updates.password = profilePassword.trim();
     }
-    updateUser(currentUser.id, updates);
+
+    // Só declara sucesso depois que o servidor confirma.
+    const result = await updateUser(currentUser.id, updates);
+    if (!result.success) {
+      toast.error('Erro ao salvar perfil', result.error || 'Não foi possível atualizar seus dados.');
+      return;
+    }
+
     setProfilePassword('');
     setShowProfilePassword(false);
     setProfileSaved(true);
@@ -157,11 +164,8 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
 
   const roleInfo = ROLE_HIERARCHIES[currentRole] || ROLE_HIERARCHIES['Usuário'];
   const handleLogout = () => {
-    document.cookie = 'rocket_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-    try {
-      localStorage.removeItem('rocket_active_user_id');
-    } catch {}
-    window.location.href = '/login';
+    // O cookie de sessão é httpOnly: só o servidor consegue limpá-lo.
+    void logout();
   };
 
   return (

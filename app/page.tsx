@@ -1,13 +1,9 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { getSession } from '@/lib/auth/session';
 
 export default async function RootPage() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('rocket_session')?.value;
-
-  if (!session) {
-    redirect('/login');
-  }
-
-  redirect('/dashboard');
+  // getSession verifica a assinatura do JWT; a versão anterior apenas checava
+  // se o cookie existia, o que qualquer pessoa conseguia forjar.
+  const session = await getSession();
+  redirect(session ? '/dashboard' : '/login');
 }
