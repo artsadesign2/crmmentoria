@@ -1,3 +1,4 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import { fetchAllMembersFromDb, queryNeon, invalidateMembersCache } from '@/lib/neon-db';
 import { INITIAL_MEMBERS } from '@/lib/mock-data';
@@ -10,6 +11,9 @@ function sanitizeStr(val: any, maxLength = 500): string | null {
 }
 
 export async function GET() {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const dbMembers = await fetchAllMembersFromDb();
     if (dbMembers && dbMembers.length > 0) {
@@ -38,6 +42,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object') {
@@ -152,6 +159,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const {
@@ -319,6 +329,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

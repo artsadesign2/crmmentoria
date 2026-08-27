@@ -1,3 +1,4 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import {
   fetchAllFinancialTransactions,
@@ -9,6 +10,9 @@ import { createAsaasPayment } from '@/lib/gateways/asaas';
 import { createStripeCheckoutSession } from '@/lib/gateways/stripe';
 
 export async function GET() {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const transactions = await fetchAllFinancialTransactions();
     return NextResponse.json({
@@ -25,6 +29,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object') {
@@ -127,6 +134,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const { id, status } = body;
@@ -151,6 +161,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

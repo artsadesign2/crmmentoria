@@ -1,7 +1,11 @@
+import { guard } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRocketAiDiagnosis } from '@/lib/ai-copilot';
 
 export async function POST(req: NextRequest) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await req.json();
     const {

@@ -1,7 +1,11 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 
 export async function GET(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   const currentDate = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
   const fileName = `Guia_Executivo_Rocket_Club_${new Date().getFullYear()}.pdf`;
 

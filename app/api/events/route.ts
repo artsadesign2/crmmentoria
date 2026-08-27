@@ -1,3 +1,4 @@
+import { guard } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
 import {
   fetchAllEventsFromDb,
@@ -7,6 +8,9 @@ import {
 } from '@/lib/events-db';
 
 export async function GET() {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const events = await fetchAllEventsFromDb();
     return NextResponse.json({
@@ -20,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     if (!body || typeof body !== 'object') {
@@ -77,6 +84,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await guard();
+  if (auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
