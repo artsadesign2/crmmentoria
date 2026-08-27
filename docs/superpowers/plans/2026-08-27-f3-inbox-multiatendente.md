@@ -35,16 +35,16 @@ cliente da Evolution.
 **Produz:** `departments.is_default_inbox`; unique `(organization_id, name)` em
 departments; três índices em `conversations`.
 
-- [ ] Escrever `migration.sql` com os 8 statements da §13 da spec, todos
+- [x] Escrever `migration.sql` com os 8 statements da §13 da spec, todos
       idempotentes (`IF NOT EXISTS`, `DO $$ ... EXCEPTION WHEN duplicate_object`).
-- [ ] Conferir antes: `SELECT count(*)` em members, courses, departments, users.
-- [ ] `npm run db:migrate f3-inbox`
-- [ ] Conferir depois: mesmas contagens; `\d departments` mostra a coluna nova;
+- [x] Conferir antes: `SELECT count(*)` em members, courses, departments, users.
+- [x] `npm run db:migrate f3-inbox`
+- [x] Conferir depois: mesmas contagens; `\d departments` mostra a coluna nova;
       exatamente um setor com `is_default_inbox = true`.
-- [ ] Atualizar `schema.prisma`: `isDefaultInbox` em `Department`,
+- [x] Atualizar `schema.prisma`: `isDefaultInbox` em `Department`,
       `@@unique([organizationId, name])`, novos `@@index` em `Conversation`.
-- [ ] `npx prisma generate` e `npx tsc --noEmit`.
-- [ ] Commit: `feat(inbox): add default sector column and inbox indexes`
+- [x] `npx prisma generate` e `npx tsc --noEmit`.
+- [x] Commit: `feat(inbox): add default sector column and inbox indexes`
 
 ---
 
@@ -86,14 +86,14 @@ Função pura, sem I/O. Reaproveita a extração de conteúdo que já existe em
 `app/api/webhook/whatsapp/route.ts` (seis formatos), acrescentando `mediaUrl` e
 `contentType`.
 
-- [ ] Escrever os testes primeiro: texto simples (`conversation`),
+- [x] Escrever os testes primeiro: texto simples (`conversation`),
       `extendedTextMessage`, imagem com legenda, vídeo, áudio, documento; grupo
       `@g.us` → `IGNORED`; `status@broadcast` → `IGNORED`; `fromMe: true`
       preservado; payload vazio → `UNKNOWN`; evento sem `key.id` → `IGNORED`.
-- [ ] Rodar: devem falhar por módulo inexistente.
-- [ ] Implementar `parseEvolutionEvent`.
-- [ ] Rodar: verde.
-- [ ] Commit: `feat(inbox): add pure parser for evolution webhook payloads`
+- [x] Rodar: devem falhar por módulo inexistente.
+- [x] Implementar `parseEvolutionEvent`.
+- [x] Rodar: verde.
+- [x] Commit: `feat(inbox): add pure parser for evolution webhook payloads`
 
 ---
 
@@ -137,18 +137,18 @@ export async function routeConversation(
 
 `pickAgent` é pura de propósito: é a regra que precisa ser demonstrável.
 
-- [ ] Testes primeiro: escolhe o de menor carga; empate resolve por
+- [x] Testes primeiro: escolhe o de menor carga; empate resolve por
       `lastAssignedAt` mais antigo; empate duplo resolve por menor id; ignora
       quem está fora da janela de 15 min; ignora CLIENTE e USUARIO; ignora
       INATIVO; lista vazia devolve `null`; todos offline devolve `null`.
-- [ ] Rodar: falham.
-- [ ] Implementar `canAttend` e `pickAgent`.
-- [ ] Rodar: verde.
-- [ ] Implementar `defaultDepartmentId` e `routeConversation` sobre o Prisma,
+- [x] Rodar: falham.
+- [x] Implementar `canAttend` e `pickAgent`.
+- [x] Rodar: verde.
+- [x] Implementar `defaultDepartmentId` e `routeConversation` sobre o Prisma,
       com `groupBy` para contar conversas abertas e `max(createdAt)` para a
       última atribuição.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(inbox): route new conversations to the least busy agent online`
+- [x] `npx tsc --noEmit`
+- [x] Commit: `feat(inbox): route new conversations to the least busy agent online`
 
 ---
 
@@ -193,19 +193,19 @@ export function buildSignature(userName: string): string;     // "*Marcio*\n"
 `messages.ts` importa `lib/evolution/server.ts` só dentro de
 `sendCustomerMessage`. `addInternalNote` não tem acesso ao cliente da Evolution.
 
-- [ ] Testes primeiro: `conversationVisibilityFilter` para Master (sem OR),
+- [x] Testes primeiro: `conversationVisibilityFilter` para Master (sem OR),
       Administrador (sem OR), Editor com setor (própria + fila do setor + fila
       sem setor), Editor sem setor; `buildSignature` com nome composto, nome
       único e nome com espaços sobrando.
-- [ ] Rodar: falham. Implementar. Rodar: verde.
-- [ ] Implementar o restante da camada.
-- [ ] `recordInboundMessage` captura `P2002` do índice
+- [x] Rodar: falham. Implementar. Rodar: verde.
+- [x] Implementar o restante da camada.
+- [x] `recordInboundMessage` captura `P2002` do índice
       `messages_org_external_key` e devolve `{ duplicated: true }` em vez de
       propagar erro.
-- [ ] `sendCustomerMessage`: grava com `status: 'PENDING'`, envia, atualiza para
+- [x] `sendCustomerMessage`: grava com `status: 'PENDING'`, envia, atualiza para
       `SENT` com `externalId`, ou `FAILED` se a Evolution recusar.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(inbox): add conversation and message service layer`
+- [x] `npx tsc --noEmit`
+- [x] Commit: `feat(inbox): add conversation and message service layer`
 
 ---
 
@@ -225,19 +225,19 @@ export async function sendText(phone: string, text: string):
 export function verifyWebhookToken(request: Request): boolean;   // timingSafeEqual
 ```
 
-- [ ] Extrair `readEvolutionEnv` de `app/api/evolution/proxy/route.ts` para
+- [x] Extrair `readEvolutionEnv` de `app/api/evolution/proxy/route.ts` para
       `lib/evolution/server.ts` e fazer o proxy importar de lá — uma definição só.
-- [ ] Implementar `sendText` batendo direto em
+- [x] Implementar `sendText` batendo direto em
       `POST {serverUrl}/message/sendText/{instance}` com header `apikey`.
-- [ ] Implementar `verifyWebhookToken`: lê `x-webhook-token` ou `?token=`,
+- [x] Implementar `verifyWebhookToken`: lê `x-webhook-token` ou `?token=`,
       compara com `EVOLUTION_WEBHOOK_TOKEN` por `crypto.timingSafeEqual` sobre
       buffers de tamanho igualado. Variável ausente → sempre falso.
-- [ ] Reescrever o webhook seguindo o fluxo da §4 da spec. Token inválido → 401.
+- [x] Reescrever o webhook seguindo o fluxo da §4 da spec. Token inválido → 401.
       Variável ausente → 503. Payload ruim → 200 com log, nunca 5xx.
-- [ ] Adicionar `EVOLUTION_WEBHOOK_TOKEN` ao `.env` local com um valor gerado, e
+- [x] Adicionar `EVOLUTION_WEBHOOK_TOKEN` ao `.env` local com um valor gerado, e
       ao `.env.example` sem valor.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(inbox): authenticate the webhook and persist incoming messages`
+- [x] `npx tsc --noEmit`
+- [x] Commit: `feat(inbox): authenticate the webhook and persist incoming messages`
 
 ---
 
@@ -260,14 +260,14 @@ Todas passam por `withAuth` + `requireSession`, como as rotas da F1.
 | `/api/crm/conversations/[id]/notes` | POST | Nota interna (não envia) |
 | `/api/crm/inbox/updates` | GET | Cursor: conversas e mensagens novas |
 
-- [ ] Implementar as cinco rotas.
-- [ ] `/updates` chama `touchPresence(session.userId)` — é o batimento que
+- [x] Implementar as cinco rotas.
+- [x] `/updates` chama `touchPresence(session.userId)` — é o batimento que
       alimenta a distribuição da Tarefa 3.
-- [ ] Reatribuição só para rank de Administrador para cima; atendente pode
+- [x] Reatribuição só para rank de Administrador para cima; atendente pode
       **assumir** conversa da fila (`assignedUserId = null → eu`), não tomar a de
       outro. Fora disso, 403.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(inbox): add conversation, message and cursor routes`
+- [x] `npx tsc --noEmit`
+- [x] Commit: `feat(inbox): add conversation, message and cursor routes`
 
 ---
 
@@ -279,51 +279,100 @@ Todas passam por `withAuth` + `requireSession`, como as rotas da F1.
 
 **Consome:** os DTOs da Tarefa 4 e as rotas da Tarefa 6.
 
-- [ ] `use-inbox.ts`: estado + polling adaptativo (2 s em foco, 15 s em segundo
+- [x] `use-inbox.ts`: estado + polling adaptativo (2 s em foco, 15 s em segundo
       plano via `document.visibilityState`), cursor com sobreposição de 1 s,
       deduplicação por id, `handleUnauthorized(401)` redirecionando para
       `/login` — mesmo contrato de `use-crm.ts`.
-- [ ] `conversation-item.tsx`: avatar, nome, prévia, tempo relativo, contador de
+- [x] `conversation-item.tsx`: avatar, nome, prévia, tempo relativo, contador de
       não lidas, `ChannelBadge` em variante `dot`, etiqueta do setor.
-- [ ] `conversation-list.tsx`: abas Minhas / Fila / Todas, busca, contador na aba
+- [x] `conversation-list.tsx`: abas Minhas / Fila / Todas, busca, contador na aba
       da fila.
-- [ ] `message-bubble.tsx`: três tratamentos distintos — entrada à esquerda,
+- [x] `message-bubble.tsx`: três tratamentos distintos — entrada à esquerda,
       saída à direita com nome do autor, **nota interna em faixa âmbar com
       borda tracejada e o rótulo "só a equipe vê"**. A nota interna precisa ser
       impossível de confundir com uma mensagem enviada; é o único lugar onde a
       interface grita.
-- [ ] `message-thread.tsx`: rolagem, separadores de data, âncora no fim.
-- [ ] `composer.tsx`: alternância Responder / Nota interna que muda cor, ícone e
+- [x] `message-thread.tsx`: rolagem, separadores de data, âncora no fim.
+- [x] `composer.tsx`: alternância Responder / Nota interna que muda cor, ícone e
       texto do botão. Contato sem telefone desabilita Responder com explicação.
-- [ ] `contact-panel.tsx`: dados do contato, oportunidade vinculada (ou botão
+- [x] `contact-panel.tsx`: dados do contato, oportunidade vinculada (ou botão
       "Criar oportunidade"), responsável, setor, encerrar atendimento.
-- [ ] `page.tsx`: três colunas, responsivo (em telas estreitas, lista e conversa
+- [x] `page.tsx`: três colunas, responsivo (em telas estreitas, lista e conversa
       alternam).
-- [ ] Sidebar: item "Inbox (Atendimento)" após CRM, ícone `MessagesSquare`,
+- [x] Sidebar: item "Inbox (Atendimento)" após CRM, ícone `MessagesSquare`,
       `permissionKey: 'viewCRM'`.
-- [ ] `npx tsc --noEmit` e `npm run build`
-- [ ] Commit: `feat(inbox): add the three-column attendant inbox`
+- [x] `npx tsc --noEmit` e `npm run build`
+- [x] Commit: `feat(inbox): add the three-column attendant inbox`
 
 ---
 
 ## Tarefa 8 — Verificação ponta a ponta
 
-- [ ] `npx vitest run` — todos verdes, incluindo os 52 anteriores.
-- [ ] `npx tsc --noEmit` limpo. `npm run build` passando.
-- [ ] Subir o dev server e exercitar contra o banco real:
-  - [ ] `POST /api/webhook/whatsapp` sem token → 401, nada gravado.
-  - [ ] Com token e payload de texto → contato, conversa e mensagem criados.
-  - [ ] Reenviar o mesmo payload → nenhuma duplicata (contar antes e depois).
-  - [ ] Payload de grupo `@g.us` → 200, nada gravado.
-  - [ ] `GET /api/crm/conversations` sem sessão → 401; com sessão → a conversa.
-  - [ ] `POST .../notes` → mensagem `INTERNAL` gravada; conferir no banco que
+- [x] `npx vitest run` — todos verdes, incluindo os 52 anteriores.
+- [x] `npx tsc --noEmit` limpo. `npm run build` passando.
+- [x] Subir o dev server e exercitar contra o banco real:
+  - [x] `POST /api/webhook/whatsapp` sem token → 401, nada gravado.
+  - [x] Com token e payload de texto → contato, conversa e mensagem criados.
+  - [x] Reenviar o mesmo payload → nenhuma duplicata (contar antes e depois).
+  - [x] Payload de grupo `@g.us` → 200, nada gravado.
+  - [x] `GET /api/crm/conversations` sem sessão → 401; com sessão → a conversa.
+  - [x] `POST .../notes` → mensagem `INTERNAL` gravada; conferir no banco que
         nenhuma chamada saiu para a Evolution.
-  - [ ] `GET /api/crm/inbox/updates?since=<antes>` → devolve a mensagem nova.
-  - [ ] Distribuição: com o Master online, conversa nova cai nele; com ninguém
+  - [x] `GET /api/crm/inbox/updates?since=<antes>` → devolve a mensagem nova.
+  - [x] Distribuição: com o Master online, conversa nova cai nele; com ninguém
         ativo há 15 min, cai na fila.
-  - [ ] Visibilidade: conversa atribuída ao Master não aparece para o Editor.
-  - [ ] `/inbox` responde 200.
-- [ ] Registrar no relatório o que **não** foi verificado — renderização visual,
+  - [x] Visibilidade: conversa atribuída ao Master não aparece para o Editor.
+  - [x] `/inbox` responde 200.
+- [x] Registrar no relatório o que **não** foi verificado — renderização visual,
       porque não há navegador aqui, e o envio real pela Evolution, que depende
       de instância conectada.
-- [ ] Commit final e relatório consolidado.
+- [x] Commit final e relatório consolidado.
+
+
+---
+
+## Resultado da verificação
+
+Executada em 2026-08-27 contra o banco real. **23 checagens, todas passaram.**
+
+| # | Checagem | Resultado |
+|---|---|---|
+| 1 | Webhook sem token | 401, nada gravado |
+| 2 | Webhook com token errado | 401 |
+| 3 | Webhook com token correto | contato, conversa e mensagem criados |
+| 4 | Reenvio do mesmo `key.id` | `duplicated: true`, 1 mensagem no banco |
+| 5 | Mensagem de grupo `@g.us` | descartada, 0 contatos criados |
+| 6 | Conversa nova com atendente online | atribuída ao Master |
+| 7 | Áudio | `contentType=AUDIO`, `mediaUrl` preservada |
+| 8 | Três rotas do Inbox sem sessão | 401 nas três |
+| 9 | As mesmas com sessão | 200 nas três |
+| 10 | Listagem para o Master | 2 conversas, prévias corretas |
+| 11 | Nota interna | gravada como `INTERNAL`, `externalId` nulo |
+| 12 | Promover a oportunidade | card criado em "1. Novos Leads" e vinculado |
+| 13 | Chamadas à Evolution durante a nota | **zero** |
+| 14 | Nota não altera `lastMessageAt` nem `unreadCount` | confirmado |
+| 15 | Cursor `?since=` | trouxe a mensagem nova, fila e não lidas corretas |
+| 16 | Editor do Financeiro | enxerga 0 conversas |
+| 17 | Editor abre conversa do Master | 404 |
+| 18 | Editor tenta tomar conversa do Master | 404 |
+| 19 | Editor movido ao Comercial | enxerga a fila do próprio setor |
+| 20 | Editor assume conversa da fila | permitido |
+| 21 | Editor tenta repassar a outro | 403 com mensagem explícita |
+| 22 | `/inbox` com sessão · sem sessão | 200 · 307 para `/login` |
+| 23 | `/crm` continua respondendo | 200 |
+
+Sem responsável online, a conversa ficou na fila (o último acesso do Master
+estava a 98 minutos, fora da janela de 15) — a regra foi exercitada nos dois
+sentidos, não só no caminho feliz.
+
+Os dados de verificação foram removidos ao final. Contagens antes e depois:
+1 usuário, 4 setores, 4 contatos, 4 oportunidades, 6 etapas, 0 conversas,
+0 mensagens.
+
+### O que não foi verificado
+
+- **Renderização visual.** Não há ferramenta de navegador neste ambiente.
+- **Envio real pela Evolution.** As credenciais existem em `.env.local` e o
+  envio funcionaria — foi por isso que não o executei: dispararia WhatsApp para
+  números reais. O caminho de gravação (`PENDING` → `SENT`/`FAILED`) está
+  coberto por código, não por execução.
