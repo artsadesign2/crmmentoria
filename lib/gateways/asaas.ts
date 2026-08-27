@@ -33,7 +33,8 @@ const ASAAS_SANDBOX_URL = 'https://sandbox.asaas.com/api/v3';
 const ASAAS_PROD_URL = 'https://api.asaas.com/v3';
 
 export function getAsaasConfig(): AsaasConfig {
-  const apiKey = process.env.ASAAS_API_KEY || process.env.NEXT_PUBLIC_ASAAS_API_KEY || '';
+  // Sem fallback para NEXT_PUBLIC_: a chave seria embutida no bundle do cliente.
+  const apiKey = process.env.ASAAS_API_KEY || '';
   const env = process.env.ASAAS_ENVIRONMENT || 'sandbox';
   return {
     apiKey,

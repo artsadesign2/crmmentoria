@@ -22,7 +22,9 @@ export interface StripeCheckoutResult {
 }
 
 export function getStripeSecretKey(): string {
-  return process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY || '';
+  // Sem fallback para NEXT_PUBLIC_: uma secret key com esse prefixo seria
+  // embutida no bundle entregue ao navegador.
+  return process.env.STRIPE_SECRET_KEY || '';
 }
 
 /**
