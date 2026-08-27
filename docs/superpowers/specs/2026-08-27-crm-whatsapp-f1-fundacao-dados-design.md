@@ -16,7 +16,11 @@ não estava entre as 19 tabelas reais.
 *(Nota posterior: a tabela passou a existir, vazia, durante a verificação da F0 — o teste
 de fumaça chamou `GET /api/crm`, e `ensureLeadsTable()` em `lib/crm-db.ts` executa
 `CREATE TABLE IF NOT EXISTS` a cada primeira leitura. Ela tem 0 linhas, então a conclusão
-não muda: não há dado algum a migrar. A tabela é removida na Task 9.)*
+não muda: não há dado algum a migrar.*
+
+*Ela **não** é removida na F1: `ensureLeadsTable()` a recriaria na requisição seguinte.
+Some sozinha quando a F2 aposentar `lib/crm-db.ts` e a rota `/api/crm` antiga. Até lá fica
+vazia e inofensiva.)*
 
 Consequência: a tela `/crm` (1117 linhas) roda hoje inteiramente sobre `MOCK_LEADS`, um
 array em `lib/mock-data.ts`. **Não há um único lead real no sistema.** A F1 fica menor e
