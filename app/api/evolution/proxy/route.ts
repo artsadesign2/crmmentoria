@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireSession, withAuth } from '@/lib/auth/session';
+import { readEvolutionEnv } from '@/lib/evolution/server';
 
 /**
  * Proxy servidor-a-servidor para a Evolution API.
@@ -15,24 +16,6 @@ import { requireSession, withAuth } from '@/lib/auth/session';
  *
  * O cliente envia apenas `endpoint`, `method` e `body`.
  */
-
-interface EvolutionEnv {
-  serverUrl: string;
-  apiKey: string;
-  instanceName: string;
-}
-
-function readEvolutionEnv(): EvolutionEnv | null {
-  const serverUrl = process.env.EVOLUTION_API_URL;
-  const apiKey = process.env.EVOLUTION_API_KEY;
-  if (!serverUrl || !apiKey) return null;
-
-  return {
-    serverUrl: serverUrl.replace(/\/+$/, ''),
-    apiKey,
-    instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'rocket-club-crm',
-  };
-}
 
 export const POST = withAuth(async (request: Request) => {
   await requireSession();
