@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole, requireSession, withAuth } from '@/lib/auth/session';
 import { signSession, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth/jwt';
-import { labelToRole, type DbRole } from '@/lib/auth/roles';
+import { labelToRole, roleToLabel, type DbRole } from '@/lib/auth/roles';
 import type { UserRole } from '@/lib/permissions';
 
 /**
@@ -39,24 +39,34 @@ export const POST = withAuth(async (request: Request) => {
   }
 
   const body = await request.json().catch(() => ({}));
-  const role = body.role as UserRole;
+  const role = body.role as UserRole | undefined;
+  const userId = typeof body.userId === 'string' ? body.userId : undefined;
 
-  if (!VALID_ROLES.includes(role)) {
-    return NextResponse.json({ ok: false, error: 'Papel inválido.' }, { status: 400 });
+  if (!userId && (!role || !VALID_ROLES.includes(role))) {
+    return NextResponse.json(
+      { ok: false, error: 'Informe um papel válido ou o id do usuário a simular.' },
+      { status: 400 }
+    );
   }
 
+  // Sempre escopado à organização da sessão: não se simula usuário de outro tenant.
   const target = await prisma.user.findFirst({
     where: {
       organizationId: session.organizationId,
-      role: labelToRole(role),
       status: 'ATIVO',
       NOT: { id: session.userId },
+      ...(userId ? { id: userId } : { role: labelToRole(role as UserRole) }),
     },
   });
 
   if (!target) {
     return NextResponse.json(
-      { ok: false, error: `Nenhum outro usuário ativo com o papel ${role} nesta organização.` },
+      {
+        ok: false,
+        error: userId
+          ? 'Usuário não encontrado, inativo, ou é a própria conta.'
+          : `Nenhum outro usuário ativo com o papel ${role} nesta organização.`,
+      },
       { status: 404 }
     );
   }
@@ -71,7 +81,11 @@ export const POST = withAuth(async (request: Request) => {
     SIMULATION_MAX_AGE
   );
 
-  const response = NextResponse.json({ ok: true, simulating: role, as: target.name });
+  const response = NextResponse.json({
+    ok: true,
+    simulating: roleToLabel(target.role as DbRole),
+    as: target.name,
+  });
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(SIMULATION_MAX_AGE));
   return response;
 });
