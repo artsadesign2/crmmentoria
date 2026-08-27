@@ -95,6 +95,8 @@ import {
   interpolateWhatsAppTemplate,
 } from '@/lib/whatsapp-automations';
 
+import { AiSettingsSection } from '@/components/settings/ai-settings-section';
+
 export default function SettingsPage() {
   const { activePaletteId, activePalette, isLightMode, setPalette, resetToDefault: resetTheme } =
     useTheme();
@@ -115,7 +117,7 @@ export default function SettingsPage() {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<
-    'design' | 'permissions' | 'users' | 'whatsapp' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
+    'design' | 'permissions' | 'users' | 'whatsapp' | 'ai' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
   >('design');
 
   const [mounted, setMounted] = useState(false);
@@ -853,6 +855,28 @@ export default function SettingsPage() {
           {evolutionState.state === 'open' && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ai')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'ai'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'ai'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <Sparkles size={16} />
+          <span>Copiloto de IA</span>
         </button>
 
         <button
@@ -1600,6 +1624,17 @@ export default function SettingsPage() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: COPILOTO DE IA (BASE DE CONHECIMENTO QUE FUNDAMENTA AS SUGESTOES)     */}
+      {/* ========================================================================= */}
+      {activeTab === 'ai' && (
+        <div className="animate-in fade-in duration-200">
+          <Card className="p-6">
+            <AiSettingsSection canEdit={currentRole === 'Master' || currentRole === 'Administrador'} />
           </Card>
         </div>
       )}

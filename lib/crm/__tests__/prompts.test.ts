@@ -21,6 +21,7 @@ function msg(over: Partial<MessageDTO> & { id: string }): MessageDTO {
     content: 'oi',
     mediaUrl: null,
     transcription: null,
+    transcriptionStatus: null,
     status: 'DELIVERED',
     isFromBot: false,
     userId: null,
