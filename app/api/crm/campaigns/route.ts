@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireSession, requireRole, withAuth } from '@/lib/auth/session';
-import { createCampaign, listCampaigns } from '@/lib/dispatch/campaigns';
+import {
+  createCampaign,
+  listCampaigns,
+  type CampaignRecipientInput,
+} from '@/lib/dispatch/campaigns';
 import { CampaignError } from '@/lib/dispatch/types';
 
 /** Campanhas da organização da sessão. Ver é o bastante para qualquer papel. */
@@ -25,11 +29,24 @@ export const POST = withAuth(async (request: Request) => {
     ? body.contactIds.filter((id: unknown): id is string => typeof id === 'string')
     : [];
 
+  // Destinatários crus vêm da tela de eventos, cuja lista não é do CRM. Cada um
+  // vira um contato de verdade — ver resolverDestinatarios.
+  const recipients: CampaignRecipientInput[] = Array.isArray(body.recipients)
+    ? body.recipients
+        .filter((r: unknown): r is Record<string, unknown> => typeof r === 'object' && r !== null)
+        .map((r: Record<string, unknown>) => ({
+          name: typeof r.name === 'string' ? r.name : '',
+          phone: typeof r.phone === 'string' ? r.phone : '',
+          company: typeof r.company === 'string' ? r.company : null,
+        }))
+    : [];
+
   try {
     const campaign = await createCampaign(session, {
       name: typeof body.name === 'string' ? body.name : '',
       message: typeof body.message === 'string' ? body.message : '',
       contactIds,
+      recipients,
       scheduledAt: typeof body.scheduledAt === 'string' ? body.scheduledAt : undefined,
     });
 

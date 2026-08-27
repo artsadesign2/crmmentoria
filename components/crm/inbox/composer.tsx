@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Send, EyeOff, Loader2, MessageCircle, Sparkles } from 'lucide-react';
 import type { ConversationDetailDTO } from '@/lib/crm/inbox-types';
+import { QuickReplyPicker } from './quick-reply-picker';
+import { interpolateQuickReply, type QuickReplyDTO } from '@/lib/crm/quick-reply-text';
 
 /**
  * Caixa de escrita, com dois modos.
@@ -40,6 +42,47 @@ export function Composer({
   const [erro, setErro] = useState<string | null>(null);
   const [sugerindo, setSugerindo] = useState(false);
   const [veioDaIa, setVeioDaIa] = useState(false);
+  const [respostas, setRespostas] = useState<QuickReplyDTO[]>([]);
+  const [menuDispensado, setMenuDispensado] = useState(false);
+
+  /**
+   * As respostas prontas são carregadas uma vez, não a cada `/`.
+   * O menu precisa abrir na mesma tecla, sem esperar rede.
+   */
+  useEffect(() => {
+    let ativo = true;
+
+    void fetch('/api/crm/quick-replies')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((corpo) => {
+        if (ativo && corpo?.quickReplies) setRespostas(corpo.quickReplies as QuickReplyDTO[]);
+      })
+      .catch(() => {
+        // Sem respostas prontas o compositor funciona igual. Um erro na tela
+        // por causa de um atalho opcional seria desproporcional.
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  /**
+   * O texto entra na caixa já resolvido, e fica editável.
+   *
+   * O nome vem do contato desta conversa: uma resposta pronta com `{{nome}}`
+   * cru seria pior que não ter resposta pronta.
+   */
+  const escolherResposta = (resposta: QuickReplyDTO) => {
+    setTexto(
+      interpolateQuickReply(resposta.content, {
+        nome: conversation.contact.name,
+        empresa: conversation.contact.company,
+      })
+    );
+    setMenuDispensado(true);
+    setVeioDaIa(false);
+  };
 
   /**
    * O rascunho preenche a caixa e para ali. Não existe caminho daqui para o
@@ -140,11 +183,24 @@ export function Composer({
         </button>
       </div>
 
-      <textarea
+      <div className="relative">
+        {!ehNota && !menuDispensado && (
+          <QuickReplyPicker
+            text={texto}
+            replies={respostas}
+            onPick={escolherResposta}
+            onDismiss={() => setMenuDispensado(true)}
+          />
+        )}
+
+        <textarea
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value);
           setVeioDaIa(false);
+          // Apagar tudo devolve o menu: quem dispensou e recomeçou com `/`
+          // está pedindo a lista de novo.
+          if (!e.target.value.startsWith('/')) setMenuDispensado(false);
         }}
         onKeyDown={aoTeclar}
         rows={3}
@@ -155,11 +211,12 @@ export function Composer({
             ? 'Este contato não tem telefone cadastrado.'
             : ehNota
               ? 'O que a equipe precisa saber sobre este atendimento…'
-              : 'Escreva a resposta. Enter envia, Shift+Enter quebra linha.'
+              : 'Escreva a resposta, ou digite / para usar uma pronta.'
         }
         className="w-full resize-y rounded-xl border bg-[var(--theme-bg)] p-2.5 text-xs leading-relaxed text-[var(--theme-text-primary)] outline-none transition-colors placeholder:text-[var(--theme-text-secondary)] disabled:opacity-60"
         style={{ borderColor: ehNota ? AMBAR : 'var(--theme-border)' }}
-      />
+        />
+      </div>
 
       {bloqueado && (
         <p className="mt-1 text-[11px] font-semibold text-[var(--theme-text-secondary)]">

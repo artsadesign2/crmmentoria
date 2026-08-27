@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { SessionPayload } from '@/lib/auth/jwt';
-import { formatPhoneBr } from '@/lib/crm/phone';
+import { formatPhoneBr, normalizePhone } from '@/lib/crm/phone';
 import {
   CampaignError,
   STATUS_FINAIS,
@@ -76,7 +76,13 @@ const comAutor = { createdBy: { select: { name: true } } } as const;
  */
 export async function createCampaign(
   session: SessionPayload,
-  input: { name: string; message: string; contactIds: string[]; scheduledAt?: string }
+  input: {
+    name: string;
+    message: string;
+    contactIds?: string[];
+    recipients?: CampaignRecipientInput[];
+    scheduledAt?: string;
+  }
 ): Promise<CampaignDTO> {
   const nome = input.name.trim();
   if (!nome) throw new CampaignError('Dê um nome à campanha.');
@@ -84,19 +90,29 @@ export async function createCampaign(
   const mensagem = input.message.trim();
   if (!mensagem) throw new CampaignError('Escreva a mensagem antes de criar a campanha.');
 
-  const ids = [...new Set(input.contactIds)];
-  if (ids.length === 0) throw new CampaignError('Selecione ao menos um contato.');
-  if (ids.length > LIMITE_DESTINATARIOS) {
-    throw new CampaignError(
-      `Uma campanha aceita no máximo ${LIMITE_DESTINATARIOS} contatos. Divida a lista.`
-    );
-  }
-
   let agendadaPara: Date | null = null;
   if (input.scheduledAt) {
     const quando = new Date(input.scheduledAt);
     if (Number.isNaN(quando.getTime())) throw new CampaignError('Data de agendamento inválida.');
     agendadaPara = quando;
+  }
+
+  const ids = [...new Set(input.contactIds ?? [])];
+  const puloDeEntrada: LinhaDestinatario[] = [];
+
+  if (input.recipients?.length) {
+    const resolvidos = await resolverDestinatarios(session.organizationId, input.recipients);
+    for (const id of resolvidos.contactIds) if (!ids.includes(id)) ids.push(id);
+    puloDeEntrada.push(...resolvidos.pulados);
+  }
+
+  if (ids.length === 0 && puloDeEntrada.length === 0) {
+    throw new CampaignError('Selecione ao menos um contato.');
+  }
+  if (ids.length + puloDeEntrada.length > LIMITE_DESTINATARIOS) {
+    throw new CampaignError(
+      `Uma campanha aceita no máximo ${LIMITE_DESTINATARIOS} contatos. Divida a lista.`
+    );
   }
 
   // Escopado pela organização da sessão: id de contato de outra organização
@@ -109,7 +125,7 @@ export async function createCampaign(
   const encontrados = new Map(contatos.map((c) => [c.id, c]));
   const telefonesVistos = new Set<string>();
 
-  const destinatarios = ids.map((id) => {
+  const dosContatos = ids.map((id): LinhaDestinatario => {
     const contato = encontrados.get(id);
 
     if (!contato) {
@@ -148,6 +164,7 @@ export async function createCampaign(
     };
   });
 
+  const destinatarios = [...dosContatos, ...puloDeEntrada];
   const pulados = destinatarios.filter((d) => d.status === 'SKIPPED').length;
 
   const campanha = await prisma.dispatchCampaign.create({
@@ -170,19 +187,105 @@ export async function createCampaign(
 
 function linhaPulada(
   organizationId: string,
-  contactId: string,
+  contactId: string | null,
   motivo: string,
   nome = 'Contato removido',
   telefone = '—'
-) {
+): LinhaDestinatario {
   return {
     contactId,
     organizationId,
     name: nome,
     phone: telefone,
-    status: 'SKIPPED' as TargetStatus,
+    status: 'SKIPPED',
     skipReason: motivo,
   };
+}
+
+/**
+ * Destinatário que ainda não é contato do CRM.
+ *
+ * A tela de eventos dispara para mentorados e leads que vivem fora da tabela
+ * `contacts`. Em vez de aceitar uma lista solta de telefones, cada um vira um
+ * contato de verdade: sem isso, a resposta do cliente chegaria como uma
+ * conversa nova, sem nome e sem histórico do que a empresa mandou.
+ */
+export interface CampaignRecipientInput {
+  name: string;
+  phone: string;
+  company?: string | null;
+}
+
+interface LinhaDestinatario {
+  contactId: string | null;
+  organizationId: string;
+  name: string;
+  phone: string;
+  status: TargetStatus;
+  skipReason: string | null;
+}
+
+/**
+ * Converte destinatários crus em contatos, criando os que faltarem.
+ *
+ * Em duas consultas, não uma por pessoa: uma lista de 300 mentorados viraria
+ * 300 idas ao banco antes mesmo de a campanha existir.
+ */
+async function resolverDestinatarios(
+  organizationId: string,
+  recebidos: CampaignRecipientInput[]
+): Promise<{ contactIds: string[]; pulados: LinhaDestinatario[] }> {
+  const pulados: LinhaDestinatario[] = [];
+  const porTelefone = new Map<string, CampaignRecipientInput>();
+
+  for (const bruto of recebidos) {
+    const telefone = normalizePhone(bruto.phone ?? '');
+
+    if (!telefone) {
+      pulados.push(
+        linhaPulada(organizationId, null, 'Telefone ausente ou inválido.', bruto.name || 'Sem nome')
+      );
+      continue;
+    }
+
+    // Primeiro da lista ganha: repetido não vira segunda mensagem.
+    if (!porTelefone.has(telefone)) porTelefone.set(telefone, bruto);
+  }
+
+  const telefones = [...porTelefone.keys()];
+  if (telefones.length === 0) return { contactIds: [], pulados };
+
+  const existentes = await prisma.contact.findMany({
+    where: { organizationId, phone: { in: telefones } },
+    select: { id: true, phone: true },
+  });
+
+  const jaCadastrados = new Set(existentes.map((c) => c.phone));
+  const novos = telefones.filter((t) => !jaCadastrados.has(t));
+
+  if (novos.length > 0) {
+    await prisma.contact.createMany({
+      data: novos.map((telefone) => {
+        const bruto = porTelefone.get(telefone)!;
+        return {
+          organizationId,
+          name: bruto.name?.trim() || formatPhoneBr(telefone),
+          phone: telefone,
+          company: bruto.company?.trim() || null,
+          type: 'LEAD',
+          source: 'Disparo',
+        };
+      }),
+      skipDuplicates: true,
+    });
+  }
+
+  const todos = await prisma.contact.findMany({
+    where: { organizationId, phone: { in: telefones } },
+    select: { id: true },
+  });
+
+  return { contactIds: todos.map((c) => c.id), pulados };
 }
 
 export async function listCampaigns(session: SessionPayload): Promise<CampaignDTO[]> {

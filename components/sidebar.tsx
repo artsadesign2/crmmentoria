@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Target,
   MessagesSquare,
+  Megaphone,
   Users,
   X,
   Trophy,
@@ -57,6 +58,12 @@ export const NAVIGATION_ITEMS: {
     name: 'Inbox (Atendimento)',
     href: '/inbox',
     icon: MessagesSquare,
+    permissionKey: 'viewCRM',
+  },
+  {
+    name: 'Disparos',
+    href: '/disparos',
+    icon: Megaphone,
     permissionKey: 'viewCRM',
   },
   {

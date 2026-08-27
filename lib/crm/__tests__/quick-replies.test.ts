@@ -3,7 +3,7 @@ import {
   interpolateQuickReply,
   normalizeShortcut,
   QuickReplyError,
-} from '@/lib/crm/quick-replies';
+} from '@/lib/crm/quick-reply-text';
 
 /**
  * A resposta rápida é escrita uma vez e enviada centenas de vezes. Um erro de
