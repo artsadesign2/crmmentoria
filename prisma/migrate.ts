@@ -1,5 +1,5 @@
 /**
- * Aplica prisma/migrations/f0-auth/migration.sql contra o banco.
+ * Aplica prisma/migrations/<nome>/migration.sql contra o banco.
  *
  * NÃO usa lib/neon-db.ts de propósito: `queryNeon` captura toda exceção e
  * devolve `[]`, o que faria uma migração falha parecer bem-sucedida. Aqui as
@@ -9,18 +9,30 @@
  * é dividido e executado em sequência. Toda instrução do arquivo é idempotente,
  * de modo que rodar este script mais de uma vez é seguro.
  *
- * Uso: node --env-file=.env --import tsx prisma/migrate-f0.ts
+ * Uso: npm run db:migrate <nome-da-migracao>
  */
 import fs from 'fs';
 import path from 'path';
 
-const SQL_PATH = path.join(import.meta.dirname, 'migrations', 'f0-auth', 'migration.sql');
+const MIGRATION = process.argv[2];
+
+if (!MIGRATION || !/^[a-z0-9-]+$/.test(MIGRATION)) {
+  console.error('Informe o nome da migracao. Exemplo: npm run db:migrate f1-crm');
+  process.exit(1);
+}
+
+const SQL_PATH = path.join(import.meta.dirname, 'migrations', MIGRATION, 'migration.sql');
+
+if (!fs.existsSync(SQL_PATH)) {
+  console.error(`Migracao nao encontrada: prisma/migrations/${MIGRATION}/migration.sql`);
+  process.exit(1);
+}
 
 function connectionString(): { host: string; conn: string } {
   const { NEON_HOST, NEON_USER, NEON_PASS, NEON_DB } = process.env;
   if (!NEON_HOST || !NEON_USER || !NEON_PASS) {
     throw new Error(
-      'Credenciais NEON_* ausentes. Rode com: node --env-file=.env --import tsx prisma/migrate-f0.ts'
+      'Credenciais NEON_* ausentes. Rode com: npm run db:migrate <nome-da-migracao>'
     );
   }
   return {
@@ -87,7 +99,7 @@ function splitStatements(sql: string): string[] {
 
 async function main() {
   const statements = splitStatements(fs.readFileSync(SQL_PATH, 'utf8'));
-  console.log(`Aplicando ${statements.length} instrucoes de f0-auth/migration.sql\n`);
+  console.log(`Aplicando ${statements.length} instrucoes de ${MIGRATION}/migration.sql\n`);
 
   for (const [index, statement] of statements.entries()) {
     const label = statement.replace(/\s+/g, ' ').slice(0, 70);
@@ -102,7 +114,7 @@ async function main() {
     }
   }
 
-  console.log('\nMigracao f0-auth aplicada com sucesso.');
+  console.log(`\nMigracao ${MIGRATION} aplicada com sucesso.`);
 }
 
 main().catch((error) => {

@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:seed": "node --env-file=.env --import tsx prisma/seed-auth.ts",
-    "db:migrate": "node --env-file=.env --import tsx prisma/migrate-f0.ts"
+    "db:migrate": "node --env-file=.env --import tsx prisma/migrate.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
