@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Target,
+  MessagesSquare,
   Users,
   X,
   Trophy,
@@ -50,6 +51,12 @@ export const NAVIGATION_ITEMS: {
     name: 'CRM (Novos Leads)',
     href: '/crm',
     icon: Target,
+    permissionKey: 'viewCRM',
+  },
+  {
+    name: 'Inbox (Atendimento)',
+    href: '/inbox',
+    icon: MessagesSquare,
     permissionKey: 'viewCRM',
   },
   {
