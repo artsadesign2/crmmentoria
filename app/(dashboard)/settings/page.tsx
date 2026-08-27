@@ -2204,7 +2204,7 @@ export default function SettingsPage() {
                             key={t.tag}
                             type="button"
                             onClick={() => handleInsertTag(t.tag)}
-                            className="px-2.5 py-1 rounded-lg bg-[#131926] hover:bg-yellow-500/10 text-yellow-400 hover:text-yellow-300 border border-[#1F293D] hover:border-yellow-500/40 text-[11px] font-mono font-semibold transition-all hover:scale-105"
+                            className="px-2.5 py-1 rounded-lg bg-[#131926] hover:bg-theme-primary/10 text-theme-primary hover:text-theme-primary border border-[#1F293D] hover:border-theme-primary/40 text-[11px] font-mono font-semibold transition-all hover:scale-105"
                           >
                             + {t.tag}
                           </button>
@@ -2257,7 +2257,7 @@ export default function SettingsPage() {
                   Envie o logotipo completo e o ícone reduzido para personalizar o menu expandido e recolhido.
                 </p>
               </div>
-              <Badge variant="outline" className="border-yellow-500/40 text-yellow-300 self-start sm:self-auto">
+              <Badge variant="outline" className="border-theme-primary/40 text-theme-primary self-start sm:self-auto">
                 Whitelabel Multi-Empresa
               </Badge>
             </div>
@@ -2275,7 +2275,7 @@ export default function SettingsPage() {
                   <span className="text-[10px] text-slate-500 font-mono">PNG, WEBP ou SVG</span>
                 </div>
 
-                <div className="relative border-2 border-dashed border-yellow-500/30 hover:border-yellow-400/60 transition-colors rounded-2xl p-5 bg-[#131926]/60 text-center flex flex-col items-center justify-center space-y-2 cursor-pointer group min-h-[140px]">
+                <div className="relative border-2 border-dashed border-theme-primary/30 hover:border-theme-primary/60 transition-colors rounded-2xl p-5 bg-[#131926]/60 text-center flex flex-col items-center justify-center space-y-2 cursor-pointer group min-h-[140px]">
                   <input
                     type="file"
                     accept="image/*"
@@ -2339,7 +2339,7 @@ export default function SettingsPage() {
                   <span className="text-[10px] text-slate-500 font-mono">1:1 Quadrado</span>
                 </div>
 
-                <div className="relative border-2 border-dashed border-yellow-500/30 hover:border-yellow-400/60 transition-colors rounded-2xl p-5 bg-[#131926]/60 text-center flex flex-col items-center justify-center space-y-2 cursor-pointer group min-h-[140px]">
+                <div className="relative border-2 border-dashed border-theme-primary/30 hover:border-theme-primary/60 transition-colors rounded-2xl p-5 bg-[#131926]/60 text-center flex flex-col items-center justify-center space-y-2 cursor-pointer group min-h-[140px]">
                   <input
                     type="file"
                     accept="image/*"

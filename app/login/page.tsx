@@ -380,7 +380,7 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setIsForgotPasswordOpen(true)}
-                        className="text-[11px] text-slate-400 hover:text-yellow-400 transition-colors font-medium"
+                        className="text-[11px] text-slate-400 hover:text-theme-primary transition-colors font-medium"
                       >
                         Esqueceu?
                       </button>

@@ -244,7 +244,7 @@ export function Sidebar({
                 className={`hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full items-center justify-center transition-all z-50 border shadow-xl hover:scale-110 active:scale-95 ${
                   isLightMode
                     ? 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400'
-                    : 'bg-[#131926] border-[#1F293D] text-slate-300 hover:text-white hover:border-yellow-500/50'
+                    : 'bg-[#131926] border-[#1F293D] text-slate-300 hover:text-white hover:border-theme-primary/60'
                 }`}
                 title="Expandir Menu Lateral"
               >

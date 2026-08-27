@@ -723,10 +723,10 @@ export default function MentoradosPage() {
                                   onClick={() => setSelectedMember(member)}
                                   className={`p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-[#0F1526]/95 to-[#0A0E1A]/95 border transition-all duration-200 cursor-pointer group space-y-3 shadow-lg select-none relative overflow-hidden ${
                                     dragSnapshot.isDragging
-                                      ? 'border-yellow-400 shadow-2xl shadow-yellow-500/40 ring-2 ring-yellow-400/90 !opacity-100 scale-105'
+                                      ? 'border-theme-primary shadow-2xl shadow-theme-glow ring-2 ring-theme-primary !opacity-100 scale-105'
                                       : member.excludeFromBook
                                       ? 'border-dashed border-slate-700 opacity-60'
-                                      : 'border-[#1F293D] hover:border-yellow-500/50 hover:shadow-xl hover:shadow-yellow-500/5 hover:-translate-y-0.5'
+                                      : 'border-[#1F293D] hover:border-theme-primary/60 hover:shadow-xl hover:shadow-theme-glow hover:-translate-y-0.5'
                                   }`}
                                 >
                                   {/* Left Stage Accent Glow Line */}
@@ -739,7 +739,7 @@ export default function MentoradosPage() {
                                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                                       <div
                                         {...dragProvided.dragHandleProps}
-                                        className="text-slate-500 group-hover:text-yellow-400 hover:bg-[#1C253B] rounded-lg p-1 -ml-1 transition-colors cursor-grab active:cursor-grabbing shrink-0"
+                                        className="text-slate-500 group-hover:text-theme-primary hover:bg-[#1C253B] rounded-lg p-1 -ml-1 transition-colors cursor-grab active:cursor-grabbing shrink-0"
                                         title="Arrastar card para outra etapa"
                                         onClick={(e) => e.stopPropagation()}
                                       >
@@ -750,7 +750,7 @@ export default function MentoradosPage() {
                                         <img
                                           src={member.coverImage || member.avatar}
                                           alt={member.name}
-                                          className="w-10 h-10 rounded-xl object-cover object-center border border-yellow-500/30 shrink-0 shadow"
+                                          className="w-10 h-10 rounded-xl object-cover object-center border border-theme-primary/30 shrink-0 shadow"
                                         />
                                       ) : (
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow">
@@ -759,7 +759,7 @@ export default function MentoradosPage() {
                                       )}
 
                                       <div className="flex-1 min-w-0">
-                                        <h4 className="text-xs font-black text-slate-100 group-hover:text-yellow-400 transition-colors truncate leading-tight">
+                                        <h4 className="text-xs font-black text-slate-100 group-hover:text-theme-primary transition-colors truncate leading-tight">
                                           {member.name}
                                         </h4>
                                         <span className="text-[10px] text-slate-400 truncate block mt-0.5">
@@ -773,7 +773,7 @@ export default function MentoradosPage() {
                                       <button
                                         type="button"
                                         onClick={() => setSelectedMember(member)}
-                                        className="p-1.5 rounded-lg text-slate-500 hover:text-yellow-400 hover:bg-[#1E2840] transition-colors"
+                                        className="p-1.5 rounded-lg text-slate-500 hover:text-theme-primary hover:bg-[#1E2840] transition-colors"
                                         title="Abrir Ficha 360°"
                                       >
                                         <Pencil size={13} />
@@ -783,8 +783,8 @@ export default function MentoradosPage() {
                                         onClick={(e) => toggleExcludeFromBook(member.id, e)}
                                         className={`p-1.5 rounded-lg transition-colors ${
                                           member.excludeFromBook
-                                            ? 'text-slate-600 hover:text-yellow-400'
-                                            : 'text-yellow-400/80 hover:text-yellow-300'
+                                            ? 'text-slate-600 hover:text-theme-primary'
+                                            : 'text-theme-primary/80 hover:text-theme-primary'
                                         }`}
                                         title={member.excludeFromBook ? 'Incluir no PDF Book' : 'Excluir do PDF Book'}
                                       >
@@ -796,7 +796,7 @@ export default function MentoradosPage() {
                                   {/* Middle Company Section */}
                                   <div className="space-y-2 text-xs text-slate-400 pt-1.5 border-t border-[#1F293D]/60 pl-1.5">
                                     <div className="flex items-center gap-1.5">
-                                      <Building size={12} className="text-yellow-400 shrink-0" />
+                                      <Building size={12} className="text-theme-primary shrink-0" />
                                       <span className="truncate text-[11px] font-semibold text-slate-300">
                                         {member.tradeName || member.companyName || 'Empresa Própria'}
                                       </span>
@@ -861,7 +861,7 @@ export default function MentoradosPage() {
               <div
                 key={member.id}
                 onClick={() => setSelectedMember(member)}
-                className="rounded-2xl bg-[#111728]/90 border border-[#1F293D] hover:border-yellow-500/50 p-5 shadow-xl hover:shadow-yellow-500/5 transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+                className="rounded-2xl bg-[#111728]/90 border border-[#1F293D] hover:border-theme-primary/50 p-5 shadow-xl hover:shadow-theme-glow transition-all cursor-pointer group flex flex-col justify-between space-y-4"
               >
                 {/* Header Profile */}
                 <div className="flex items-start justify-between gap-3">
@@ -870,7 +870,7 @@ export default function MentoradosPage() {
                       <img
                         src={member.coverImage || member.avatar}
                         alt={member.name}
-                        className="w-14 h-14 rounded-2xl object-cover object-center border-2 border-yellow-500/30 shadow-md shrink-0"
+                        className="w-14 h-14 rounded-2xl object-cover object-center border-2 border-theme-primary/30 shadow-md shrink-0"
                       />
                     ) : (
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-md shrink-0">
@@ -879,10 +879,10 @@ export default function MentoradosPage() {
                     )}
 
                     <div>
-                      <h3 className="text-sm font-extrabold text-slate-100 group-hover:text-yellow-400 transition-colors">
+                      <h3 className="text-sm font-extrabold text-slate-100 group-hover:text-theme-primary transition-colors">
                         {member.name}
                       </h3>
-                      <p className="text-xs text-yellow-400/90 font-semibold">{member.specialty}</p>
+                      <p className="text-xs text-theme-primary/90 font-semibold">{member.specialty}</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         {member.tradeName || member.companyName}
                       </p>

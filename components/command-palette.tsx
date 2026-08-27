@@ -140,44 +140,44 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button
                 onClick={() => navigateTo('/crm')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Target size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <Target size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>CRM Novos Leads</span>
               </button>
               <button
                 onClick={() => navigateTo('/mentorados')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Users size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <Users size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Mentorados da Base</span>
               </button>
               <button
                 onClick={() => navigateTo('/academy')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <GraduationCap size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <GraduationCap size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Rocket Academy</span>
               </button>
               <button
                 onClick={() => navigateTo('/wiki')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <BookOpen size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <BookOpen size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Wiki de Processos</span>
               </button>
               <button
                 onClick={() => navigateTo('/financial')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <TrendingUp size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <TrendingUp size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Gestão Financeira</span>
               </button>
               <button
                 onClick={() => navigateTo('/events')}
-                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-yellow-500/10 hover:border-yellow-500/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Calendar size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                <Calendar size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Agenda de Eventos</span>
               </button>
             </div>
@@ -186,7 +186,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           {/* Members / Fichas dos Mentorados */}
           {filteredMembers.length > 0 && (
             <div className="pt-4 space-y-2">
-              <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-theme-primary uppercase tracking-wider px-1 flex items-center gap-1.5">
                 <Users size={12} /> Fichas de Mentorados da Base ({filteredMembers.length})
               </span>
               <div className="space-y-1.5">
@@ -194,14 +194,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <button
                     key={m.id}
                     onClick={() => openMemberSheet(m.id)}
-                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#0B0F17]/40 hover:bg-[#1F293D] hover:border-yellow-500/30 border border-[#1F293D]/60 text-left transition-all group"
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#0B0F17]/40 hover:bg-[#1F293D] hover:border-theme-primary/40 border border-[#1F293D]/60 text-left transition-all group"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-bold flex items-center justify-center text-xs shadow shrink-0">
                         {m.name.charAt(0)}
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-slate-100 group-hover:text-yellow-400 transition-colors block">
+                        <span className="text-xs font-bold text-slate-100 group-hover:text-theme-primary transition-colors block">
                           {m.name}
                         </span>
                         <span className="text-[11px] text-slate-400">
@@ -211,7 +211,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-theme-badge-bg text-theme-primary border border-theme-badge-border">
                         {m.status}
                       </span>
                       <span className="text-[11px] font-bold text-yellow-400 flex items-center gap-1 group-hover:underline">

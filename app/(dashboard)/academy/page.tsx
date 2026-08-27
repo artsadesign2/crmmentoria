@@ -1355,7 +1355,7 @@ export default function AcademyPage() {
               <Card
                 key={course.id}
                 onClick={() => handleSelectCourse(course)}
-                className="group overflow-hidden cursor-pointer hover:scale-[1.01] sm:hover:scale-[1.02] flex flex-col justify-between p-0 border-[#1F293D] bg-[#131926] shadow-xl hover:border-yellow-500/50 transition-all relative"
+                className="group overflow-hidden cursor-pointer hover:scale-[1.01] sm:hover:scale-[1.02] flex flex-col justify-between p-0 border-[#1F293D] bg-[#131926] shadow-xl hover:border-theme-primary/50 hover:shadow-theme-glow transition-all relative"
               >
                 {/* Cover Image */}
                 <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-900">
@@ -1376,7 +1376,7 @@ export default function AcademyPage() {
                       e.stopPropagation();
                       handleOpenEditCourseModal(course);
                     }}
-                    className="absolute top-3 left-3 w-8 h-8 rounded-xl bg-black/70 backdrop-blur-md border border-white/20 text-slate-300 hover:text-yellow-400 flex items-center justify-center transition-colors shadow-md"
+                    className="absolute top-3 left-3 w-8 h-8 rounded-xl bg-black/70 backdrop-blur-md border border-white/20 text-slate-300 hover:text-theme-primary flex items-center justify-center transition-colors shadow-md"
                     title="Editar Curso"
                   >
                     <Pencil size={13} />
@@ -1386,10 +1386,10 @@ export default function AcademyPage() {
                 {/* Course Body */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div className="space-y-1.5">
-                    <span className="text-[11px] font-extrabold text-yellow-500 uppercase tracking-wider">
+                    <span className="text-[11px] font-extrabold text-theme-primary uppercase tracking-wider">
                       {course.category}
                     </span>
-                    <h3 className="text-base font-bold text-slate-100 group-hover:text-yellow-400 transition-colors line-clamp-1">
+                    <h3 className="text-base font-bold text-slate-100 group-hover:text-theme-primary transition-colors line-clamp-1">
                       {course.title}
                     </h3>
                     <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
@@ -1400,11 +1400,11 @@ export default function AcademyPage() {
                   <div className="space-y-3 pt-2 border-t border-[#1F293D]">
                     <div className="flex items-center justify-between text-xs text-slate-400">
                       <span className="flex items-center gap-1.5">
-                        <BookOpen size={14} className="text-yellow-400" />
+                        <BookOpen size={14} className="text-theme-primary" />
                         {course.lessonsCount} aulas
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <Clock size={14} className="text-yellow-400" />
+                        <Clock size={14} className="text-theme-primary" />
                         {course.durationMinutes} min
                       </span>
                     </div>
@@ -1413,7 +1413,7 @@ export default function AcademyPage() {
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px] font-semibold text-slate-400">
                         <span>Progresso</span>
-                        <span className="text-yellow-400 font-bold">{course.progressPercent}%</span>
+                        <span className="text-theme-primary font-bold">{course.progressPercent}%</span>
                       </div>
                       <div className="w-full h-2 bg-[#0B0F17] rounded-full overflow-hidden border border-[#1F293D]">
                         <div
@@ -1426,7 +1426,7 @@ export default function AcademyPage() {
                 </div>
 
                 {/* Footer Action */}
-                <div className="p-3.5 sm:p-4 bg-[#0B0F17] border-t border-[#1F293D] flex items-center justify-between text-xs font-bold text-yellow-400 group-hover:text-yellow-300">
+                <div className="p-3.5 sm:p-4 bg-[#0B0F17] border-t border-[#1F293D] flex items-center justify-between text-xs font-bold text-theme-primary group-hover:text-theme-primary">
                   <span>Acessar Trilha de Aulas</span>
                   <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </div>

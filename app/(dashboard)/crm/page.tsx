@@ -634,8 +634,8 @@ export default function CrmPage() {
                                   onClick={() => setSelectedLead(lead)}
                                   className={`p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-[#0F1526]/95 to-[#0A0E1A]/95 border transition-all duration-200 cursor-pointer group space-y-3 shadow-lg select-none relative overflow-hidden ${
                                     dragSnapshot.isDragging
-                                      ? 'border-yellow-400 shadow-2xl shadow-yellow-500/40 ring-2 ring-yellow-400/90 !opacity-100 scale-105'
-                                      : 'border-[#1F293D] hover:border-yellow-500/50 hover:shadow-xl hover:shadow-yellow-500/5 hover:-translate-y-0.5'
+                                      ? 'border-theme-primary shadow-2xl shadow-theme-glow ring-2 ring-theme-primary !opacity-100 scale-105'
+                                      : 'border-[#1F293D] hover:border-theme-primary/60 hover:shadow-xl hover:shadow-theme-glow hover:-translate-y-0.5'
                                   }`}
                                 >
                                   {/* Left Stage Accent Glow Line */}
@@ -648,7 +648,7 @@ export default function CrmPage() {
                                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                                       <div
                                         {...dragProvided.dragHandleProps}
-                                        className="text-slate-500 group-hover:text-yellow-400 hover:bg-[#1C253B] rounded-lg p-1 -ml-1 transition-colors cursor-grab active:cursor-grabbing shrink-0"
+                                        className="text-slate-500 group-hover:text-theme-primary hover:bg-[#1C253B] rounded-lg p-1 -ml-1 transition-colors cursor-grab active:cursor-grabbing shrink-0"
                                         title="Arrastar lead para outra etapa"
                                         onClick={(e) => e.stopPropagation()}
                                       >
@@ -660,7 +660,7 @@ export default function CrmPage() {
                                       </div>
 
                                       <div className="flex-1 min-w-0">
-                                        <h4 className="text-xs font-black text-slate-100 group-hover:text-yellow-400 transition-colors truncate leading-tight">
+                                        <h4 className="text-xs font-black text-slate-100 group-hover:text-theme-primary transition-colors truncate leading-tight">
                                           {lead.name}
                                         </h4>
                                         <p className="text-[10px] text-slate-400 truncate mt-0.5 font-medium">
@@ -674,7 +674,7 @@ export default function CrmPage() {
                                       <button
                                         type="button"
                                         onClick={() => setSelectedLead(lead)}
-                                        className="p-1.5 rounded-lg text-slate-500 hover:text-yellow-400 hover:bg-[#1E2840] transition-colors"
+                                        className="p-1.5 rounded-lg text-slate-500 hover:text-theme-primary hover:bg-[#1E2840] transition-colors"
                                         title="Abrir Ficha Completa do Lead"
                                       >
                                         <Pencil size={13} />
@@ -685,7 +685,7 @@ export default function CrmPage() {
                                   {/* Specialty & Notes snippet */}
                                   <div className="text-[11px] text-slate-400 space-y-1.5 pl-1.5">
                                     <div className="flex items-center gap-1.5 text-slate-300 font-medium truncate">
-                                      <Briefcase size={12} className="text-yellow-400 shrink-0" />
+                                      <Briefcase size={12} className="text-theme-primary shrink-0" />
                                       <span className="truncate text-[11px]">{lead.specialty}</span>
                                     </div>
                                     {lead.notes && (
@@ -777,7 +777,7 @@ export default function CrmPage() {
                             {lead.name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-extrabold text-slate-100 group-hover:text-yellow-400 transition-colors block">
+                            <span className="font-extrabold text-slate-100 group-hover:text-theme-primary transition-colors block">
                               {lead.name}
                             </span>
                             <span className="text-[11px] text-slate-500">{lead.company}</span>

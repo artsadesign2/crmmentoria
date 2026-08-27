@@ -56,7 +56,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   return (
     <Card
       onClick={onClick}
-      className="flex w-full flex-col gap-3 overflow-hidden rounded-3xl border border-[#1F293D] bg-[#131926]/90 p-4 shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-yellow-500/50 hover:shadow-yellow-500/10 cursor-pointer group"
+      className="flex w-full flex-col gap-3 overflow-hidden rounded-3xl border border-[#1F293D] bg-[#131926]/90 p-4 shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-theme-primary/50 hover:shadow-theme-glow cursor-pointer group"
     >
       {cover && (
         <CardHeader className="p-0">
@@ -84,7 +84,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           </div>
         )}
 
-        <h2 className="text-lg font-bold leading-tight text-slate-100 group-hover:text-yellow-400 transition-colors">
+        <h2 className="text-lg font-bold leading-tight text-slate-100 group-hover:text-theme-primary transition-colors">
           {headline}
         </h2>
 
