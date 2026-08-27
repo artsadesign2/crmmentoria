@@ -721,55 +721,60 @@ export default function MentoradosPage() {
                                     zIndex: dragSnapshot.isDragging ? 999999 : undefined,
                                   }}
                                   onClick={() => setSelectedMember(member)}
-                                  className={`p-4 rounded-xl bg-[#0D1322] border transition-shadow cursor-pointer group space-y-3 shadow-lg select-none ${
+                                  className={`p-3.5 sm:p-4 rounded-2xl bg-gradient-to-b from-[#0F1526]/95 to-[#0A0E1A]/95 border transition-all duration-200 cursor-pointer group space-y-3 shadow-lg select-none relative overflow-hidden ${
                                     dragSnapshot.isDragging
-                                      ? 'border-yellow-400 shadow-2xl shadow-yellow-500/40 ring-2 ring-yellow-400/90 !opacity-100'
+                                      ? 'border-yellow-400 shadow-2xl shadow-yellow-500/40 ring-2 ring-yellow-400/90 !opacity-100 scale-105'
                                       : member.excludeFromBook
                                       ? 'border-dashed border-slate-700 opacity-60'
-                                      : 'border-[#1F293D] hover:border-yellow-500/50 hover:shadow-yellow-500/5'
+                                      : 'border-[#1F293D] hover:border-yellow-500/50 hover:shadow-xl hover:shadow-yellow-500/5 hover:-translate-y-0.5'
                                   }`}
                                 >
-                                  {/* Drag Handle & Member Info */}
-                                  <div className="flex items-start justify-between gap-2">
+                                  {/* Left Stage Accent Glow Line */}
+                                  <div
+                                    className={`absolute left-0 top-0 bottom-0 w-1 ${stage.badge} opacity-80 group-hover:opacity-100 group-hover:w-1.5 transition-all`}
+                                  />
+
+                                  {/* Top Header: Drag Handle, Avatar, Name & Quick Actions */}
+                                  <div className="flex items-start justify-between gap-2 pl-1.5">
                                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                                       <div
                                         {...dragProvided.dragHandleProps}
-                                        className="text-slate-500 group-hover:text-yellow-400 cursor-grab active:cursor-grabbing p-1 -ml-1.5 transition-colors shrink-0"
+                                        className="text-slate-500 group-hover:text-yellow-400 hover:bg-[#1C253B] rounded-lg p-1 -ml-1 transition-colors cursor-grab active:cursor-grabbing shrink-0"
                                         title="Arrastar card para outra etapa"
                                         onClick={(e) => e.stopPropagation()}
                                       >
-                                        <GripVertical size={16} />
+                                        <GripVertical size={15} />
                                       </div>
 
                                       {member.coverImage || member.avatar ? (
                                         <img
                                           src={member.coverImage || member.avatar}
                                           alt={member.name}
-                                          className="w-9 h-9 rounded-xl object-cover object-center border border-yellow-500/30 shrink-0"
+                                          className="w-10 h-10 rounded-xl object-cover object-center border border-yellow-500/30 shrink-0 shadow"
                                         />
                                       ) : (
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-extrabold text-xs flex items-center justify-center shrink-0">
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-black text-sm flex items-center justify-center shrink-0 shadow">
                                           {(member.name || 'M').charAt(0).toUpperCase()}
                                         </div>
                                       )}
 
                                       <div className="flex-1 min-w-0">
-                                        <h4 className="text-xs font-extrabold text-slate-100 group-hover:text-yellow-400 transition-colors truncate">
+                                        <h4 className="text-xs font-black text-slate-100 group-hover:text-yellow-400 transition-colors truncate leading-tight">
                                           {member.name}
                                         </h4>
-                                        <p className="text-[11px] text-slate-400 truncate">
+                                        <span className="text-[10px] text-slate-400 truncate block mt-0.5">
                                           {member.specialty}
-                                        </p>
+                                        </span>
                                       </div>
                                     </div>
 
-                                    {/* Quick Action Icons */}
+                                    {/* Quick Actions */}
                                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                       <button
                                         type="button"
                                         onClick={() => setSelectedMember(member)}
-                                        className="p-1.5 rounded-lg text-slate-500 hover:text-yellow-400 hover:bg-[#1F293D] transition-colors"
-                                        title="Abrir e Editar Ficha"
+                                        className="p-1.5 rounded-lg text-slate-500 hover:text-yellow-400 hover:bg-[#1E2840] transition-colors"
+                                        title="Abrir Ficha 360°"
                                       >
                                         <Pencil size={13} />
                                       </button>
@@ -788,30 +793,31 @@ export default function MentoradosPage() {
                                     </div>
                                   </div>
 
-                                  {/* Company & Revenue */}
-                                  <div className="space-y-1.5 text-xs text-slate-400 pt-1 border-t border-[#1F293D]/60">
+                                  {/* Middle Company Section */}
+                                  <div className="space-y-2 text-xs text-slate-400 pt-1.5 border-t border-[#1F293D]/60 pl-1.5">
                                     <div className="flex items-center gap-1.5">
                                       <Building size={12} className="text-yellow-400 shrink-0" />
-                                      <span className="truncate text-[11px] font-medium text-slate-300">
+                                      <span className="truncate text-[11px] font-semibold text-slate-300">
                                         {member.tradeName || member.companyName || 'Empresa Própria'}
                                       </span>
                                     </div>
 
+                                    {/* Bottom Metrics & Fast WhatsApp */}
                                     <div className="flex items-center justify-between pt-1">
-                                      <span className="font-extrabold text-emerald-400 text-xs">
+                                      <span className="font-black text-emerald-400 text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 shadow-sm">
                                         {member.monthlyRevenue || 'R$ —'}
                                       </span>
 
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex items-center gap-1.5">
                                         {member.phone && (
                                           <button
                                             type="button"
                                             onClick={(e) => openWhatsApp(member.phone, member.name, e)}
-                                            className="text-emerald-400 hover:text-emerald-300 p-1 hover:bg-emerald-500/10 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold"
+                                            className="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-1 text-[10px] font-bold shadow-sm"
                                             title="Chamar no WhatsApp"
                                           >
-                                            <MessageCircle size={13} />
-                                            <span className="hidden sm:inline">Whats</span>
+                                            <MessageCircle size={12} />
+                                            <span>Whats</span>
                                           </button>
                                         )}
                                       </div>

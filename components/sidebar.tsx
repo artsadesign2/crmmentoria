@@ -281,10 +281,10 @@ export function Sidebar({
 
           {/* Navigation Menu Items */}
           <nav
-            className={`mt-2 overflow-y-auto max-h-[calc(100vh-160px)] ${
+            className={`mt-1.5 ${
               isCollapsedDesktop
-                ? 'px-2 py-3 space-y-2 flex flex-col items-center'
-                : 'p-3 space-y-1.5'
+                ? 'overflow-hidden px-2 py-1 space-y-1 flex flex-col items-center'
+                : 'overflow-y-auto max-h-[calc(100vh-160px)] p-3 space-y-1.5'
             }`}
           >
             {NAVIGATION_ITEMS.map((item) => {
@@ -297,14 +297,14 @@ export function Sidebar({
               const Icon = item.icon;
 
               if (isCollapsedDesktop) {
-                // Collapsed Item: Square Centered Icon Button with Floating Tooltip
+                // Collapsed Item: Square Centered Icon Button with Floating Tooltip (No scrolling)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     prefetch={true}
                     onClick={onCloseMobile}
-                    className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all relative group shrink-0 ${
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative group shrink-0 ${
                       isActive
                         ? 'font-bold shadow-lg'
                         : isLightMode
@@ -323,8 +323,8 @@ export function Sidebar({
                     }
                   >
                     <Icon
-                      size={20}
-                      className="transition-transform group-hover:scale-110"
+                      size={18}
+                      className="transition-transform group-hover:scale-110 shrink-0"
                       style={isActive ? { color: activePalette.tokens.primary } : {}}
                     />
 
