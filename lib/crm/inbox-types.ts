@@ -23,6 +23,9 @@ export type ConversationStatus = 'OPEN' | 'PENDING' | 'CLOSED';
 
 export type MessageStatus = 'PENDING' | 'SCHEDULED' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
 
+/** Estado da transcrição de um áudio. Ver a coluna transcription_status. */
+export type TranscriptionStatus = 'DONE' | 'FAILED' | 'UNSUPPORTED';
+
 export const CONVERSATION_STATUSES: ConversationStatus[] = ['OPEN', 'PENDING', 'CLOSED'];
 
 export interface MessageDTO {
@@ -33,6 +36,12 @@ export interface MessageDTO {
   mediaUrl: string | null;
   /** Preenchida na F4. Distinta de `content`: o dito e o entendido são coisas diferentes. */
   transcription: string | null;
+  /**
+   * NULL (ainda não tentado) | DONE | FAILED | UNSUPPORTED.
+   * A interface precisa distinguir "vai chegar" de "falhou, tente de novo" e de
+   * "não adianta tentar".
+   */
+  transcriptionStatus: TranscriptionStatus | null;
   status: MessageStatus;
   isFromBot: boolean;
   /** Quem escreveu, do lado da empresa. Nulo quando veio do cliente ou do robô. */
@@ -73,7 +82,17 @@ export interface ConversationDTO {
 export interface ConversationDetailDTO extends ConversationDTO {
   messages: MessageDTO[];
   /** Só para exibir no painel lateral; o valor vem em número, nunca em Decimal. */
-  deal: { id: string; title: string; dealValue: number; stageName: string } | null;
+  deal: {
+    id: string;
+    title: string;
+    dealValue: number;
+    stageName: string;
+    /** Análise da F4. Nulos até alguém pedir "Analisar com IA". */
+    aiScore: number | null;
+    aiSummary: string | null;
+    aiAnalyzedAt: string | null;
+    customFields: Record<string, unknown> | null;
+  } | null;
 }
 
 export type InboxScope = 'mine' | 'queue' | 'all';

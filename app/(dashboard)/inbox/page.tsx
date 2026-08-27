@@ -157,13 +157,18 @@ export default function InboxPage() {
                 </div>
               </div>
 
-              <MessageThread messages={ativa.messages} />
+              <MessageThread
+                messages={ativa.messages}
+                onRetryTranscription={inbox.retryTranscription}
+              />
 
               <Composer
                 conversation={ativa}
                 isSending={inbox.isSending}
+                aiAvailable={inbox.aiAvailable}
                 onSend={inbox.sendMessage}
                 onNote={inbox.addNote}
+                onSuggest={inbox.suggestReply}
               />
             </>
           )}
@@ -176,6 +181,14 @@ export default function InboxPage() {
               conversation={ativa}
               departments={departments}
               currentUserId={currentUser.id}
+              aiAvailable={inbox.aiAvailable}
+              qualification={{
+                score: ativa.deal?.aiScore ?? null,
+                summary: ativa.deal?.aiSummary ?? null,
+                analyzedAt: ativa.deal?.aiAnalyzedAt ?? null,
+                fields: ativa.deal?.customFields ?? null,
+              }}
+              onQualify={() => inbox.qualify(ativa.id)}
               onClaim={() => inbox.claimConversation(ativa.id, currentUser.id)}
               onTransfer={(departmentId) => inbox.transfer(ativa.id, departmentId)}
               onStatus={(status) => inbox.setStatus(ativa.id, status)}

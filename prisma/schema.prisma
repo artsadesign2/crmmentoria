@@ -47,6 +47,9 @@ model Organization {
   conversations Conversation[]
   messages      Message[]
 
+  // F4 — IA
+  aiSettings    AiSettings?
+
   @@map("organizations")
 }
 
@@ -554,7 +557,15 @@ model DealCard {
   isPrivate       Boolean   @default(false) @map("is_private")
   lostReason      String?   @map("lost_reason")
   /// Qualificacao do negocio: faturamento, gargalo, meta, urgencia.
+  /// A F4 grava aqui o que a IA extrai da conversa, mesclando sem apagar.
   customFields    Json?     @map("custom_fields")
+  /// Temperatura de 0 a 100 atribuida pela IA. Coluna propria, e nao dentro de
+  /// customFields, porque precisa ser ordenavel e filtravel no quadro.
+  aiScore         Int?      @map("ai_score") @db.SmallInt
+  aiSummary       String?   @map("ai_summary")
+  /// Quando a analise foi feita, para a interface nao apresentar um resumo
+  /// antigo como se fosse de agora.
+  aiAnalyzedAt    DateTime? @map("ai_analyzed_at") @db.Timestamp(6)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamp(6)
 
@@ -570,6 +581,9 @@ model DealCard {
   @@index([organizationId, stageId], map: "deal_cards_org_idx")
   @@index([organizationId, assignedUserId], map: "deal_cards_assigned_idx")
   @@index([contactId], map: "deal_cards_contact_idx")
+  /// Ordenar o funil por temperatura. Parcial na migracao f4-ia: cards nunca
+  /// analisados nao ocupam espaco, e sao a maioria.
+  @@index([organizationId, aiScore(sort: Desc)], map: "deal_cards_ai_score_idx")
   @@map("deal_cards")
 }
 
@@ -672,6 +686,10 @@ model Message {
   /// Transcricao de audio gerada na F4. Separada de `content` para preservar
   /// a distincao entre o que foi dito e o que a IA entendeu.
   transcription  String?
+  /// NULL (nao tentado) | DONE | FAILED (vale repetir) | UNSUPPORTED.
+  /// Sem este campo, um audio que falha seria retentado a cada abertura da
+  /// conversa — uma chamada paga por abertura, para sempre.
+  transcriptionStatus String? @map("transcription_status") @db.VarChar(20)
   /// PENDING | SCHEDULED | SENT | DELIVERED | READ | FAILED
   status         String   @default("SENT") @db.VarChar(20)
   externalId     String?  @map("external_id") @db.VarChar(150)
@@ -684,4 +702,24 @@ model Message {
 
   @@index([conversationId, createdAt], map: "messages_conversation_idx")
   @@map("messages")
+}
+
+/// Base de conhecimento da organizacao, que fundamenta o copiloto.
+///
+/// Sem ela, perguntado sobre preco o copiloto inventa um. Com ela, so pode
+/// afirmar o que a empresa escreveu. A chave primaria e a propria organizacao:
+/// nao existem duas bases concorrentes para o mesmo tenant.
+model AiSettings {
+  organizationId String   @id @map("organization_id") @db.Uuid
+  /// Texto livre, sem formato imposto: quem escreve conhece o negocio.
+  knowledgeBase  String   @default("") @map("knowledge_base")
+  /// Como a empresa fala com o cliente.
+  tone           String   @default("")
+  /// Desliga a IA da organizacao inteira sem mexer em codigo.
+  enabled        Boolean  @default(true)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("ai_settings")
 }

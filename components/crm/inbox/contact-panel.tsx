@@ -12,6 +12,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { ChannelBadge } from '../channel-badge';
+import { AiQualifyPanel, type QualificationView } from './ai-qualify-panel';
 import type { ConversationDetailDTO, ConversationStatus } from '@/lib/crm/inbox-types';
 
 /**
@@ -30,6 +31,9 @@ interface ContactPanelProps {
   conversation: ConversationDetailDTO;
   departments: Setor[];
   currentUserId: string;
+  aiAvailable: boolean;
+  qualification: QualificationView;
+  onQualify: () => Promise<{ ok: boolean; error?: string }>;
   onClaim: () => Promise<{ ok: boolean; error?: string }>;
   onTransfer: (departmentId: string) => Promise<{ ok: boolean; error?: string }>;
   onStatus: (status: ConversationStatus) => Promise<{ ok: boolean; error?: string }>;
@@ -53,6 +57,9 @@ export function ContactPanel({
   conversation,
   departments,
   currentUserId,
+  aiAvailable,
+  qualification,
+  onQualify,
   onClaim,
   onTransfer,
   onStatus,
@@ -138,6 +145,14 @@ export function ContactPanel({
           </>
         )}
       </div>
+
+      {aiAvailable && (
+        <AiQualifyPanel
+          conversation={conversation}
+          qualification={qualification}
+          onQualify={onQualify}
+        />
+      )}
 
       <div className="border-t border-[var(--theme-border)] pt-3">
         <h3 className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-[var(--theme-text-secondary)]">

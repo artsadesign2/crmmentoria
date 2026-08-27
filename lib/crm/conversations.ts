@@ -127,6 +127,7 @@ export function messageToDTO(row: {
   content: string | null;
   mediaUrl: string | null;
   transcription: string | null;
+  transcriptionStatus?: string | null;
   status: string;
   isFromBot: boolean;
   userId: string | null;
@@ -140,6 +141,7 @@ export function messageToDTO(row: {
     content: row.content,
     mediaUrl: row.mediaUrl,
     transcription: row.transcription,
+    transcriptionStatus: (row.transcriptionStatus as MessageDTO['transcriptionStatus']) ?? null,
     status: row.status as MessageStatus,
     isFromBot: row.isFromBot,
     userId: row.userId,
@@ -237,7 +239,16 @@ export async function getConversation(
     include: {
       ...withRelations,
       dealCard: {
-        select: { id: true, title: true, dealValue: true, stage: { select: { name: true } } },
+        select: {
+          id: true,
+          title: true,
+          dealValue: true,
+          aiScore: true,
+          aiSummary: true,
+          aiAnalyzedAt: true,
+          customFields: true,
+          stage: { select: { name: true } },
+        },
       },
       messages: {
         include: { user: { select: { name: true } } },
@@ -264,6 +275,11 @@ export async function getConversation(
           // Decimal não sobrevive ao JSON; a conversão acontece num ponto só.
           dealValue: Number(conversa.dealCard.dealValue),
           stageName: conversa.dealCard.stage.name,
+          aiScore: conversa.dealCard.aiScore,
+          aiSummary: conversa.dealCard.aiSummary,
+          aiAnalyzedAt: conversa.dealCard.aiAnalyzedAt?.toISOString() ?? null,
+          customFields:
+            (conversa.dealCard.customFields as Record<string, unknown> | null) ?? null,
         }
       : null,
   };

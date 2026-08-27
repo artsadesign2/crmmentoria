@@ -2,6 +2,7 @@
 
 import { Check, CheckCheck, Clock, AlertCircle, EyeOff, Paperclip, Bot } from 'lucide-react';
 import { clockTime } from '@/lib/crm/sla';
+import { TranscriptionNote } from './transcription-note';
 import type { MessageDTO } from '@/lib/crm/inbox-types';
 
 /**
@@ -47,7 +48,12 @@ function Anexo({ message }: { message: MessageDTO }) {
   );
 }
 
-export function MessageBubble({ message }: { message: MessageDTO }) {
+interface MessageBubbleProps {
+  message: MessageDTO;
+  onRetryTranscription: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
+}
+
+export function MessageBubble({ message, onRetryTranscription }: MessageBubbleProps) {
   if (message.direction === 'INTERNAL') {
     return (
       <div
@@ -102,11 +108,7 @@ export function MessageBubble({ message }: { message: MessageDTO }) {
           {message.content}
         </p>
 
-        {message.transcription && (
-          <p className="mt-1 border-l-2 border-[var(--theme-border)] pl-2 text-[11px] italic leading-snug text-[var(--theme-text-secondary)]">
-            {message.transcription}
-          </p>
-        )}
+        <TranscriptionNote message={message} onRetry={onRetryTranscription} />
 
         <Anexo message={message} />
 

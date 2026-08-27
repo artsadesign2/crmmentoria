@@ -41,6 +41,8 @@ interface InboxState {
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
+  /** Falso quando não há chave no servidor ou a organização desligou a IA. */
+  aiAvailable: boolean;
 }
 
 const ESTADO_INICIAL: InboxState = {
@@ -51,6 +53,7 @@ const ESTADO_INICIAL: InboxState = {
   isLoading: true,
   isSending: false,
   error: null,
+  aiAvailable: false,
 };
 
 export interface InboxFilterState {
@@ -151,6 +154,27 @@ export function useInbox(filters: InboxFilterState) {
     void reload();
   }, [reload]);
 
+  // Sem IA disponível, nenhum botão aparece — e nenhuma chamada é tentada.
+  useEffect(() => {
+    let ativo = true;
+
+    void fetch('/api/ai/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((corpo) => {
+        if (ativo && corpo?.settings) {
+          setState((s) => ({ ...s, aiAvailable: Boolean(corpo.settings.available) }));
+        }
+      })
+      .catch(() => {
+        // Sem resposta, a IA fica indisponível. Falhar em silêncio aqui é
+        // correto: o Inbox inteiro funciona sem ela.
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
   /** Abre a conversa: carrega o histórico e zera o contador de não lidas. */
   const openConversation = useCallback(async (id: string) => {
     conversaAberta.current = id;
@@ -174,7 +198,41 @@ export function useInbox(filters: InboxFilterState) {
         c.id === id ? { ...c, unreadCount: 0 } : c
       ),
     }));
+
+    // Só dispara se houver áudio nunca tentado. Uma requisição por conversa,
+    // e nenhuma quando não há o que transcrever.
+    const pendentes = conversa.messages.some(
+      (m) => m.contentType === 'AUDIO' && m.transcriptionStatus === null && m.mediaUrl
+    );
+    if (pendentes) void transcreverPendentes(id);
   }, []);
+
+  /** Substitui as mensagens transcritas na thread aberta. */
+  const transcreverPendentes = async (id: string) => {
+    try {
+      const resposta = await fetch(`/api/crm/conversations/${id}/transcribe`, { method: 'POST' });
+      if (!resposta.ok) return;
+
+      const corpo = await readJson(resposta);
+      const atualizadas = (corpo.messages as MessageDTO[]) ?? [];
+      if (atualizadas.length === 0) return;
+
+      setState((s) => {
+        if (!s.active || s.active.id !== id) return s;
+        const porId = new Map(atualizadas.map((m) => [m.id, m]));
+
+        return {
+          ...s,
+          active: {
+            ...s.active,
+            messages: s.active.messages.map((m) => porId.get(m.id) ?? m),
+          },
+        };
+      });
+    } catch {
+      // A bolha continua mostrando "transcrevendo"; recarregar tenta de novo.
+    }
+  };
 
   const closeConversation = useCallback(() => {
     conversaAberta.current = null;
@@ -342,6 +400,77 @@ export function useInbox(filters: InboxFilterState) {
     [patchConversation]
   );
 
+  /**
+   * Pede um rascunho. Devolve o texto — quem decide o que fazer com ele é a
+   * tela, e não existe caminho daqui para o envio.
+   */
+  const suggestReply = useCallback(async (): Promise<
+    { ok: true; draft: string } | { ok: false; error: string }
+  > => {
+    const id = conversaAberta.current;
+    if (!id) return { ok: false, error: 'Nenhuma conversa aberta.' };
+
+    try {
+      const resposta = await fetch(`/api/crm/conversations/${id}/suggest`, { method: 'POST' });
+      if (handleUnauthorized(resposta.status)) return { ok: false, error: '' };
+
+      const corpo = await readJson(resposta);
+      if (!resposta.ok) {
+        return { ok: false, error: (corpo.error as string) ?? 'A IA não respondeu.' };
+      }
+      return { ok: true, draft: corpo.draft as string };
+    } catch {
+      return { ok: false, error: 'Falha de conexão com o servidor.' };
+    }
+  }, []);
+
+  /** Analisa o atendimento e recarrega o detalhe, para o painel refletir. */
+  const qualify = useCallback(async (id: string): Promise<Resultado> => {
+    try {
+      const resposta = await fetch(`/api/crm/conversations/${id}/qualify`, { method: 'POST' });
+      if (handleUnauthorized(resposta.status)) return { ok: false };
+
+      const corpo = await readJson(resposta);
+      if (!resposta.ok) {
+        return { ok: false, error: (corpo.error as string) ?? 'Não foi possível analisar.' };
+      }
+
+      if (conversaAberta.current === id) await openConversation(id);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Falha de conexão com o servidor.' };
+    }
+  }, [openConversation]);
+
+  /** Repete a transcrição de um áudio que falhou. */
+  const retryTranscription = useCallback(async (messageId: string): Promise<Resultado> => {
+    try {
+      const resposta = await fetch(`/api/ai/transcribe/${messageId}`, { method: 'POST' });
+      if (handleUnauthorized(resposta.status)) return { ok: false };
+
+      const corpo = await readJson(resposta);
+      if (!resposta.ok) {
+        return { ok: false, error: (corpo.error as string) ?? 'Não foi possível transcrever.' };
+      }
+
+      const atualizada = corpo.message as MessageDTO;
+      setState((s) =>
+        s.active
+          ? {
+              ...s,
+              active: {
+                ...s.active,
+                messages: s.active.messages.map((m) => (m.id === atualizada.id ? atualizada : m)),
+              },
+            }
+          : s
+      );
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Falha de conexão com o servidor.' };
+    }
+  }, []);
+
   const createDeal = useCallback(async (id: string): Promise<Resultado> => {
     const resposta = await fetch(`/api/crm/conversations/${id}/deal`, { method: 'POST' });
     if (handleUnauthorized(resposta.status)) return { ok: false };
@@ -367,5 +496,8 @@ export function useInbox(filters: InboxFilterState) {
     setStatus,
     transfer,
     createDeal,
+    suggestReply,
+    qualify,
+    retryTranscription,
   };
 }

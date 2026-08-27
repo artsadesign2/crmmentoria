@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, EyeOff, Loader2, MessageCircle } from 'lucide-react';
+import { Send, EyeOff, Loader2, MessageCircle, Sparkles } from 'lucide-react';
 import type { ConversationDetailDTO } from '@/lib/crm/inbox-types';
 
 /**
@@ -21,14 +21,43 @@ type Modo = 'reply' | 'note';
 interface ComposerProps {
   conversation: ConversationDetailDTO;
   isSending: boolean;
+  aiAvailable: boolean;
   onSend: (text: string) => Promise<{ ok: boolean; error?: string }>;
   onNote: (text: string) => Promise<{ ok: boolean; error?: string }>;
+  onSuggest: () => Promise<{ ok: true; draft: string } | { ok: false; error: string }>;
 }
 
-export function Composer({ conversation, isSending, onSend, onNote }: ComposerProps) {
+export function Composer({
+  conversation,
+  isSending,
+  aiAvailable,
+  onSend,
+  onNote,
+  onSuggest,
+}: ComposerProps) {
   const [modo, setModo] = useState<Modo>('reply');
   const [texto, setTexto] = useState('');
   const [erro, setErro] = useState<string | null>(null);
+  const [sugerindo, setSugerindo] = useState(false);
+  const [veioDaIa, setVeioDaIa] = useState(false);
+
+  /**
+   * O rascunho preenche a caixa e para ali. Não existe caminho daqui para o
+   * envio: quem envia é o atendente, depois de ler.
+   */
+  const sugerir = async () => {
+    setSugerindo(true);
+    setErro(null);
+    const r = await onSuggest();
+    setSugerindo(false);
+
+    if (!r.ok) {
+      if (r.error) setErro(r.error);
+      return;
+    }
+    setTexto(r.draft);
+    setVeioDaIa(true);
+  };
 
   const semTelefone = !conversation.contact.phone;
   const ehNota = modo === 'note';
@@ -46,6 +75,7 @@ export function Composer({ conversation, isSending, onSend, onNote }: ComposerPr
       return;
     }
     setTexto('');
+    setVeioDaIa(false);
   };
 
   const aoTeclar = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -79,6 +109,22 @@ export function Composer({ conversation, isSending, onSend, onNote }: ComposerPr
           Responder ao cliente
         </button>
 
+        {aiAvailable && !ehNota && (
+          <button
+            type="button"
+            onClick={() => void sugerir()}
+            disabled={sugerindo || bloqueado}
+            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[var(--theme-border)] px-2.5 py-1 text-[11px] font-bold text-[var(--theme-text-secondary)] transition-colors hover:text-[var(--theme-text-primary)] disabled:opacity-50"
+          >
+            {sugerindo ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Sparkles size={12} />
+            )}
+            {sugerindo ? 'Escrevendo...' : 'Sugerir resposta'}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => setModo('note')}
@@ -96,7 +142,10 @@ export function Composer({ conversation, isSending, onSend, onNote }: ComposerPr
 
       <textarea
         value={texto}
-        onChange={(e) => setTexto(e.target.value)}
+        onChange={(e) => {
+          setTexto(e.target.value);
+          setVeioDaIa(false);
+        }}
         onKeyDown={aoTeclar}
         rows={3}
         disabled={bloqueado}
@@ -115,6 +164,13 @@ export function Composer({ conversation, isSending, onSend, onNote }: ComposerPr
       {bloqueado && (
         <p className="mt-1 text-[11px] font-semibold text-[var(--theme-text-secondary)]">
           Cadastre um número no contato para poder responder. A nota interna continua disponível.
+        </p>
+      )}
+
+      {veioDaIa && (
+        <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-[var(--theme-text-secondary)]">
+          <Sparkles size={10} />
+          Rascunho da IA. Leia e ajuste antes de enviar.
         </p>
       )}
 

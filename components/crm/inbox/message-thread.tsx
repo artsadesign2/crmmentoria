@@ -26,7 +26,12 @@ function rotuloDoDia(iso: string, hoje: Date): string {
   return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-export function MessageThread({ messages }: { messages: MessageDTO[] }) {
+interface MessageThreadProps {
+  messages: MessageDTO[];
+  onRetryTranscription: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
+}
+
+export function MessageThread({ messages, onRetryTranscription }: MessageThreadProps) {
   const container = useRef<HTMLDivElement>(null);
   const estavaNoFim = useRef(true);
 
@@ -72,7 +77,7 @@ export function MessageThread({ messages }: { messages: MessageDTO[] }) {
                 <span className="h-px flex-1 bg-[var(--theme-border)]" />
               </div>
             )}
-            <MessageBubble message={mensagem} />
+            <MessageBubble message={mensagem} onRetryTranscription={onRetryTranscription} />
           </div>
         );
       })}
