@@ -50,6 +50,12 @@ model Organization {
   // F4 — IA
   aiSettings    AiSettings?
 
+  // F5 - disparo
+  dispatchCampaigns DispatchCampaign[]
+  dispatchTargets   DispatchTarget[]
+  dispatchSettings  DispatchSettings?
+  quickReplies      QuickReply[]
+
   @@map("organizations")
 }
 
@@ -89,6 +95,9 @@ model User {
   activityLogs          ActivityLog[]
   assignedConversations Conversation[]
   messages              Message[]
+
+  // F5 - disparo
+  dispatchCampaigns     DispatchCampaign[]
 
   /// Escopado por organização: o mesmo e-mail pode existir em tenants distintos.
   @@unique([organizationId, email])
@@ -518,6 +527,10 @@ model Contact {
   notes          String?
   /// Campos livres da pessoa; o No de Captura do bot (F6) grava aqui.
   customFields   Json?    @map("custom_fields")
+  /// Pediu para sair dos disparos. So vale para envio em massa: quem escreveu
+  /// "PARE" e depois pergunta o preco continua sendo atendido individualmente.
+  optedOutAt     DateTime? @map("opted_out_at") @db.Timestamp(6)
+  optedOutReason String?   @map("opted_out_reason")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
 
@@ -526,6 +539,9 @@ model Contact {
   tags          ContactTag[]
   activities    ActivityLog[]
   conversations Conversation[]
+
+  // F5 - disparo
+  dispatchTargets DispatchTarget[]
 
   @@index([organizationId, name], map: "contacts_org_name_idx")
   @@index([organizationId, email], map: "contacts_org_email_idx")
@@ -700,6 +716,9 @@ model Message {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user         User?        @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
+  // F5 - cada envio de campanha vira uma Message real.
+  dispatchTargets DispatchTarget[]
+
   @@index([conversationId, createdAt], map: "messages_conversation_idx")
   @@map("messages")
 }
@@ -722,4 +741,111 @@ model AiSettings {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("ai_settings")
+}
+
+/// Campanha de disparo em massa.
+///
+/// Substitui o laco que rodava no navegador: fechar a aba matava o envio no
+/// meio e nada ficava registrado.
+model DispatchCampaign {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  name            String    @db.VarChar(200)
+  /// Aceita {{nome}} e {{empresa}}, resolvidos por destinatario no envio.
+  messageTemplate String    @map("message_template")
+  /// DRAFT | SCHEDULED | RUNNING | PAUSED | DONE | CANCELED
+  status          String    @default("DRAFT") @db.VarChar(20)
+  scheduledAt     DateTime? @map("scheduled_at") @db.Timestamp(6)
+  totalCount      Int       @default(0) @map("total_count")
+  sentCount       Int       @default(0) @map("sent_count")
+  failedCount     Int       @default(0) @map("failed_count")
+  skippedCount    Int       @default(0) @map("skipped_count")
+  startedAt       DateTime? @map("started_at") @db.Timestamp(6)
+  finishedAt      DateTime? @map("finished_at") @db.Timestamp(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdBy    User?            @relation(fields: [createdByUserId], references: [id], onUpdate: NoAction)
+  targets      DispatchTarget[]
+
+  @@index([organizationId, status, scheduledAt], map: "dispatch_campaigns_org_status_idx")
+  @@map("dispatch_campaigns")
+}
+
+/// Um destinatario da campanha, com estado proprio.
+///
+/// E o que permite retomar de onde parou. O laco no navegador que isto
+/// substitui perdia o resto da lista a cada falha.
+model DispatchTarget {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId     String    @map("campaign_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  contactId      String?   @map("contact_id") @db.Uuid
+  /// Copiados na criacao: se o contato mudar de numero depois, o registro
+  /// continua contando para quem a mensagem realmente foi.
+  phone          String    @db.VarChar(30)
+  name           String    @db.VarChar(200)
+  /// PENDING | SENDING | SENT | FAILED | SKIPPED
+  status         String    @default("PENDING") @db.VarChar(20)
+  /// Por que 200 contatos viraram 187: descadastrado, sem telefone, repetido.
+  skipReason     String?   @map("skip_reason")
+  error          String?
+  attempts       Int       @default(0)
+  /// SENDING com claimed_at velho volta para PENDING: e como uma funcao que
+  /// morreu no meio devolve o trabalho.
+  claimedAt      DateTime? @map("claimed_at") @db.Timestamp(6)
+  sentAt         DateTime? @map("sent_at") @db.Timestamp(6)
+  messageId      String?   @map("message_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  campaign     DispatchCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contact      Contact?         @relation(fields: [contactId], references: [id], onUpdate: NoAction)
+  message      Message?         @relation(fields: [messageId], references: [id], onUpdate: NoAction)
+
+  @@index([campaignId, status, createdAt], map: "dispatch_targets_queue_idx")
+  @@map("dispatch_targets")
+}
+
+/// Regras anti-bloqueio da organizacao.
+///
+/// Padroes conservadores. Nenhum parametro impede o WhatsApp de bloquear um
+/// numero; eles reduzem o risco.
+model DispatchSettings {
+  organizationId  String   @id @map("organization_id") @db.Uuid
+  minIntervalMs   Int      @default(4000) @map("min_interval_ms")
+  /// O item que o codigo antigo nao tinha e mais importa: um envio a cada
+  /// 1500 ms exatos e mais suspeito que um a cada 4 s variando, porque o
+  /// padrao perfeito e o que nenhum humano produz.
+  jitterMs        Int      @default(3000) @map("jitter_ms")
+  maxPerMinute    Int      @default(12) @map("max_per_minute")
+  windowStartHour Int      @default(8) @map("window_start_hour")
+  windowEndHour   Int      @default(20) @map("window_end_hour")
+  dailyCap        Int      @default(300) @map("daily_cap")
+  /// Funcao serverless roda em UTC; "20h" precisa significar 20h em Sao Paulo.
+  timeZone        String   @default("America/Sao_Paulo") @map("time_zone") @db.VarChar(60)
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("dispatch_settings")
+}
+
+/// Resposta pronta para o atendente usar no Inbox: /preco, /endereco.
+model QuickReply {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// Sem a barra: "preco", digitado como "/preco".
+  shortcut       String   @db.VarChar(40)
+  title          String   @db.VarChar(120)
+  content        String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organizationId, shortcut], map: "quick_replies_org_shortcut_key")
+  @@map("quick_replies")
 }
