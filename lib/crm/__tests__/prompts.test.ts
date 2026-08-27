@@ -146,7 +146,7 @@ describe('qualifySystemPrompt e QUALIFY_SCHEMA', () => {
   });
 
   it('o esquema exige os seis campos', () => {
-    const esquema = QUALIFY_SCHEMA as { required: string[] };
+    const esquema = QUALIFY_SCHEMA as unknown as { required: string[] };
 
     expect(esquema.required).toEqual(
       expect.arrayContaining(['faturamento', 'gargalo', 'meta', 'objecao', 'temperatura', 'resumo'])
@@ -154,7 +154,7 @@ describe('qualifySystemPrompt e QUALIFY_SCHEMA', () => {
   });
 
   it('temperatura e inteira', () => {
-    const esquema = QUALIFY_SCHEMA as { properties: Record<string, { type: string }> };
+    const esquema = QUALIFY_SCHEMA as unknown as { properties: Record<string, { type: string }> };
     expect(esquema.properties.temperatura.type).toBe('INTEGER');
   });
 });
