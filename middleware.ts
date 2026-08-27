@@ -22,6 +22,12 @@ const PUBLIC_API = [
  */
 const WEBHOOK_PREFIXES = ['/api/webhook', '/api/webhooks'];
 
+/**
+ * Rotas chamadas por agendadores (F5). Também não têm cookie, e defendem-se com
+ * `CRON_SECRET` comparado em tempo constante — ver lib/dispatch/cron-auth.ts.
+ */
+const CRON_PREFIX = '/api/cron';
+
 function clearSession(response: NextResponse): NextResponse {
   response.cookies.set(SESSION_COOKIE, '', {
     httpOnly: true,
@@ -37,6 +43,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (WEBHOOK_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next();
+  }
+  if (pathname.startsWith(CRON_PREFIX)) {
     return NextResponse.next();
   }
   if (PUBLIC_API.includes(pathname)) {
