@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Lock,
   Sparkles,
+  Megaphone,
   Save,
   Check,
   Users,
@@ -96,6 +97,7 @@ import {
 } from '@/lib/whatsapp-automations';
 
 import { AiSettingsSection } from '@/components/settings/ai-settings-section';
+import { DispatchSettingsSection } from '@/components/settings/dispatch-settings-section';
 
 export default function SettingsPage() {
   const { activePaletteId, activePalette, isLightMode, setPalette, resetToDefault: resetTheme } =
@@ -117,7 +119,7 @@ export default function SettingsPage() {
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<
-    'design' | 'permissions' | 'users' | 'whatsapp' | 'ai' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
+    'design' | 'permissions' | 'users' | 'whatsapp' | 'ai' | 'dispatch' | 'company' | 'levels' | 'system' | 'depts' | 'csv' | 'saas'
   >('design');
 
   const [mounted, setMounted] = useState(false);
@@ -880,6 +882,28 @@ export default function SettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('dispatch')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            activeTab === 'dispatch'
+              ? 'shadow-md font-extrabold'
+              : isLightMode
+              ? 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+              : 'bg-[#131926]/60 text-slate-400 border border-[#1F293D] hover:bg-[#1F293D] hover:text-slate-200'
+          }`}
+          style={
+            activeTab === 'dispatch'
+              ? {
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                }
+              : {}
+          }
+        >
+          <Megaphone size={16} />
+          <span>Disparo</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('company')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             activeTab === 'company'
@@ -1635,6 +1659,19 @@ export default function SettingsPage() {
         <div className="animate-in fade-in duration-200">
           <Card className="p-6">
             <AiSettingsSection canEdit={currentRole === 'Master' || currentRole === 'Administrador'} />
+          </Card>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: DISPARO (RITMO ANTI-BLOQUEIO E RESPOSTAS RÁPIDAS)                     */}
+      {/* ========================================================================= */}
+      {activeTab === 'dispatch' && (
+        <div className="animate-in fade-in duration-200">
+          <Card className="p-6">
+            <DispatchSettingsSection
+              canEdit={currentRole === 'Master' || currentRole === 'Administrador'}
+            />
           </Card>
         </div>
       )}

@@ -43,7 +43,6 @@ import { useNotifications } from '@/lib/notification-context';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 import {
-  sendWhatsAppBroadcastToAll,
   getAllWhatsAppTemplates,
   interpolateWhatsAppTemplate,
   INITIAL_DEFAULT_TEMPLATES,
@@ -92,20 +91,10 @@ export default function EventsPage() {
   const [broadcastTargetEvent, setBroadcastTargetEvent] = useState<EventItem | null>(null);
   const [audienceType, setAudienceType] = useState<'mentees' | 'leads'>('mentees');
   const [customBroadcastMsg, setCustomBroadcastMsg] = useState('');
-  const [broadcastDelayMs, setBroadcastDelayMs] = useState(2000);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [sendToAll, setSendToAll] = useState(true);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [broadcastProgress, setBroadcastProgress] = useState<{
-    current: number;
-    total: number;
-    percent: number;
-    currentName: string;
-    successCount: number;
-    failedCount: number;
-    isFinished: boolean;
-  } | null>(null);
 
   // Load confirmed RSVPs, members, and leads on mount
   useEffect(() => {
@@ -194,7 +183,6 @@ export default function EventsPage() {
 
   const handleOpenBroadcastModal = (event: EventItem) => {
     setBroadcastTargetEvent(event);
-    setBroadcastProgress(null);
     setCustomBroadcastMsg('');
     setAudienceType('mentees'); // Mentorados é SEMPRE o padrão
     setSendToAll(true);
@@ -309,25 +297,60 @@ export default function EventsPage() {
       minute: '2-digit',
     });
 
-    const res = await sendWhatsAppBroadcastToAll(
-      listToSend,
-      messageToUse,
-      {
-        delayMs: broadcastDelayMs,
-        extraVars: {
-          eventoTitulo: broadcastTargetEvent.title,
-          eventoData: formattedDate,
-          eventoLocal: broadcastTargetEvent.location,
-        },
-        onProgress: (prog) => {
-          setBroadcastProgress(prog);
-        },
-      }
-    );
+    /**
+     * O que é igual para todo mundo é resolvido agora; o que varia por pessoa
+     * vira `{{nome}}` e `{{empresa}}`, que a fila resolve no envio.
+     *
+     * `{especialidade}` cai no padrão da mentoria: a campanha personaliza nome
+     * e empresa, e manter um placeholder cru na mensagem seria pior.
+     */
+    const comDadosDoEvento = interpolateWhatsAppTemplate(messageToUse, {
+      eventoTitulo: broadcastTargetEvent.title,
+      eventoData: formattedDate,
+      eventoLocal: broadcastTargetEvent.location,
+      especialidade: 'Mentoria',
+    });
 
-    setIsBroadcasting(false);
-    setToastMsg(`Disparo finalizado: ${res.sent} de ${res.total} mensagens entregues com sucesso.`);
-    setTimeout(() => setToastMsg(null), 5000);
+    const template = comDadosDoEvento.replace(/\{(nome|empresa)\}/gi, '{{$1}}');
+
+    try {
+      const resposta = await fetch('/api/crm/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `Evento — ${broadcastTargetEvent.title}`,
+          message: template,
+          // Mentorados e leads não são contatos do CRM ainda. A fila cadastra
+          // cada um, para a resposta chegar no Inbox com nome e histórico.
+          recipients: listToSend.map((r) => ({
+            name: r.name,
+            phone: r.phone,
+            company: r.company,
+          })),
+        }),
+      });
+
+      const corpo = await resposta.json();
+      setIsBroadcasting(false);
+
+      if (!resposta.ok || !corpo.ok) {
+        setToastMsg(corpo.error ?? 'Não foi possível criar a campanha.');
+        setTimeout(() => setToastMsg(null), 5000);
+        return;
+      }
+
+      // Nada sai daqui. A campanha nasce como rascunho e quem inicia é a tela
+      // de disparos — que é onde se vê o andamento e se pode pausar.
+      setIsBroadcastModalOpen(false);
+      setToastMsg(
+        `Campanha criada com ${corpo.campaign.totalCount} destinatários. Abra Disparos para iniciar.`
+      );
+      setTimeout(() => setToastMsg(null), 6000);
+    } catch {
+      setIsBroadcasting(false);
+      setToastMsg('Falha de rede ao criar a campanha.');
+      setTimeout(() => setToastMsg(null), 5000);
+    }
   };
 
   const handleCreateEvent = (e: React.FormEvent) => {
@@ -1153,32 +1176,21 @@ export default function EventsPage() {
             </div>
 
             {/* Anti-Ban Interval Control */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D]">
-              <div>
-                <span className="font-bold text-slate-200 block text-xs">Intervalo de Segurança Anti-Bloqueio</span>
-                <span className="text-[10px] text-slate-400">Pausa entre cada disparo para proteger seu número</span>
-              </div>
-              <div className="flex items-center gap-1.5 font-mono text-xs">
-                {[
-                  { label: '1.5s', ms: 1500 },
-                  { label: '3.0s (Recomendado)', ms: 3000 },
-                  { label: '5.0s (Mais Seguro)', ms: 5000 },
-                ].map((preset) => (
-                  <button
-                    key={preset.ms}
-                    type="button"
-                    onClick={() => setBroadcastDelayMs(preset.ms)}
-                    disabled={isBroadcasting}
-                    className={`px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                      broadcastDelayMs === preset.ms
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 font-bold'
-                        : 'bg-[#131926] text-slate-400 border-[#1F293D] hover:text-slate-200'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
+            {/*
+              O intervalo deixou de ser escolhido aqui: ele agora vale para a
+              organização inteira e vive em Configurações. Três campanhas
+              criadas em telas diferentes, cada uma com o próprio ritmo,
+              somariam envios pelo mesmo número — que é o que o intervalo
+              existe para evitar.
+            */}
+            <div className="p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D]">
+              <span className="font-bold text-slate-200 block text-xs">
+                Ritmo e horário de envio
+              </span>
+              <span className="text-[10px] text-slate-400 block mt-0.5">
+                O intervalo entre mensagens, a variação aleatória e a janela de horário valem para
+                todos os disparos da empresa. Ajuste em Configurações → Disparo.
+              </span>
             </div>
 
             {/* Live Message Preview / Customizer */}
@@ -1230,36 +1242,12 @@ export default function EventsPage() {
               />
             </div>
 
-            {/* Live Progress Bar during Broadcast */}
-            {broadcastProgress && (
-              <div className="p-4 rounded-xl bg-[#070A12] border border-emerald-500/30 space-y-2.5 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-200 flex items-center gap-2">
-                    {isBroadcasting && <Loader2 size={14} className="animate-spin text-emerald-400" />}
-                    <span>{broadcastProgress.isFinished ? '✅ Disparo Concluído!' : `Enviando para: ${broadcastProgress.currentName}`}</span>
-                  </span>
-                  <span className="text-emerald-400 font-mono">{broadcastProgress.percent}%</span>
-                </div>
-
-                {/* Visual Progress Bar */}
-                <div className="w-full bg-[#1F293D] rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-2.5 transition-all duration-300 rounded-full"
-                    style={{ width: `${broadcastProgress.percent}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Progresso: {broadcastProgress.current} de {broadcastProgress.total}</span>
-                  <span className="flex items-center gap-3">
-                    <strong className="text-emerald-400">✓ {broadcastProgress.successCount} enviados</strong>
-                    {broadcastProgress.failedCount > 0 && (
-                      <strong className="text-red-400">✗ {broadcastProgress.failedCount} falhas</strong>
-                    )}
-                  </span>
-                </div>
-              </div>
-            )}
+            {/*
+              A barra de progresso saiu daqui junto com o laço que a alimentava.
+              O envio não acontece mais nesta aba, então uma barra viva seria
+              ficção: o andamento de verdade está na tela de Disparos, onde
+              sobrevive a fechar o navegador.
+            */}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800/40">
@@ -1269,7 +1257,7 @@ export default function EventsPage() {
                 disabled={isBroadcasting}
                 className="px-4 py-2.5 rounded-xl bg-[#0B0F17] text-slate-300 font-bold border border-[#1F293D] disabled:opacity-50 cursor-pointer"
               >
-                {broadcastProgress?.isFinished ? 'Fechar' : 'Cancelar'}
+                Cancelar
               </button>
 
               <button
@@ -1281,12 +1269,12 @@ export default function EventsPage() {
                 {isBroadcasting ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    <span>Disparando em Massa ({broadcastProgress?.percent || 0}%)...</span>
+                    <span>Criando campanha...</span>
                   </>
                 ) : (
                   <>
                     <Send size={14} />
-                    <span>Iniciar Disparo ({selectedCount} {audienceType === 'mentees' ? 'Mentorados' : 'Leads'})</span>
+                    <span>Criar campanha ({selectedCount} {audienceType === 'mentees' ? 'Mentorados' : 'Leads'})</span>
                   </>
                 )}
               </button>
@@ -1319,7 +1307,7 @@ export default function EventsPage() {
                 </strong>.
               </p>
               <div className="pt-2 text-[11px] text-slate-400 flex items-center gap-4">
-                <span>⏱️ Intervalo Anti-Ban: <strong>{(broadcastDelayMs / 1000).toFixed(1)}s</strong></span>
+                <span>⏱️ Ritmo: <strong>definido em Configurações</strong></span>
                 <span>📱 Canal: <strong>Evolution API WhatsApp</strong></span>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { recordInboundMessage } from '@/lib/crm/messages';
 import { findOrCreateByPhone } from '@/lib/crm/contacts';
 import { formatPhoneBr } from '@/lib/crm/phone';
 import { readEvolutionEnv, verifyWebhookToken } from '@/lib/evolution/server';
+import { isOptOutMessage, optOutContact } from '@/lib/dispatch/optout';
 
 /**
  * Recebe os eventos da Evolution API e grava o que for conversa.
@@ -88,10 +89,23 @@ export async function POST(request: Request) {
       console.log(`[webhook] reenvio de ${evento.externalId}; nada duplicado.`);
     }
 
+    // O descadastro vem *depois* de gravar, nunca no lugar de gravar. Quem
+    // escreve "PARE" continua com a mensagem no histórico e continua podendo
+    // ser atendido: o pedido foi para sair do disparo em massa, e apagar o
+    // pedido do histórico seria perder a prova de quando ele chegou.
+    const descadastrou =
+      !evento.fromMe && evento.contentType === 'TEXT' && isOptOutMessage(evento.content);
+
+    if (descadastrou) {
+      await optOutContact(contact.id, `Pediu para parar pelo WhatsApp: "${evento.content.trim()}"`);
+      console.log(`[webhook] contato ${contact.id} descadastrado do disparo.`);
+    }
+
     return NextResponse.json({
       ok: true,
       handled: 'MESSAGE',
       duplicated,
+      optedOut: descadastrou,
       conversationId: conversa.id,
     });
   } catch (error) {
