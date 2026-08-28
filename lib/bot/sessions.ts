@@ -90,25 +90,28 @@ export async function sessaoAtiva(conversationId: string): Promise<SessaoCarrega
 }
 
 /**
+ * Qual fluxo abre a sessão.
+ *
+ * `TRIGGER` atende quem chegou agora. `REENGAGE` retoma quem já estava sendo
+ * atendido e ficou parado — e por isso não pode ser o mesmo fluxo: "Olá! Você
+ * chegou ao atendimento da nossa equipe" é exatamente a frase errada para quem
+ * espera resposta há dois dias.
+ */
+export type PapelDoFluxo = 'TRIGGER' | 'REENGAGE';
+
+/**
  * Abre uma sessão para uma conversa que ainda não tem.
  *
- * Devolve `null` — e o bot simplesmente não atua — quando não há fluxo-gatilho
- * publicado. Uma organização sem bot precisa continuar funcionando como antes
- * da F6, sem nenhuma diferença perceptível.
+ * Devolve `null` — e o bot simplesmente não atua — quando não há fluxo
+ * publicado para o papel pedido. Uma organização sem bot precisa continuar
+ * funcionando como antes da F6, sem nenhuma diferença perceptível.
  */
 export async function abrirSessao(
   organizationId: string,
-  conversationId: string
+  conversationId: string,
+  papel: PapelDoFluxo = 'TRIGGER'
 ): Promise<SessaoCarregada | null> {
-  const fluxo = await prisma.botFlow.findFirst({
-    where: {
-      organizationId,
-      isTrigger: true,
-      status: 'PUBLISHED',
-      publishedVersion: { not: null },
-    },
-    select: { id: true, publishedVersion: true },
-  });
+  const fluxo = await fluxoPublicado(organizationId, papel);
 
   if (!fluxo?.publishedVersion) return null;
 
@@ -158,6 +161,38 @@ export async function abrirSessao(
     // venceu, em vez de estourar — duas sessões responderiam em dobro.
     return sessaoAtiva(conversationId);
   }
+}
+
+/**
+ * O fluxo publicado do papel pedido.
+ *
+ * A retomada cai no fluxo-gatilho quando não há um fluxo de retomada próprio:
+ * uma saudação fora de contexto ainda é melhor que silêncio. Quem quiser a
+ * mensagem certa publica um fluxo de retomada.
+ */
+async function fluxoPublicado(
+  organizationId: string,
+  papel: PapelDoFluxo
+): Promise<{ id: string; publishedVersion: number | null } | null> {
+  const publicado = {
+    organizationId,
+    status: 'PUBLISHED',
+    publishedVersion: { not: null },
+  } as const;
+
+  if (papel === 'REENGAGE') {
+    const retomada = await prisma.botFlow.findFirst({
+      where: { ...publicado, isReengage: true },
+      select: { id: true, publishedVersion: true },
+    });
+
+    if (retomada) return retomada;
+  }
+
+  return prisma.botFlow.findFirst({
+    where: { ...publicado, isTrigger: true },
+    select: { id: true, publishedVersion: true },
+  });
 }
 
 /** Grava o avanço da sessão. */

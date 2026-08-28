@@ -278,6 +278,58 @@ export async function criarFluxoTriagem(organizationId: string, userId: string):
 
 ---
 
+## Tarefa 3.5 — Retomada: o lead nunca fica sem atendimento
+
+> Acrescentada depois da Tarefa 3, a pedido, ao se descobrir que a distribuição
+> automática da F3 deixava o robô inalcançável: a conversa nova ganha dono na
+> primeira mensagem, e o executor recusava atuar onde havia dono. Com qualquer
+> atendente online, o bot nunca rodaria.
+
+**Arquivos:** criar `prisma/migrations/f6-retomada/migration.sql`,
+`lib/bot/reengage.ts`, `lib/bot/settings.ts`, `lib/bot/reengage-service.ts`,
+`lib/bot/sweep.ts`, `app/api/cron/bot-reengage/route.ts`,
+`lib/crm/__tests__/bot-reengage.test.ts`; alterar `lib/bot/executor.ts`,
+`lib/bot/sessions.ts`, `app/api/webhook/whatsapp/route.ts`, `vercel.json`,
+`lib/email/templates.ts`, `prisma/schema.prisma`.
+
+**A regra, em duas situações que não merecem o mesmo tratamento:**
+
+| | ABANDONO | FORA_DE_HORARIO |
+|---|---|---|
+| Quando | cliente esperando resposta humana há mais de N horas (padrão 24) | mensagem chega fora do expediente configurado |
+| Devolve para a fila | **sim** — qualquer um da equipe pode assumir | **não** — o atendente não fez nada errado |
+| Notifica por e-mail | **sim**, quem a deixou parada | não |
+| Trava anti-insistência | sim, uma por período | não — responder quem escreveu nunca é insistência |
+
+- [x] Migração: `bot_flows.is_reengage` + índice único parcial
+      `bot_flows_reengage_key`; tabela `bot_settings`; índices da varredura.
+      Contar linhas antes e depois.
+- [x] Testes de `decidirRetomada` e `dentroDoExpediente` primeiro — fuso da
+      organização e não do servidor, hora de fim exclusiva, domingo fora,
+      abandono vencendo fora-de-horário, trava de insistência. Rodar: falham.
+- [x] Implementar `lib/bot/reengage.ts` **puro**. Rodar: verde.
+- [x] `esperandoDesde` é a mensagem mais antiga do cliente que **nenhuma pessoa**
+      respondeu — não a última recebida. O webhook grava antes de chamar o robô,
+      então "última mensagem do cliente" seria sempre agora.
+- [x] Mensagem de robô não conta como resposta: a consulta filtra
+      `userId: { not: null }`. É a disciplina de não assinar texto de robô com
+      nome de gente que faz isso funcionar.
+- [x] `abrirSessao(org, conversa, papel)` com papel `TRIGGER | REENGAGE`. A
+      retomada cai no fluxo-gatilho quando não há fluxo de retomada publicado.
+- [x] `transferir` nunca tira o dono quando a distribuição devolve `null`: às
+      duas da manhã ninguém está online, e o nó de transferência roubaria a
+      conversa de quem a tinha durante o dia.
+- [x] Varredura (`/api/cron/bot-reengage`, mesmo segredo do disparo) para o lead
+      que escreveu uma vez e desistiu — esse nunca produz webhook. Só ABANDONO;
+      respeita opt-out e a janela de envio antes de falar com o cliente.
+- [x] Sem fluxo publicado, a devolução para a fila e o e-mail acontecem do mesmo
+      jeito: a parte que garante atendimento não depende de existir bot.
+- [x] Verificação contra o banco real: 26/26, Evolution apontada para porta
+      morta, banco devolvido ao estado inicial.
+- [x] Commit: `feat(bot): retomar lead abandonado e cobrir fora do expediente`
+
+---
+
 ## Tarefa 4 — Validação e publicação imutável
 
 **Arquivos:** criar `lib/bot/validate.ts`, `lib/bot/flows.ts`,
@@ -300,6 +352,8 @@ export interface FlowDTO {
   name: string;
   status: FlowStatus;
   isTrigger: boolean;
+  /** Fluxo de retomada (Tarefa 3.5). No máximo um por organização. */
+  isReengage: boolean;
   publishedVersion: number | null;
   updatedAt: string;
   createdByName: string | null;
@@ -460,7 +514,11 @@ modificar `components/sidebar.tsx`.
 - [ ] O simulador mostra **qual nó está ativo** a cada passo — é assim que se
       descobre que a opção "3" não leva a lugar nenhum.
 - [ ] Marcar um fluxo como gatilho exige confirmação dizendo o que muda: a
-      partir dali o robô fala com clientes reais.
+      partir dali o robô fala com clientes reais. O mesmo vale para marcá-lo
+      como fluxo de **retomada**.
+- [ ] Configuração da retomada (Tarefa 3.5) na tela: interruptor, horas até
+      considerar abandono, dias e horário de expediente, fuso, aviso por
+      e-mail. Chama `saveBotSettings`.
 - [ ] Sidebar: "Atendimento automático" depois de "Disparos",
       `permissionKey: 'viewCRM'`, ícone `Bot`.
 - [ ] Estado vazio com um botão "criar menu de triagem", chamando

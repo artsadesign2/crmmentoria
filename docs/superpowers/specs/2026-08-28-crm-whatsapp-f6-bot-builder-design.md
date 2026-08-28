@@ -264,3 +264,82 @@ trava com clientes reais enquanto funciona no seu teste.
 | `package.json` | `@xyflow/react` |
 
 Nenhuma migração destrutiva. Nenhuma coluna removida.
+
+---
+
+## 12. Retomada — o lead nunca fica sem atendimento
+
+> Acrescentado depois da Tarefa 3, a pedido do usuário. Implementado na Tarefa
+> 3.5 do plano.
+
+### O buraco
+
+A distribuição da F3 entrega a conversa nova ao atendente menos ocupado que
+estiver online, e o executor recusa atuar onde já existe dono. As duas regras
+são certas isoladamente e, juntas, produzem dois defeitos:
+
+1. **O robô fica inalcançável.** A conversa ganha dono na primeira mensagem, de
+   modo que com qualquer atendente online o bot nunca roda. O menu de triagem —
+   que existe para perguntar "com quem você quer falar" *antes* de escolher a
+   pessoa — só atenderia de madrugada.
+
+2. **O lead abandonado desaparece em silêncio.** A partir do instante em que a
+   conversa ganha dono, ninguém mais olha para ela. Se esse dono entra de
+   férias, muda de time ou esquece, o cliente espera para sempre, e o sistema
+   não acusa nada: do ponto de vista dele, a conversa *está sendo atendida*. É o
+   pior modo de falha possível num CRM — silencioso e caro.
+
+### A regra
+
+Duas situações devolvem o cliente ao robô. Elas não merecem o mesmo tratamento,
+e tratá-las igual seria punir alguém por dormir:
+
+| | ABANDONO | FORA_DE_HORARIO |
+|---|---|---|
+| Quando | cliente esperando resposta humana há mais de N horas (padrão 24) | mensagem chega fora do expediente |
+| Devolve para a fila | sim | **não** |
+| Notifica por e-mail | sim, quem a deixou parada | não |
+| Trava anti-insistência | uma retomada por período | não se aplica |
+
+`FORA_DE_HORARIO` não tira a conversa de ninguém porque o atendente não fez nada
+errado: está fora do expediente. O robô cobre o intervalo e sai de cena na
+primeira resposta humana.
+
+### Duas sutilezas que decidem se isso funciona
+
+**A espera é medida da mensagem mais antiga não respondida**, não da última
+recebida. O webhook grava a mensagem antes de chamar o robô, então "última
+mensagem do cliente" seria sempre *agora* e o abandono jamais dispararia.
+
+**Mensagem de robô não conta como resposta.** A consulta filtra
+`userId: { not: null }`, o que só é possível porque o executor grava as
+mensagens dele sem autor. A disciplina de nunca assinar texto de robô com nome
+de gente — tomada por honestidade no histórico — é o que permite distinguir
+"foi atendido" de "recebeu um menu automático e continuou esperando".
+
+### Quem dispara
+
+O caminho normal é o cliente escrever de novo: roda no webhook, sem cron. Mas o
+lead que escreveu uma vez, foi ignorado e desistiu de insistir nunca produz um
+webhook — e é justamente o que mais importa recuperar. Uma varredura
+(`/api/cron/bot-reengage`, mesmo segredo do disparo) o encontra. Ela só trata
+`ABANDONO`: "fora de horário" numa varredura significaria acordar às duas da
+manhã alguém que não perguntou nada.
+
+Antes de o robô puxar assunto — e não antes de devolver para a fila, que é
+interno e sempre seguro — valem o opt-out do contato e a janela de envio da F5.
+
+### Configuração
+
+Tabela `bot_settings`, separada de `dispatch_settings` de propósito: a janela do
+disparo responde "quando é aceitável incomodar um desconhecido"; a do expediente
+responde "quando existe gente trabalhando". Perguntas diferentes, que mudam por
+motivos diferentes.
+
+### Grau de dependência do bot
+
+A parte que garante atendimento — devolver para a fila e avisar quem deixou
+parado — **não depende de existir fluxo publicado**. Sem bot nenhum, o lead
+abandonado ainda volta a ficar visível para a equipe inteira e alguém recebe um
+e-mail. O robô, quando existe, é o que impede o cliente de ficar no vácuo
+enquanto isso acontece.

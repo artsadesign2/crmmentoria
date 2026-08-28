@@ -2,12 +2,15 @@ import { prisma } from '@/lib/prisma';
 import { sendText } from '@/lib/evolution/server';
 import { routeConversation } from '@/lib/crm/routing';
 import { step, type BotAction, type StepInput } from './engine';
+import { aplicarRetomada, avaliarRetomada } from './reengage-service';
+import type { MotivoRetomada } from './reengage';
 import {
   abrirSessao,
   encerrarSessao,
   gravarEvento,
   salvarEstado,
   sessaoAtiva,
+  type PapelDoFluxo,
   type SessaoCarregada,
 } from './sessions';
 
@@ -33,9 +36,11 @@ export interface ResultadoBot {
   /** Falso quando não havia fluxo, ou a conversa já era de um humano. */
   atuou: boolean;
   enviadas: number;
+  /** Preenchido quando o robô voltou a uma conversa que já tinha dono. */
+  retomada: MotivoRetomada | null;
 }
 
-const NAO_ATUOU: ResultadoBot = { atuou: false, enviadas: 0 };
+const NAO_ATUOU: ResultadoBot = { atuou: false, enviadas: 0, retomada: null };
 
 /**
  * Roda o bot sobre uma mensagem que acabou de chegar.
@@ -47,10 +52,17 @@ const NAO_ATUOU: ResultadoBot = { atuou: false, enviadas: 0 };
 export async function executarBot(
   organizationId: string,
   conversationId: string,
-  texto: string
+  texto: string,
+  /**
+   * `REENGAGE` é a varredura falando: ela já devolveu a conversa para a fila,
+   * então o robô não veria mais dono nenhum aqui e cairia no fluxo de
+   * boas-vindas — dando "olá, seja bem-vindo" a quem espera resposta há dois
+   * dias. O papel viaja junto para isso não acontecer.
+   */
+  papelInicial: PapelDoFluxo = 'TRIGGER'
 ): Promise<ResultadoBot> {
   try {
-    return await rodar(organizationId, conversationId, texto);
+    return await rodar(organizationId, conversationId, texto, papelInicial);
   } catch (error) {
     console.error(`[bot] falha ao executar na conversa ${conversationId}:`, error);
     await encerrarSessao(conversationId, 'Falha do robô; conversa entregue a um atendente.').catch(
@@ -63,7 +75,8 @@ export async function executarBot(
 async function rodar(
   organizationId: string,
   conversationId: string,
-  texto: string
+  texto: string,
+  papelInicial: PapelDoFluxo
 ): Promise<ResultadoBot> {
   const conversa = await prisma.conversation.findFirst({
     where: { id: conversationId, organizationId },
@@ -78,18 +91,52 @@ async function rodar(
   if (!conversa) return NAO_ATUOU;
 
   let sessao = await sessaoAtiva(conversationId);
+  let papel: PapelDoFluxo = papelInicial;
+  let motivo: MotivoRetomada | null = null;
 
-  // Conversa que já tem dono é de um humano, ponto. O bot só entra onde
-  // ninguém entrou — e uma sessão viva numa conversa assumida é resíduo.
-  if (conversa.assignedUserId) {
-    if (sessao) await encerrarSessao(conversationId, 'Conversa assumida por um atendente.');
-    return NAO_ATUOU;
+  /**
+   * Conversa com dono é de um humano — até deixar de ser.
+   *
+   * A distribuição da F3 dá dono à conversa na primeira mensagem. Sem exceção
+   * nenhuma aqui, um atendente que entrasse de férias levaria os leads dele
+   * junto: o sistema não acusaria nada, porque do ponto de vista dele a
+   * conversa está sendo atendida. `avaliarRetomada` é essa exceção, e ela é
+   * estreita — devolve `null`, e o robô cala, em todos os casos normais.
+   *
+   * Sessão já viva numa conversa com dono é o robô cobrindo o intervalo:
+   * qualquer resposta humana a encerra (`sendCustomerMessage`), então ela só
+   * existe enquanto ninguém respondeu. Segue pelo caminho normal.
+   */
+  if (conversa.assignedUserId && !sessao) {
+    const retomada = await avaliarRetomada(organizationId, conversationId, conversa.assignedUserId);
+    if (!retomada) return NAO_ATUOU;
+
+    await aplicarRetomada(organizationId, conversationId, retomada);
+    papel = 'REENGAGE';
+    motivo = retomada.motivo;
   }
 
   if (!sessao) {
-    sessao = await abrirSessao(organizationId, conversationId);
-    if (!sessao) return NAO_ATUOU;
-    await gravarEvento(sessao.id, sessao.estado.currentNodeId, 'ENTER', 'Sessão iniciada.');
+    sessao = await abrirSessao(organizationId, conversationId, papel);
+
+    // Sem fluxo publicado o robô não fala. Mas se houve retomada, a conversa já
+    // voltou para a fila e quem a deixou parada já foi avisado — a parte que
+    // garante atendimento não depende de existir bot.
+    if (!sessao) return { atuou: motivo !== null, enviadas: 0, retomada: motivo };
+
+    // O rótulo sai de `papel`, não de `motivo`. Quando é a varredura que abre a
+    // sessão, ela já devolveu a conversa para a fila antes de chamar aqui — o
+    // dono sumiu, a avaliação acima nem roda, e `motivo` fica nulo. Rotular
+    // pelo motivo faria a trilha dizer "sessão iniciada" justamente no caso que
+    // alguém vai querer investigar depois.
+    await gravarEvento(
+      sessao.id,
+      sessao.estado.currentNodeId,
+      'ENTER',
+      papel === 'REENGAGE'
+        ? `Sessão retomada${motivo ? ` (${motivo})` : ''}.`
+        : 'Sessão iniciada.'
+    );
   }
 
   const contato = {
@@ -115,7 +162,7 @@ async function rodar(
 
     await salvarEstado(sessao.id, resultado.proximaSessao, resultado.status);
 
-    if (resultado.status !== 'RUNNING') return { atuou: true, enviadas };
+    if (resultado.status !== 'RUNNING') return { atuou: true, enviadas, retomada: motivo };
 
     // O motor parou pedindo a IA e o executor conseguiu a resposta: outra
     // passada, agora com ela em mãos.
@@ -132,16 +179,16 @@ async function rodar(
         conversa.departmentId,
         'O fluxo chegou ao nó de IA e ela não está disponível.'
       );
-      return { atuou: true, enviadas };
+      return { atuou: true, enviadas, retomada: motivo };
     }
 
     // Parou esperando o cliente. É aqui que a maioria das passadas termina.
-    return { atuou: true, enviadas };
+    return { atuou: true, enviadas, retomada: motivo };
   }
 
   // Estourou o laço externo: transferir é a saída honesta.
   await transferir(sessao, conversa.departmentId, 'O robô não conseguiu concluir o atendimento.');
-  return { atuou: true, enviadas };
+  return { atuou: true, enviadas, retomada: motivo };
 }
 
 interface Efeitos {
@@ -294,11 +341,21 @@ async function transferir(
 ): Promise<void> {
   const destino = await routeConversation(sessao.organizationId, departmentId);
 
+  const atual = await prisma.conversation.findUnique({
+    where: { id: sessao.conversationId },
+    select: { assignedUserId: true },
+  });
+
   await prisma.conversation.update({
     where: { id: sessao.conversationId },
     data: {
       departmentId: destino.departmentId,
-      assignedUserId: destino.assignedUserId,
+      // A distribuição devolve `null` quando ninguém está online — o que é o
+      // normal às duas da manhã, exatamente quando o robô de retomada está
+      // trabalhando. Sem o `??`, o nó de transferência tiraria a conversa do
+      // atendente que a tinha durante o dia, por não achar ninguém acordado
+      // para substituí-lo.
+      assignedUserId: destino.assignedUserId ?? atual?.assignedUserId ?? null,
       status: 'OPEN',
       updatedAt: new Date(),
     },

@@ -7,7 +7,7 @@ import { findOrCreateByPhone } from '@/lib/crm/contacts';
 import { formatPhoneBr } from '@/lib/crm/phone';
 import { readEvolutionEnv, verifyWebhookToken } from '@/lib/evolution/server';
 import { isOptOutMessage, optOutContact } from '@/lib/dispatch/optout';
-import { executarBot } from '@/lib/bot/executor';
+import { executarBot, type ResultadoBot } from '@/lib/bot/executor';
 import { encerrarSessao } from '@/lib/bot/sessions';
 
 /**
@@ -115,8 +115,12 @@ export async function POST(request: Request) {
      *   atendendo. O robô sai de cena — quem chega depois é sempre o humano.
      * - `contentType === 'TEXT'`: o motor lê texto. Áudio e imagem vão para um
      *   atendente, que é quem sabe o que fazer com eles.
+     *
+     * O robô decide sozinho se a conversa é dele. Ele atende as que ainda não
+     * têm dono e, desde a retomada, volta às que têm dono mas ficaram paradas
+     * ou chegaram fora do expediente — ver `lib/bot/reengage.ts`.
      */
-    let bot = { atuou: false, enviadas: 0 };
+    let bot: ResultadoBot = { atuou: false, enviadas: 0, retomada: null };
 
     if (evento.fromMe) {
       await encerrarSessao(conversa.id, 'Um atendente respondeu pelo aparelho.');
@@ -129,7 +133,7 @@ export async function POST(request: Request) {
       handled: 'MESSAGE',
       duplicated,
       optedOut: descadastrou,
-      bot: bot.atuou ? { enviadas: bot.enviadas } : null,
+      bot: bot.atuou ? { enviadas: bot.enviadas, retomada: bot.retomada } : null,
       conversationId: conversa.id,
     });
   } catch (error) {
