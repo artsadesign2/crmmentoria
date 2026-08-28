@@ -7,6 +7,8 @@ import { findOrCreateByPhone } from '@/lib/crm/contacts';
 import { formatPhoneBr } from '@/lib/crm/phone';
 import { readEvolutionEnv, verifyWebhookToken } from '@/lib/evolution/server';
 import { isOptOutMessage, optOutContact } from '@/lib/dispatch/optout';
+import { executarBot } from '@/lib/bot/executor';
+import { encerrarSessao } from '@/lib/bot/sessions';
 
 /**
  * Recebe os eventos da Evolution API e grava o que for conversa.
@@ -101,11 +103,33 @@ export async function POST(request: Request) {
       console.log(`[webhook] contato ${contact.id} descadastrado do disparo.`);
     }
 
+    /**
+     * O bot roda por último, e só sobre mensagem nova do cliente.
+     *
+     * Três condições, cada uma evitando um estrago diferente:
+     *
+     * - `!duplicated`: a Evolution reenvia webhooks. Mensagem duplicada no
+     *   histórico é feia; bot executado duas vezes manda o texto em dobro para
+     *   o cliente. A idempotência da F3 passa a proteger o robô.
+     * - `!evento.fromMe`: mensagem enviada do próprio celular é uma pessoa
+     *   atendendo. O robô sai de cena — quem chega depois é sempre o humano.
+     * - `contentType === 'TEXT'`: o motor lê texto. Áudio e imagem vão para um
+     *   atendente, que é quem sabe o que fazer com eles.
+     */
+    let bot = { atuou: false, enviadas: 0 };
+
+    if (evento.fromMe) {
+      await encerrarSessao(conversa.id, 'Um atendente respondeu pelo aparelho.');
+    } else if (!duplicated && evento.contentType === 'TEXT') {
+      bot = await executarBot(organizationId, conversa.id, evento.content);
+    }
+
     return NextResponse.json({
       ok: true,
       handled: 'MESSAGE',
       duplicated,
       optedOut: descadastrou,
+      bot: bot.atuou ? { enviadas: bot.enviadas } : null,
       conversationId: conversa.id,
     });
   } catch (error) {

@@ -4,6 +4,7 @@ import { sendText } from '@/lib/evolution/server';
 import type { SessionPayload } from '@/lib/auth/jwt';
 import { formatPhoneBr } from './phone';
 import { applySignature, signatureEnabled } from './signature';
+import { encerrarSessao } from '@/lib/bot/sessions';
 import { conversationVisibilityFilter, sessionDepartmentId, messageToDTO } from './conversations';
 import type { InboundMessage } from './inbound';
 import type { MessageDTO } from './inbox-types';
@@ -152,6 +153,10 @@ export async function sendCustomerMessage(
     autor?.name ?? null,
     signatureEnabled(conversa.organization.features)
   );
+
+  // O atendente entrou: o robô sai. Fazer isto ANTES de enviar evita a janela
+  // em que os dois responderiam a mesma mensagem do cliente.
+  await encerrarSessao(conversationId, 'Um atendente assumiu a conversa.');
 
   const gravada = await prisma.message.create({
     data: {
