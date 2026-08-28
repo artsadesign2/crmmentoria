@@ -192,7 +192,7 @@ export function sessaoInicial(grafo: BotGraph): BotSessionState;
     transfere.
   - Aresta apontando para nó inexistente transfere com motivo, não lança.
   - Grafo sem START devolve `nodeInicial === null` e `step` transfere.
-- [ ] Rodar: falham. Implementar. Rodar: verde.
+- [x] Rodar: falham. Implementar. Rodar: verde.
 - [ ] `npx tsc --noEmit`
 - [ ] Commit: `feat(bot): add the pure execution engine`
 
@@ -372,29 +372,37 @@ export async function saveFlow(session, input: { id?: string; name: string;
   graph: BotGraph }): Promise<FlowDTO>;                      // Administrador+
 export async function publishFlow(session, id): Promise<
   { ok: true; version: number } | { ok: false; problemas: ProblemaGrafo[] }>;
-export async function setTriggerFlow(session, id): Promise<void>;
+export async function setFlowRole(session, papel: PapelDoFluxo,
+  flowId: string | null): Promise<void>;   // null tira o papel de todos
 export async function deleteFlow(session, id): Promise<boolean>;
 ```
 
-- [ ] Testes de `validateGraph` primeiro:
+- [x] Testes de `validateGraph` primeiro:
   - grafo vazio → problema "sem nó de início";
   - dois START → problema;
   - nó inalcançável a partir do START → problema apontando o `nodeId`;
-  - QUESTION sem opções → problema;
+  - ~~QUESTION sem opções → problema~~ — **corrigido na execução**: o motor
+    trata pergunta sem opções como campo livre de propósito (é assim que se
+    pede um e-mail). O defeito é ela não levar a lugar nenhum, e é isso que a
+    regra verifica;
   - QUESTION com opção sem aresta correspondente → problema;
   - aresta apontando para nó inexistente → problema;
   - ciclo sem saída alcançável → problema;
   - grafo do menu de triagem (o da Tarefa 3) → **zero problemas**.
-- [ ] Rodar: falham. Implementar. Rodar: verde.
-- [ ] `publishFlow` recusa publicar com problemas e devolve a lista — publicar é
+- [x] Rodar: falham. Implementar. Rodar: verde. (16 testes)
+- [x] `publishFlow` recusa publicar com problemas e devolve a lista — publicar é
       o único momento de barrar um fluxo quebrado antes de ele alcançar um
       cliente.
-- [ ] Publicar copia o grafo para `bot_flow_versions` com `version + 1` e nunca
+- [x] Publicar copia o grafo para `bot_flow_versions` com `version + 1` e nunca
       altera versão anterior.
-- [ ] `setTriggerFlow` desmarca o gatilho anterior na mesma transação: o índice
-      parcial da Tarefa 1 recusaria dois.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(bot): validate graphs and publish immutable versions`
+- [x] `setFlowRole` desmarca o papel anterior na mesma transação: os índices
+      parciais recusariam dois. Recusa pôr rascunho no ar — o robô filtra por
+      PUBLISHED, então seria silêncio com aparência de sucesso.
+- [x] `deleteFlow` recusa apagar fluxo no ar ou que já atendeu alguém: as FKs
+      são CASCADE e levariam junto sessões e eventos.
+- [x] Verificação contra o banco real: 29/29.
+- [x] `npx tsc --noEmit`
+- [x] Commit: `feat(bot): validate graphs and publish immutable versions`
 
 ---
 
