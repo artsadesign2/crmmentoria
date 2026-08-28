@@ -77,3 +77,20 @@ export function clockTime(iso: string | null | undefined): string {
 
   return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
+
+/**
+ * Duração de espera por extenso, para uma frase.
+ *
+ * Diferente de `relativeTime`, que é o "26h" curto do card: aqui o texto entra
+ * numa frase que uma pessoa lê no WhatsApp ou no e-mail, então precisa
+ * concordar em número — "1 hora", nunca "1 horas".
+ */
+export function esperaLegivel(horas: number): string {
+  const inteiras = Math.max(1, Math.round(horas));
+
+  if (inteiras === 1) return '1 hora';
+  if (inteiras < 48) return `${inteiras} horas`;
+
+  const dias = Math.floor(inteiras / 24);
+  return dias === 1 ? '1 dia' : `${dias} dias`;
+}

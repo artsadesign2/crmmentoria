@@ -54,6 +54,9 @@ export interface EntradaBotSettings {
   officeStartHour?: number;
   officeEndHour?: number;
   timeZone?: string;
+  /** Rota principal do aviso: o WhatsApp da empresa para o celular do atendente. */
+  notifyByWhatsapp?: boolean;
+  /** Reserva, usada quando o atendente não tem telefone ou o envio falha. */
   notifyByEmail?: boolean;
 }
 
@@ -98,6 +101,11 @@ export async function saveBotSettings(
     officeStartHour: proposta.officeStartHour,
     officeEndHour: proposta.officeEndHour,
     timeZone: proposta.timeZone,
+    // Os dois avisos ficam fora de `RetomadaConfig` porque a regra pura não
+    // decide por onde avisar — só se há motivo para avisar.
+    ...(entrada.notifyByWhatsapp === undefined
+      ? {}
+      : { notifyByWhatsapp: entrada.notifyByWhatsapp }),
     ...(entrada.notifyByEmail === undefined ? {} : { notifyByEmail: entrada.notifyByEmail }),
   };
 
@@ -108,16 +116,6 @@ export async function saveBotSettings(
   });
 
   return proposta;
-}
-
-/** Verdadeiro quando a organização quer ser avisada por e-mail do abandono. */
-export async function notificaPorEmail(organizationId: string): Promise<boolean> {
-  const salva = await prisma.botSettings.findUnique({
-    where: { organizationId },
-    select: { notifyByEmail: true },
-  });
-
-  return salva?.notifyByEmail ?? true;
 }
 
 /** Campo de formulário chega como string; `NaN` não pode virar coluna. */

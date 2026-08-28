@@ -1,9 +1,7 @@
 import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email';
-import { leadParadoEmail } from '@/lib/email/templates';
-import { formatPhoneBr } from '@/lib/crm/phone';
 import { decidirRetomada, type EstadoConversa, type Retomada } from './reengage';
-import { getBotSettings, notificaPorEmail } from './settings';
+import { avisarAtendente, type RotaAviso } from './notify';
+import { getBotSettings } from './settings';
 
 /**
  * A parte suja da retomada: descobrir no banco o que a regra pura precisa
@@ -116,11 +114,20 @@ export async function aplicarRetomada(
     });
   }
 
-  await registrarNaTrilha(organizationId, conversa.contactId, retomada);
+  // Avisar antes de registrar, para a trilha poder dizer por onde o aviso foi.
+  // "O robô retomou" sem essa informação deixa a pergunta que sempre vem
+  // depois — "e o atendente ficou sabendo?" — sem resposta no histórico.
+  const rota =
+    retomada.notifica && donoAnterior
+      ? await avisarAtendente({
+          organizationId,
+          userId: donoAnterior,
+          contato: conversa.contact,
+          horasParado: retomada.horasParado,
+        })
+      : 'NENHUMA';
 
-  if (retomada.notifica && donoAnterior) {
-    await avisarAtendente(organizationId, donoAnterior, conversa.contact, retomada);
-  }
+  await registrarNaTrilha(organizationId, conversa.contactId, retomada, rota);
 }
 
 const TITULO: Record<Retomada['motivo'], string> = {
@@ -128,14 +135,27 @@ const TITULO: Record<Retomada['motivo'], string> = {
   FORA_DE_HORARIO: 'Robô cobriu o atendimento fora do expediente',
 };
 
+const AVISO: Record<RotaAviso, string> = {
+  WHATSAPP: 'atendente avisado pelo WhatsApp',
+  EMAIL: 'atendente avisado por e-mail',
+  NENHUMA: 'não foi possível avisar o atendente',
+};
+
 async function registrarNaTrilha(
   organizationId: string,
   contactId: string,
-  retomada: RetomadaAvaliada
+  retomada: RetomadaAvaliada,
+  rota: RotaAviso
 ): Promise<void> {
   try {
-    const horas = Math.round(retomada.horasParado);
-    const detalhe = retomada.motivo === 'ABANDONO' ? ` (${horas}h de espera)` : '';
+    const partes: string[] = [];
+
+    if (retomada.motivo === 'ABANDONO') {
+      partes.push(`${Math.round(retomada.horasParado)}h de espera`);
+      partes.push(AVISO[rota]);
+    }
+
+    const detalhe = partes.length > 0 ? ` (${partes.join('; ')})` : '';
 
     await prisma.activityLog.create({
       data: {
@@ -150,34 +170,4 @@ async function registrarNaTrilha(
     // Perder uma linha de histórico não pode impedir o atendimento.
     console.error('[retomada] falha ao registrar na trilha:', error);
   }
-}
-
-async function avisarAtendente(
-  organizationId: string,
-  userId: string,
-  contato: { name: string; phone: string | null },
-  retomada: RetomadaAvaliada
-): Promise<void> {
-  if (!(await notificaPorEmail(organizationId))) return;
-
-  const atendente = await prisma.user.findFirst({
-    where: { id: userId, organizationId },
-    select: { name: true, email: true, status: true },
-  });
-
-  // Cadastro inativo é metade do motivo de a conversa ter parado. Mandar
-  // e-mail para quem saiu da empresa não recupera lead nenhum.
-  if (!atendente || atendente.status !== 'ATIVO') return;
-
-  const base = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'http://localhost:3000';
-
-  const conteudo = leadParadoEmail({
-    atendente: atendente.name,
-    contato: contato.name,
-    telefone: contato.phone ? formatPhoneBr(contato.phone) : null,
-    horasParado: retomada.horasParado,
-    url: `${base.replace(/\/$/, '')}/inbox`,
-  });
-
-  await sendEmail({ to: atendente.email, ...conteudo });
 }

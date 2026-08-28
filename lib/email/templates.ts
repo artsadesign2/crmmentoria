@@ -1,3 +1,4 @@
+import { esperaLegivel } from '@/lib/crm/sla';
 /**
  * Conteúdo dos e-mails transacionais.
  *
@@ -73,13 +74,6 @@ export function passwordResetEmail(code: string, nome: string): EmailContent {
   return { subject, html, text };
 }
 
-/** Horas em texto curto: "26 horas", "3 dias". */
-function esperaLegivel(horas: number): string {
-  const inteiras = Math.max(1, Math.round(horas));
-  if (inteiras < 48) return `${inteiras} horas`;
-
-  return `${Math.floor(inteiras / 24)} dias`;
-}
 
 export interface LeadParadoParams {
   /** Quem estava com a conversa. */

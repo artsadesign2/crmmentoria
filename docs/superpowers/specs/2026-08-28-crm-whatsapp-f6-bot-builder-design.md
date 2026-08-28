@@ -298,7 +298,7 @@ e tratá-las igual seria punir alguém por dormir:
 |---|---|---|
 | Quando | cliente esperando resposta humana há mais de N horas (padrão 24) | mensagem chega fora do expediente |
 | Devolve para a fila | sim | **não** |
-| Notifica por e-mail | sim, quem a deixou parada | não |
+| Avisa quem a deixou parada | sim | não |
 | Trava anti-insistência | uma retomada por período | não se aplica |
 
 `FORA_DE_HORARIO` não tira a conversa de ninguém porque o atendente não fez nada
@@ -328,6 +328,41 @@ manhã alguém que não perguntou nada.
 
 Antes de o robô puxar assunto — e não antes de devolver para a fila, que é
 interno e sempre seguro — valem o opt-out do contato e a janela de envio da F5.
+
+
+### Por onde o aviso chega
+
+WhatsApp primeiro, e-mail como reserva. A ordem não é preferência de estilo: o
+atendente passa o dia no WhatsApp da empresa e entra no e-mail corporativo de
+vez em quando. Um aviso que chega onde a pessoa não está é o mesmo que não
+avisar, com o agravante de o sistema registrar que avisou. O e-mail cobre os
+dois casos em que o WhatsApp não serve — atendente sem telefone cadastrado, ou
+envio recusado pela Evolution. A rota usada fica registrada na trilha do
+contato, para a pergunta que sempre vem depois ("e o atendente ficou sabendo?")
+ter resposta no histórico.
+
+O envio sai pelo **mesmo número central** que fala com os clientes, para o
+número pessoal em `users.phone`. A distribuição entre atendentes não muda em
+nada: continua sendo usuários do sistema disputando as conversas de um número
+só.
+
+### O filtro de número interno
+
+Isto **precisou** vir junto, e não é um detalhe. A Evolution dispara
+`messages.upsert` também para o que a própria instância envia, e nesse evento o
+`remoteJid` é o **destinatário**. Enquanto o sistema só falava com clientes isso
+era inofensivo. A partir do momento em que ele avisa o atendente, sem filtro o
+primeiro aviso criaria um contato com o nome do atendente, uma conversa
+entrando na distribuição e o menu de triagem sendo oferecido à própria equipe —
+o funil da empresa se encheria de gente da empresa.
+
+`isNumeroInterno` descarta o evento antes de gravar qualquer coisa, e cobre
+também a resposta: quem responder "ok" ao aviso não vira lead. A comparação
+atravessa o nono dígito, porque o mesmo celular aparece com e sem o 9 conforme
+quem escreveu o cadastro.
+
+**Consequência assumida:** um atendente não pode ser cliente da empresa pelo
+mesmo número.
 
 ### Configuração
 

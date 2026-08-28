@@ -5,6 +5,7 @@ import { findOrCreateConversation } from '@/lib/crm/conversations';
 import { recordInboundMessage } from '@/lib/crm/messages';
 import { findOrCreateByPhone } from '@/lib/crm/contacts';
 import { formatPhoneBr } from '@/lib/crm/phone';
+import { isNumeroInterno } from '@/lib/crm/internal-phones';
 import { readEvolutionEnv, verifyWebhookToken } from '@/lib/evolution/server';
 import { isOptOutMessage, optOutContact } from '@/lib/dispatch/optout';
 import { executarBot, type ResultadoBot } from '@/lib/bot/executor';
@@ -68,6 +69,23 @@ export async function POST(request: Request) {
     if (!organizationId) {
       console.error('[webhook] nenhuma organizacao cadastrada; evento descartado.');
       return NextResponse.json({ ok: true, handled: 'NO_ORG' });
+    }
+
+    /**
+     * Número da própria equipe: descartar antes de gravar qualquer coisa.
+     *
+     * A Evolution dispara `messages.upsert` também para o que a instância
+     * **envia**, e nesse evento o `remoteJid` é o **destinatário**. Enquanto o
+     * sistema só falava com clientes isso era inofensivo. Desde que o robô
+     * avisa o atendente pelo WhatsApp, sem este filtro o primeiro aviso criaria
+     * um contato com o nome do atendente, uma conversa entrando na
+     * distribuição, e o menu de triagem sendo oferecido à própria equipe.
+     *
+     * Cobre também a resposta: quem responder "ok" ao aviso não vira lead.
+     */
+    if (await isNumeroInterno(organizationId, evento.phone)) {
+      console.log('[webhook] numero da equipe; nada gravado.');
+      return NextResponse.json({ ok: true, handled: 'INTERNAL' });
     }
 
     const { contact } = await findOrCreateByPhone(

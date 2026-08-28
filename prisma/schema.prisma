@@ -997,6 +997,10 @@ model BotSettings {
   officeStartHour    Int      @default(9) @map("office_start_hour")
   officeEndHour      Int      @default(18) @map("office_end_hour")
   timeZone           String   @default("America/Sao_Paulo") @map("time_zone") @db.VarChar(60)
+  /// Aviso pelo WhatsApp da empresa para o numero pessoal do atendente. E onde
+  /// ele esta o dia inteiro, entao e a rota principal.
+  notifyByWhatsapp   Boolean  @default(true) @map("notify_by_whatsapp")
+  /// Reserva: vale quando o atendente nao tem telefone ou o envio falha.
   notifyByEmail      Boolean  @default(true) @map("notify_by_email")
   updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
 

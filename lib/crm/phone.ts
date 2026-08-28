@@ -62,3 +62,39 @@ export function formatPhoneBr(e164: string): string {
 export function phoneFromWhatsAppJid(jid: string): string {
   return normalizePhone((jid ?? '').split('@')[0] ?? '');
 }
+
+/**
+ * Se dois números são a mesma pessoa.
+ *
+ * Existe por causa do nono dígito. O mesmo celular aparece como
+ * `5511987654321` e como `551187654321` dependendo de quem escreveu o cadastro
+ * e de como o WhatsApp devolveu o JID, e a comparação literal diria que são
+ * duas pessoas.
+ *
+ * A tolerância vale **só** para números brasileiros. Fora do Brasil, "mesmo DDD
+ * e mesmos 8 últimos dígitos" não quer dizer nada, e um falso positivo aqui é
+ * caro: quem chama isto trata número interno como mensagem a descartar, então
+ * confundir um cliente com um atendente faria a mensagem do cliente sumir.
+ */
+export function mesmoTelefone(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = normalizePhone(a ?? '');
+  const y = normalizePhone(b ?? '');
+
+  if (!x || !y) return false;
+  if (x === y) return true;
+
+  const cx = chaveBr(x);
+  const cy = chaveBr(y);
+
+  return cx !== null && cx === cy;
+}
+
+/** DDD + os 8 dígitos finais, ou `null` quando o número não é brasileiro. */
+function chaveBr(e164: string): string | null {
+  if (!e164.startsWith(DDI_BR)) return null;
+
+  const nacional = e164.slice(DDI_BR.length);
+  if (!BR_NACIONAL.includes(nacional.length)) return null;
+
+  return nacional.slice(0, 2) + nacional.slice(2).slice(-8);
+}

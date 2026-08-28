@@ -298,7 +298,7 @@ export async function criarFluxoTriagem(organizationId: string, userId: string):
 |---|---|---|
 | Quando | cliente esperando resposta humana há mais de N horas (padrão 24) | mensagem chega fora do expediente configurado |
 | Devolve para a fila | **sim** — qualquer um da equipe pode assumir | **não** — o atendente não fez nada errado |
-| Notifica por e-mail | **sim**, quem a deixou parada | não |
+| Avisa quem a deixou parada | **sim** | não |
 | Trava anti-insistência | sim, uma por período | não — responder quem escreveu nunca é insistência |
 
 - [x] Migração: `bot_flows.is_reengage` + índice único parcial
@@ -327,6 +327,15 @@ export async function criarFluxoTriagem(organizationId: string, userId: string):
 - [x] Verificação contra o banco real: 26/26, Evolution apontada para porta
       morta, banco devolvido ao estado inicial.
 - [x] Commit: `feat(bot): retomar lead abandonado e cobrir fora do expediente`
+- [x] **Aviso pelo WhatsApp** (pedido depois): sai pelo número central para
+      `users.phone`; o e-mail vira reserva, para quem não tem telefone ou
+      quando a Evolution recusa. A rota usada entra na trilha do contato.
+- [x] `isNumeroInterno` no webhook, **obrigatório junto com o aviso**: a
+      Evolution ecoa o que a instância envia com o `remoteJid` do
+      DESTINATÁRIO, então sem o filtro o primeiro aviso viraria um contato com
+      o nome do atendente e o menu de triagem seria oferecido à equipe.
+- [x] Verificação: 16/16 com uma Evolution falsa local, 8/8 na rota HTTP real.
+- [x] Commit: `feat(bot): avisar o atendente pelo WhatsApp e ignorar numeros internos`
 
 ---
 
