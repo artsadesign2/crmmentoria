@@ -81,6 +81,22 @@ export function NewCampaignModal({ onClose, onCreate }: NewCampaignModalProps) {
 
   const desconhecidos = useMemo(() => placeholdersDesconhecidos(mensagem), [mensagem]);
 
+  /**
+   * Quantos dos escolhidos não têm empresa cadastrada.
+   *
+   * Sem este aviso, "aqui é da {{empresa}}" chega como "aqui é da ." para quem
+   * não tem — uma frase quebrada que só aparece depois do envio, e só para
+   * algumas pessoas.
+   */
+  const semEmpresa = useMemo(() => {
+    if (!/\{\{\s*empresa\s*\}\}/i.test(mensagem)) return 0;
+
+    return selecionados.filter((id) => {
+      const contato = contatos.find((c) => c.id === id);
+      return contato ? !contato.company?.trim() : false;
+    }).length;
+  }, [mensagem, selecionados, contatos]);
+
   const alternar = (id: string) => {
     setSelecionados((atual) =>
       atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]
@@ -164,6 +180,17 @@ export function NewCampaignModal({ onClose, onCreate }: NewCampaignModalProps) {
               <span>
                 {desconhecidos.map((d) => `{{${d}}}`).join(', ')} não será substituído — vai sair
                 assim mesmo na mensagem.
+              </span>
+            </p>
+          )}
+
+          {semEmpresa > 0 && (
+            <p className="flex items-start gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] font-semibold text-amber-300">
+              <AlertTriangle size={13} className="mt-px shrink-0" />
+              <span>
+                {semEmpresa} {semEmpresa === 1 ? 'contato não tem' : 'contatos não têm'} empresa
+                cadastrada. Para {semEmpresa === 1 ? 'ele' : 'eles'}, {'{{empresa}}'} vira vazio e a
+                frase fica incompleta.
               </span>
             </p>
           )}
