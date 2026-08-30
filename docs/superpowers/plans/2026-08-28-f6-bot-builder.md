@@ -584,29 +584,75 @@ modificar `components/sidebar.tsx`.
 
 ## Tarefa 9 — Verificação ponta a ponta
 
-- [ ] `npx vitest run` — verdes, incluindo os 205 anteriores.
-- [ ] `tsc --noEmit` código de saída 0, `npm run build` passando.
-- [ ] **Um dev server só.**
-- [ ] Contra o banco real, com a Evolution apontada para porta morta (nenhuma
+- [x] `npx vitest run` — verdes, incluindo os 205 anteriores.
+- [x] `tsc --noEmit` código de saída 0, `npm run build` passando.
+- [x] **Um dev server só.**
+- [x] Contra o banco real, com a Evolution apontada para porta morta (nenhuma
       mensagem sai da máquina, como na F5):
-  - [ ] Webhook de contato novo → bot abre sessão e envia o menu.
-  - [ ] Resposta "2" → transfere para o setor certo e **encerra a sessão**.
-  - [ ] Resposta inválida ("abc") → repete o menu, não transfere, não cala.
-  - [ ] Reenvio do mesmo `externalId` → `duplicated`, bot **não** executa de
+  - [x] Webhook de contato novo → bot abre sessão e envia o menu.
+  - [x] Resposta "2" → transfere para o setor certo e **encerra a sessão**.
+  - [x] Resposta inválida ("abc") → repete o menu, não transfere, não cala.
+  - [x] Reenvio do mesmo `externalId` → `duplicated`, bot **não** executa de
         novo; nenhuma mensagem a mais.
-  - [ ] Nó de captura grava em `contacts.custom_fields` sem apagar o que havia.
-  - [ ] Resposta humana (`sendCustomerMessage`) encerra a sessão; a mensagem
+  - [x] Nó de captura grava em `contacts.custom_fields` sem apagar o que havia.
+  - [x] Resposta humana (`sendCustomerMessage`) encerra a sessão; a mensagem
         seguinte do cliente **não** aciona o bot.
-  - [ ] Grafo com ciclo → para em `TETO_NOS`, transfere, grava o motivo. Contar
+  - [x] Grafo com ciclo → para em `TETO_NOS`, transfere, grava o motivo. Contar
         as mensagens enviadas: no máximo `TETO_MENSAGENS`.
-  - [ ] Editar e republicar o fluxo com uma sessão em andamento → a sessão
+  - [x] Editar e republicar o fluxo com uma sessão em andamento → a sessão
         continua na versão antiga.
-  - [ ] Publicar fluxo inválido → 422 com problemas, nada publicado.
-  - [ ] Toda mensagem do bot tem `isFromBot: true` e **nenhuma assinatura**.
-  - [ ] Nó de IA com base vazia → transfere sem chamar o Gemini.
-  - [ ] Nó de IA com base preenchida e pergunta sensível ("qual o preço?") →
+  - [x] Publicar fluxo inválido → 422 com problemas, nada publicado.
+  - [x] Toda mensagem do bot tem `isFromBot: true` e **nenhuma assinatura**.
+  - [x] Nó de IA com base vazia → transfere sem chamar o Gemini.
+  - [x] Nó de IA com base preenchida e pergunta sensível ("qual o preço?") →
         transfere.
-  - [ ] `/atendimento-automatico` responde.
-- [ ] Remover os dados de verificação e conferir as contagens.
-- [ ] Registrar o que **não** foi verificado.
-- [ ] Commit final e relatório consolidado.
+  - [x] `/atendimento-automatico` responde.
+- [x] Remover os dados de verificação e conferir as contagens.
+- [x] Registrar o que **não** foi verificado.
+- [x] Commit final e relatório consolidado.
+
+### O que a verificação encontrou
+
+**Um defeito de verdade, e ele importava.** Depois de um atendente responder,
+`sendCustomerMessage` encerrava a sessão — mas encerrar não bastava. A mensagem
+seguinte do cliente abria uma sessão **nova**, e o robô cumprimentava com "Você
+chegou ao atendimento da nossa equipe" quem acabara de conversar com uma pessoa,
+passando a responder por cima do colega. Corrigido com uma guarda em
+`executarBot`: conversa em que uma pessoa já falou não recebe o fluxo de
+boas-vindas. Voltar a ela é papel da retomada, que tem regra própria.
+
+Junto veio o caso vizinho: a cobertura fora do expediente disparava mesmo com
+um atendente respondendo naquele minuto — um atendente que trabalha às 22h de
+domingo está trabalhando. `decidirRetomada` passou a exigir que nenhuma pessoa
+tenha escrito nos últimos 30 minutos, e três testes puros cobrem a regra.
+
+**Três asserções minhas estavam erradas, não o código:**
+
+1. A sessão do grafo em ciclo termina como `ABORTED`, não `HANDED_OFF` — e é o
+   rótulo certo: `types.ts` separa "entrega planejada" de "o robô bateu num
+   teto" justamente para dar para achar um fluxo abortando sem ninguém
+   reclamar. A conversa foi para um setor de gente do mesmo jeito.
+2. A trilha do ciclo diz "mensagens demais", não "ciclo": `TETO_MENSAGENS` (5)
+   dispara antes de `TETO_NOS` (25).
+3. A tela não traz o título no HTML do servidor. Ela é montada no navegador —
+   o servidor entrega o esqueleto com o indicador de carregamento.
+
+### O que **não** foi verificado
+
+- **Entrega real no WhatsApp.** A Evolution ficou apontada para
+  `127.0.0.1:9` do começo ao fim, de propósito. A verificação conta quantas
+  mensagens ficaram `SENT`: zero.
+- **O comportamento visual do canvas e do simulador.** Não houve automação de
+  navegador. Arrastar nós, editar no inspetor e conversar no simulador foram
+  escritos e compilam, mas não foram exercitados por um teste.
+- **O cron da Vercel** rodando de fato no horário. A função da varredura foi
+  verificada em processo (16/16 no commit da retomada).
+- **Envio de e-mail pelo Resend.** `RESEND_API_KEY` não está no ambiente; o
+  caminho cai no log, e é isso que foi observado.
+- **O aviso chegando no celular de um atendente de verdade.** Foi verificado
+  contra uma Evolution falsa local, que registrou o número de destino e o texto.
+- **Isolamento entre organizações nos fluxos.** Só existe uma organização no
+  banco, então a asserção foi pulada em vez de fingida.
+- **Corrida entre dois webhooks simultâneos** na mesma conversa. O índice único
+  parcial `bot_sessions_active_key` existe e `abrirSessao` trata a colisão,
+  mas duas execuções não foram disputadas de fato.

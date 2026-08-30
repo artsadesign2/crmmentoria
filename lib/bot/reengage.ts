@@ -65,7 +65,25 @@ export interface EstadoConversa {
   esperandoDesde: Date | null;
   /** Início da última sessão de robô nesta conversa. Nulo se nunca houve. */
   ultimaRetomada: Date | null;
+  /**
+   * Quando uma **pessoa** escreveu por último nesta conversa.
+   *
+   * Serve para saber se há gente por perto agora, o que é diferente de saber
+   * se é horário comercial. Um atendente que responde às 22h de domingo está
+   * trabalhando, e o robô não tem o que fazer ali.
+   */
+  ultimaRespostaHumana: Date | null;
 }
+
+/**
+ * Quanto tempo uma resposta humana mantém o robô fora da conversa.
+ *
+ * Curto de propósito: é "esta pessoa está no teclado agora", não "esta pessoa
+ * cuida deste cliente". Passada a janela, a cobertura fora do expediente volta
+ * a valer — o atendente que respondeu às 19h não fica de plantão a noite toda
+ * por causa disso.
+ */
+export const JANELA_HUMANO_PRESENTE_MS = 30 * 60_000;
 
 export interface Retomada {
   motivo: MotivoRetomada;
@@ -99,11 +117,22 @@ export function decidirRetomada(
   // A trava de insistência não se aplica aqui de propósito: responder quem
   // acabou de escrever nunca é insistência — foi o cliente que procurou a
   // empresa. Duas noites seguidas precisam ser cobertas.
-  if (!dentroDoExpediente(agora, config)) {
+  //
+  // Já a presença de um humano se aplica, e é o que impede o pior caso: um
+  // atendente que responde às 22h de domingo está trabalhando, e o robô entrar
+  // por cima dele seria falar em duas vozes com o mesmo cliente.
+  if (!dentroDoExpediente(agora, config) && !humanoPresente(estado, agora)) {
     return { motivo: 'FORA_DE_HORARIO', devolveParaFila: false, notifica: false };
   }
 
   return null;
+}
+
+/** Uma pessoa escreveu aqui há pouco. */
+export function humanoPresente(estado: EstadoConversa, agora: Date): boolean {
+  if (!estado.ultimaRespostaHumana) return false;
+
+  return agora.getTime() - estado.ultimaRespostaHumana.getTime() < JANELA_HUMANO_PRESENTE_MS;
 }
 
 function abandonada(estado: EstadoConversa, agora: Date, config: RetomadaConfig): boolean {

@@ -51,7 +51,29 @@ export async function estadoDaConversa(
     assignedUserId,
     esperandoDesde: esperando?.createdAt ?? null,
     ultimaRetomada: ultimaSessao?.startedAt ?? null,
+    ultimaRespostaHumana: ultimaHumana?.createdAt ?? null,
   };
+}
+
+/**
+ * Se alguma pessoa já escreveu nesta conversa.
+ *
+ * O fluxo-gatilho existe para conversa que ninguém tocou. Depois que um
+ * atendente respondeu, abrir uma sessão nova daria "Olá! Você chegou ao
+ * atendimento da nossa equipe" a quem acabou de falar com um humano — e o robô
+ * passaria a disputar a conversa com o colega, um respondendo por cima do
+ * outro.
+ *
+ * Quando o robô precisa voltar a uma conversa dessas, o caminho é a retomada,
+ * que tem regra própria e diz por que está voltando.
+ */
+export async function houveRespostaHumana(conversationId: string): Promise<boolean> {
+  const humana = await prisma.message.findFirst({
+    where: { conversationId, direction: 'OUTBOUND', userId: { not: null } },
+    select: { id: true },
+  });
+
+  return humana !== null;
 }
 
 export interface RetomadaAvaliada extends Retomada {

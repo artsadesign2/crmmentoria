@@ -34,6 +34,7 @@ function estado(over: Partial<EstadoConversa> = {}): EstadoConversa {
     assignedUserId: 'atendente-1',
     esperandoDesde: null,
     ultimaRetomada: null,
+    ultimaRespostaHumana: null,
     ...over,
   };
 }
@@ -166,6 +167,35 @@ describe('decidirRetomada', () => {
     // procurou a empresa. Duas noites seguidas precisam ser cobertas.
     const ontemANoite = estado({ ultimaRetomada: horasAntes(MADRUGADA, 24) });
     expect(decidirRetomada(ontemANoite, MADRUGADA, CONFIG)?.motivo).toBe('FORA_DE_HORARIO');
+  });
+
+  it('atendente que acabou de responder mantém o robô fora, mesmo de madrugada', () => {
+    // O caso que a verificação ponta a ponta pegou: um atendente respondendo
+    // às 22h de domingo está trabalhando. O robô entrar por cima faria a
+    // empresa falar em duas vozes com o mesmo cliente.
+    const acabouDeResponder = estado({
+      ultimaRespostaHumana: new Date(MADRUGADA.getTime() - 2 * 60_000),
+    });
+
+    expect(decidirRetomada(acabouDeResponder, MADRUGADA, CONFIG)).toBeNull();
+  });
+
+  it('resposta humana antiga não segura a cobertura da madrugada', () => {
+    // Quem respondeu às 19h não fica de plantão a noite toda por causa disso.
+    const respondeuCedo = estado({ ultimaRespostaHumana: horasAntes(MADRUGADA, 3) });
+
+    expect(decidirRetomada(respondeuCedo, MADRUGADA, CONFIG)?.motivo).toBe('FORA_DE_HORARIO');
+  });
+
+  it('humano presente NÃO impede o abandono de disparar', () => {
+    // Aqui a presença é irrelevante: se o cliente está esperando há 40h, o
+    // atendente pode ter escrito para outra pessoa um minuto atrás.
+    const parada = estado({
+      esperandoDesde: horasAntes(EXPEDIENTE, 40),
+      ultimaRespostaHumana: new Date(EXPEDIENTE.getTime() - 60_000),
+    });
+
+    expect(decidirRetomada(parada, EXPEDIENTE, CONFIG)?.motivo).toBe('ABANDONO');
   });
 
   it('desligada, a retomada não acontece em nenhuma hipótese', () => {

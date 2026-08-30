@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { sendText } from '@/lib/evolution/server';
 import { routeConversation } from '@/lib/crm/routing';
 import { step, type BotAction, type StepInput } from './engine';
-import { aplicarRetomada, avaliarRetomada } from './reengage-service';
+import { aplicarRetomada, avaliarRetomada, houveRespostaHumana } from './reengage-service';
 import { responderComIa } from './ai-node';
 import type { MotivoRetomada } from './reengage';
 import {
@@ -115,6 +115,21 @@ async function rodar(
     await aplicarRetomada(organizationId, conversationId, retomada);
     papel = 'REENGAGE';
     motivo = retomada.motivo;
+  }
+
+  /**
+   * Conversa em que uma pessoa já falou não recebe o fluxo de boas-vindas.
+   *
+   * `sendCustomerMessage` encerra a sessão quando o atendente responde, mas
+   * encerrar não basta: sem esta guarda, a mensagem seguinte do cliente abriria
+   * uma sessão **nova** e o robô cumprimentaria quem acabou de conversar com
+   * um humano — passando a responder por cima do colega.
+   *
+   * Voltar a uma conversa dessas é papel da retomada, que tem regra própria e
+   * registra por que voltou.
+   */
+  if (!sessao && papel === 'TRIGGER' && (await houveRespostaHumana(conversationId))) {
+    return NAO_ATUOU;
   }
 
   if (!sessao) {
