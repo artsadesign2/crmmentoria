@@ -484,20 +484,35 @@ export async function responderComIa(organizationId: string, conversationId: str
 **Consome:** `listFlows`, `saveFlow`, `publishFlow`, `setTriggerFlow`,
 `deleteFlow` da Tarefa 4; `step` da Tarefa 2.
 
-- [ ] `GET /api/crm/bot/flows` — lista. Qualquer papel com `viewCRM`.
-- [ ] `POST /api/crm/bot/flows` — cria. Administrador+.
-- [ ] `GET|PATCH|DELETE /api/crm/bot/flows/[id]` — 404 quando não existe **ou**
+- [x] `GET /api/crm/bot/flows` — lista. Qualquer papel com `viewCRM`.
+- [x] `POST /api/crm/bot/flows` — cria. Administrador+.
+- [x] `GET|PATCH|DELETE /api/crm/bot/flows/[id]` — 404 quando não existe **ou**
       é de outra organização.
-- [ ] `POST /api/crm/bot/flows/[id]/publish` — publica; **422** com a lista de
+- [x] `POST /api/crm/bot/flows/[id]/publish` — publica; **422** com a lista de
       problemas quando a validação recusa (não é erro do servidor, e não é
       "não autorizado": é o fluxo que está quebrado).
-- [ ] `POST /api/crm/bot/simulate` — roda `step` sobre um grafo enviado no
+- [x] `POST /api/crm/bot/simulate` — roda `step` sobre um grafo enviado no
       corpo, **sem tocar no banco e sem enviar nada**. É o que alimenta o
       simulador da Tarefa 8.
-- [ ] A rota de simulação não aceita `flowId`: recebe o grafo. Assim ela nunca
+- [x] A rota de simulação não aceita `flowId`: recebe o grafo. Assim ela nunca
       pode, por engano, executar sobre uma conversa real.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(bot): add flow and simulation endpoints`
+- [x] `npx tsc --noEmit`
+- [x] **Arquivo a mais:** `app/api/crm/bot/flows/[id]/role/route.ts`. Colocar
+      no ar não podia viajar de carona no PATCH que salva o rascunho a cada
+      arrasto de nó — a ação grave ficaria misturada com a corriqueira. Também
+      confere quem ocupa o papel antes de desativar: uma tela desatualizada
+      derrubaria o robô de um colega.
+- [x] Publicar rascunho não publicado devolve **409** com a frase inteira, e o
+      gatilho que já estava no ar permanece.
+- [x] O simulador devolve os problemas da validação de carona, para a tela
+      avisar antes de o operador se perguntar por que a opção 3 não vai a lugar
+      nenhum. O nó de IA **não** é chamado ali: devolve `PERGUNTAR_IA` e para,
+      e quem simula digita em `respostaIa` o que quer testar. Chamar o Gemini
+      a cada tecla gastaria cota e daria respostas diferentes a cada rodada.
+- [x] Estado de sessão vindo do navegador é saneado antes de chegar ao motor,
+      que é puro e confia no que recebe.
+- [x] Verificação contra o servidor real: 37/37, com sessão assinada.
+- [x] Commit: `feat(bot): add flow and simulation endpoints`
 
 ---
 
