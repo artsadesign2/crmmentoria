@@ -443,7 +443,7 @@ export async function responderComIa(organizationId: string, conversationId: str
   { tipo: 'RESPONDER'; texto: string } | { tipo: 'TRANSFERIR'; motivo: string }>;
 ```
 
-- [ ] Testes primeiro, todos puros:
+- [x] Testes primeiro, todos puros:
   - "quero falar com um atendente" → `exigeHumano` verdadeiro;
   - "qual o preço?" e "quero cancelar" → verdadeiro (palavra sensível);
   - "qual o horário de vocês?" → falso;
@@ -451,18 +451,26 @@ export async function responderComIa(organizationId: string, conversationId: str
   - `trocas >= TETO_TROCAS_IA` → `TRANSFERIR` mesmo com resposta boa;
   - resposta vazia → `TRANSFERIR`, nunca enviar vazio;
   - resposta normal na primeira troca → `RESPONDER`.
-- [ ] Rodar: falham. Implementar. Rodar: verde.
-- [ ] `botSystemPrompt` manda o modelo responder **só** com a base de
+- [x] Rodar: falham. Implementar. Rodar: verde.
+- [x] `botSystemPrompt` manda o modelo responder **só** com a base de
       conhecimento e escrever exatamente `[NAO_SEI]` quando não souber. Reusar
       a defesa contra injeção da F4 (`DEFESA_INJECAO` em `lib/ai/prompts.ts`).
-- [ ] Base de conhecimento vazia → transfere sem chamar o Gemini. Não gastar
+- [x] Base de conhecimento vazia → transfere sem chamar o Gemini. Não gastar
       chamada para inventar resposta.
-- [ ] IA desligada em `AiSettings.enabled` → transfere.
-- [ ] Falha do Gemini → transfere. `generate()` nunca lança (F4).
-- [ ] `executarBot` incrementa `ai_turns` a cada troca e realimenta a resposta
+- [x] IA desligada em `AiSettings.enabled` → transfere.
+- [x] Falha do Gemini → transfere. `generate()` nunca lança (F4).
+- [x] `executarBot` incrementa `ai_turns` a cada troca e realimenta a resposta
       como `respostaIa` na próxima chamada de `step`.
-- [ ] `npx tsc --noEmit`
-- [ ] Commit: `feat(bot): add the grounded AI node with handoff limits`
+- [x] `npx tsc --noEmit`
+- [x] **Correção no motor, encontrada aqui:** depois de entregar a resposta da
+      IA ele voltava a caminhar a partir do próprio nó de IA, com o texto do
+      cliente ainda em mãos, e perguntava de novo — uma pergunta virava três
+      respostas em rajada, e o teto de trocas virava o gatilho da metralhadora.
+      Agora o nó de IA é uma conversa por turnos: uma mensagem, uma resposta.
+- [x] `DEFESA_INJECAO` passou a ser exportada de `lib/ai/prompts.ts`.
+- [x] Verificação contra o banco real: 21/21, incluindo duas chamadas reais ao
+      Gemini (dentro e fora da base). Base de conhecimento restaurada.
+- [x] Commit: `feat(bot): add the grounded AI node with handoff limits`
 
 ---
 

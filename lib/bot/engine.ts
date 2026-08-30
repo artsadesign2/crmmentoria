@@ -133,13 +133,28 @@ function retomar(p: Passada): StepResult | null {
     const texto = p.entrada.respostaIa.trim();
     if (texto) enviar(p, texto);
 
-    p.sessao = {
-      ...p.sessao,
-      aiTurns: p.sessao.aiTurns + 1,
-      awaitingInput: false,
+    /**
+     * Respondeu: volta a esperar o cliente, no mesmo nó.
+     *
+     * Continuar a caminhada aqui seria voltar ao próprio nó de IA com o texto
+     * do cliente ainda em `entrada.texto` — e ele perguntaria de novo, e de
+     * novo, até estourar o teto de trocas. Uma pergunta viraria três respostas
+     * em rajada, e o teto que existe para limitar a conversa com o robô viraria
+     * o gatilho de uma metralhadora.
+     *
+     * O nó de IA é uma conversa por turnos: uma mensagem do cliente, uma
+     * resposta. Ele só é deixado quando o teto de trocas transfere.
+     */
+    return {
+      proximaSessao: {
+        ...p.sessao,
+        aiTurns: p.sessao.aiTurns + 1,
+        currentNodeId: atual.id,
+        awaitingInput: true,
+      },
+      acoes: p.acoes,
+      status: 'RUNNING',
     };
-
-    return null;
   }
 
   if (atual.type !== 'QUESTION') {

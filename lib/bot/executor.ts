@@ -3,6 +3,7 @@ import { sendText } from '@/lib/evolution/server';
 import { routeConversation } from '@/lib/crm/routing';
 import { step, type BotAction, type StepInput } from './engine';
 import { aplicarRetomada, avaliarRetomada } from './reengage-service';
+import { responderComIa } from './ai-node';
 import type { MotivoRetomada } from './reengage';
 import {
   abrirSessao,
@@ -171,13 +172,15 @@ async function rodar(
       continue;
     }
 
-    // Pediu a IA e não houve resposta. Entregar a um humano agora, em vez de
-    // dar voltas até estourar o laço externo.
+    // Pediu a IA e não houve resposta — porque o cliente pediu uma pessoa,
+    // porque a base não cobre o assunto, porque o teto de trocas acabou ou
+    // porque o Gemini falhou. Entregar a um humano agora, com o motivo, em vez
+    // de dar voltas até estourar o laço externo.
     if (efeitos.precisaIa) {
       await transferir(
         sessao,
         conversa.departmentId,
-        'O fluxo chegou ao nó de IA e ela não está disponível.'
+        efeitos.motivoIa ?? 'O fluxo chegou ao nó de IA e ela não está disponível.'
       );
       return { atuou: true, enviadas, retomada: motivo };
     }
@@ -197,6 +200,8 @@ interface Efeitos {
   respostaIa?: string;
   /** Verdadeiro quando o nó de IA foi alcançado e não há como respondê-lo. */
   precisaIa: boolean;
+  /** Por que a IA não respondeu, para a transferência dizer a verdade. */
+  motivoIa?: string;
 }
 
 async function realizar(
@@ -223,14 +228,37 @@ async function realizar(
         await transferir(sessao, acao.departmentId ?? departmentIdAtual, acao.motivo);
         break;
 
-      case 'PERGUNTAR_IA':
-        // A Tarefa 5 põe o Gemini aqui. Até lá o nó de IA entrega a conversa a
-        // uma pessoa na hora — o comportamento seguro, e o único honesto:
-        // deixar o cliente esperando uma resposta que ninguém vai escrever é
-        // pior do que transferir.
-        efeitos.precisaIa = true;
-        await gravarEvento(sessao.id, sessao.estado.currentNodeId, 'AI', acao.pergunta);
+      case 'PERGUNTAR_IA': {
+        const decisao = await responderComIa(
+          sessao.organizationId,
+          sessao.conversationId,
+          acao.pergunta,
+          sessao.estado.aiTurns
+        );
+
+        if (decisao.tipo === 'RESPONDER') {
+          // Realimenta o motor, que envia o texto e conta a troca. O executor
+          // não envia por conta própria: quem decide o que sai é o motor, e
+          // essa divisão é o que mantém o teto de trocas confiável.
+          efeitos.respostaIa = decisao.texto;
+          await gravarEvento(
+            sessao.id,
+            sessao.estado.currentNodeId,
+            'AI',
+            `P: ${acao.pergunta}\nR: ${decisao.texto}`
+          );
+        } else {
+          efeitos.precisaIa = true;
+          efeitos.motivoIa = decisao.motivo;
+          await gravarEvento(
+            sessao.id,
+            sessao.estado.currentNodeId,
+            'AI',
+            `P: ${acao.pergunta}\nSem resposta: ${decisao.motivo}`
+          );
+        }
         break;
+      }
 
       case 'ENCERRAR':
         await gravarEvento(sessao.id, sessao.estado.currentNodeId, 'ENTER', acao.motivo);
