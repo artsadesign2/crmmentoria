@@ -18,7 +18,7 @@ export const GET = withAuth(async () => {
   const config = await getBotSettings(session.organizationId);
   const linha = await prisma.botSettings.findUnique({
     where: { organizationId: session.organizationId },
-    select: { notifyByWhatsapp: true, notifyByEmail: true },
+    select: { notifyByWhatsapp: true, notifyByEmail: true, personaName: true, humanized: true },
   });
 
   return NextResponse.json({
@@ -27,6 +27,10 @@ export const GET = withAuth(async () => {
       ...config,
       notifyByWhatsapp: linha?.notifyByWhatsapp ?? true,
       notifyByEmail: linha?.notifyByEmail ?? true,
+
+      personaName: linha?.personaName ?? '',
+
+      humanized: linha?.humanized ?? true,
     },
   });
 });
@@ -48,11 +52,13 @@ export const PUT = withAuth(async (request: Request) => {
       timeZone: typeof body.timeZone === 'string' ? body.timeZone : undefined,
       notifyByWhatsapp: booleano(body.notifyByWhatsapp),
       notifyByEmail: booleano(body.notifyByEmail),
+      personaName: typeof body.personaName === 'string' ? body.personaName : undefined,
+      humanized: booleano(body.humanized),
     });
 
     const linha = await prisma.botSettings.findUnique({
       where: { organizationId: session.organizationId },
-      select: { notifyByWhatsapp: true, notifyByEmail: true },
+      select: { notifyByWhatsapp: true, notifyByEmail: true, personaName: true, humanized: true },
     });
 
     return NextResponse.json({
@@ -61,6 +67,10 @@ export const PUT = withAuth(async (request: Request) => {
         ...config,
         notifyByWhatsapp: linha?.notifyByWhatsapp ?? true,
         notifyByEmail: linha?.notifyByEmail ?? true,
+
+        personaName: linha?.personaName ?? '',
+
+        humanized: linha?.humanized ?? true,
       },
     });
   } catch (error) {

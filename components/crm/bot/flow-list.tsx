@@ -19,6 +19,7 @@ export function FlowList({
   onSelecionar,
   onCriar,
   onCriarTriagem,
+  onCriarRetomada,
 }: {
   flows: FlowDTO[];
   selecionadoId: string | null;
@@ -26,6 +27,7 @@ export function FlowList({
   onSelecionar: (id: string) => void;
   onCriar: () => void;
   onCriarTriagem: () => void;
+  onCriarRetomada: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -48,6 +50,16 @@ export function FlowList({
           style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
         >
           <Bot size={14} /> Menu de triagem pronto
+        </button>
+
+        <button
+          type="button"
+          onClick={onCriarRetomada}
+          disabled={ocupado}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs transition-colors disabled:opacity-40"
+          style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
+        >
+          <RotateCcw size={14} /> Retomada pronta
         </button>
       </div>
 

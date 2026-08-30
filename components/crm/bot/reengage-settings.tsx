@@ -21,6 +21,8 @@ export interface BotSettingsDTO {
   timeZone: string;
   notifyByWhatsapp: boolean;
   notifyByEmail: boolean;
+  personaName: string;
+  humanized: boolean;
 }
 
 const DIAS = [
@@ -116,10 +118,10 @@ export function ReengageSettings({
         >
           <div>
             <h2 className="text-base font-semibold" style={{ color: 'var(--theme-text-primary)' }}>
-              Retomada automática
+              Comportamento do robô
             </h2>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
-              O que acontece quando um lead fica sem resposta.
+              Como ele fala, e o que acontece quando um lead fica sem resposta.
             </p>
           </div>
           <button
@@ -253,7 +255,69 @@ export function ReengageSettings({
               </div>
             </div>
 
-            <div>
+            <div
+              className="border-t pt-5"
+              style={{ borderColor: 'var(--theme-border)' }}
+            >
+              <p className="text-sm font-medium" style={{ color: 'var(--theme-text-primary)' }}>
+                Como o robô fala
+              </p>
+
+              <label className="mt-2 flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={config.humanized}
+                  disabled={!podeEditar}
+                  onChange={(e) => alterar({ humanized: e.target.checked })}
+                />
+                <span>
+                  <span className="block text-sm" style={{ color: 'var(--theme-text-primary)' }}>
+                    Escrever como gente
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
+                    Pausa antes de responder, indicador de “digitando…”,
+                    mensagens curtas em sequência e menu em frase corrida no
+                    lugar de lista numerada. Desmarcar devolve o robô
+                    instantâneo — é a reversão sem precisar de deploy.
+                  </span>
+                </span>
+              </label>
+
+              <div className="mt-3">
+                <label
+                  htmlFor="persona"
+                  className="block text-sm"
+                  style={{ color: 'var(--theme-text-primary)' }}
+                >
+                  Nome de quem atende
+                </label>
+                <input
+                  id="persona"
+                  className={`${CAMPO} mt-1.5 w-full`}
+                  style={estiloCampo}
+                  maxLength={60}
+                  placeholder="deixe em branco para não usar nome"
+                  value={config.personaName}
+                  disabled={!podeEditar}
+                  onChange={(e) => alterar({ personaName: e.target.value })}
+                />
+                <p
+                  className="mt-1.5 text-xs leading-snug"
+                  style={{ color: 'var(--theme-text-secondary)' }}
+                >
+                  Com um nome aqui, o robô se apresenta e responde por ele
+                  quando perguntam. Em branco, ele atende sem se nomear — que é
+                  o normal. O nome entra em fluxos criados a partir daqui e em
+                  qualquer texto que use <code>{'{{atendente}}'}</code>.
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="border-t pt-5"
+              style={{ borderColor: 'var(--theme-border)' }}
+            >
               <p className="text-sm font-medium" style={{ color: 'var(--theme-text-primary)' }}>
                 Como avisar o atendente
               </p>

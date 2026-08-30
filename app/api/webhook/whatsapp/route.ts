@@ -33,6 +33,17 @@ import { encerrarSessao } from '@/lib/bot/sessions';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * O robô humanizado responde devagar de propósito: pausa de leitura, indicador
+ * de "digitando…" e mensagens em sequência somam até `ORCAMENTO_TOTAL_MS`
+ * (`lib/bot/cadence.ts`) antes de esta rota devolver 200.
+ *
+ * Com o teto padrão de 10s, uma conversa no ritmo humano seria cortada no meio
+ * e a Evolution reenviaria o evento — o cliente receberia tudo em dobro
+ * justamente porque o robô estava parecendo gente.
+ */
+export const maxDuration = 60;
+
 /** Organização dona da instância. Com número central, é a instância que decide. */
 async function organizacaoDaInstancia(): Promise<string | null> {
   // Uma instância por organização hoje. Quando houver várias, o vínculo passa a

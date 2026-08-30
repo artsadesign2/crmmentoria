@@ -4,6 +4,16 @@ import { routeConversation } from '@/lib/crm/routing';
 import { step, type BotAction, type StepInput } from './engine';
 import { aplicarRetomada, avaliarRetomada, houveRespostaHumana } from './reengage-service';
 import { responderComIa } from './ai-node';
+import { quebrarEmBolhas } from './bubbles';
+import {
+  ORCAMENTO_TOTAL_MS,
+  RITMO_HUMANO,
+  RITMO_IMEDIATO,
+  ritmoDaSequencia,
+  type PassoDeRitmo,
+  type RitmoConfig,
+} from './cadence';
+import { getVozConfig, type VozConfig } from './settings';
 import type { MotivoRetomada } from './reengage';
 import {
   abrirSessao,
@@ -160,7 +170,27 @@ async function rodar(
     empresa: conversa.contact.company,
   };
 
-  let entrada: StepInput = { texto, contato };
+  const voz = await getVozConfig(organizationId);
+
+  /**
+   * O orçamento de ritmo é da mensagem recebida inteira, não de cada passada.
+   *
+   * Um nó de IA produz duas passadas, e cobrar o ritmo cheio em cada uma
+   * dobraria a espera do webhook sem que ninguém tivesse pedido mais nada. A
+   * leitura, em particular, se paga uma vez só: o cliente escreveu uma vez.
+   */
+  const ritmo: Ritmo = {
+    config: voz.humanized ? RITMO_HUMANO : RITMO_IMEDIATO,
+    recebida: texto,
+    restanteMs: voz.humanized ? ORCAMENTO_TOTAL_MS : 0,
+  };
+
+  let entrada: StepInput = {
+    texto,
+    contato,
+    humanizado: voz.humanized,
+    persona: voz.personaName,
+  };
   let enviadas = 0;
 
   for (let passada = 0; passada < TETO_PASSADAS; passada++) {
@@ -170,7 +200,9 @@ async function rodar(
       sessao,
       conversa.contact.phone,
       conversa.departmentId,
-      resultado.acoes
+      resultado.acoes,
+      voz,
+      ritmo
     );
 
     enviadas += efeitos.enviadas;
@@ -183,7 +215,13 @@ async function rodar(
     // O motor parou pedindo a IA e o executor conseguiu a resposta: outra
     // passada, agora com ela em mãos.
     if (efeitos.respostaIa !== undefined) {
-      entrada = { texto, contato, respostaIa: efeitos.respostaIa };
+      entrada = {
+        texto,
+        contato,
+        humanizado: voz.humanized,
+        persona: voz.personaName,
+        respostaIa: efeitos.respostaIa,
+      };
       continue;
     }
 
@@ -219,19 +257,59 @@ interface Efeitos {
   motivoIa?: string;
 }
 
+/**
+ * O orçamento de ritmo de uma mensagem recebida, consumido ao longo das
+ * passadas.
+ *
+ * `recebida` zera depois da primeira cobrança: a pausa de leitura representa o
+ * tempo de ler o que o cliente escreveu, e ele escreveu uma vez só.
+ */
+interface Ritmo {
+  config: RitmoConfig;
+  recebida: string;
+  restanteMs: number;
+}
+
+/** Reserva as pausas destas bolhas e desconta do que sobrou. */
+function planejarRitmo(ritmo: Ritmo, textos: string[]): PassoDeRitmo[] {
+  const passos = ritmoDaSequencia(textos, ritmo.recebida, ritmo.config, ritmo.restanteMs);
+  const gasto = passos.reduce((soma, p) => soma + p.leituraMs + p.digitacaoMs, 0);
+
+  ritmo.restanteMs = Math.max(0, ritmo.restanteMs - gasto);
+  ritmo.recebida = '';
+
+  return passos;
+}
+
+const esperar = (ms: number): Promise<void> =>
+  ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+
 async function realizar(
   sessao: SessaoCarregada,
   telefone: string | null,
   departmentIdAtual: string | null,
-  acoes: BotAction[]
+  acoes: BotAction[],
+  voz: VozConfig,
+  ritmo: Ritmo
 ): Promise<Efeitos> {
   const efeitos: Efeitos = { enviadas: 0, precisaIa: false };
 
   for (const acao of acoes) {
     switch (acao.tipo) {
       case 'ENVIAR': {
-        const ok = await enviarMensagem(sessao, telefone, acao.texto);
-        if (ok) efeitos.enviadas += 1;
+        // Uma ação do motor pode virar mais de uma mensagem no aparelho do
+        // cliente: é o que separa "parágrafo de e-mail" de "gente digitando".
+        const bolhas = voz.humanized ? quebrarEmBolhas(acao.texto) : [acao.texto];
+
+        for (const passo of planejarRitmo(ritmo, bolhas)) {
+          // O silêncio de leitura é nosso; o "digitando…" é da Evolution, que
+          // segura o envio e mantém a presença durante a espera. Trocar a ordem
+          // faria o indicador aparecer antes de haver o que ler.
+          await esperar(passo.leituraMs);
+
+          const ok = await enviarMensagem(sessao, telefone, passo.texto, passo.digitacaoMs);
+          if (ok) efeitos.enviadas += 1;
+        }
         break;
       }
 
@@ -297,7 +375,8 @@ async function realizar(
 async function enviarMensagem(
   sessao: SessaoCarregada,
   telefone: string | null,
-  texto: string
+  texto: string,
+  digitacaoMs = 0
 ): Promise<boolean> {
   if (!telefone) {
     await gravarEvento(sessao.id, sessao.estado.currentNodeId, 'SEND', 'Contato sem telefone.');
@@ -318,7 +397,7 @@ async function enviarMensagem(
     select: { id: true },
   });
 
-  const envio = await sendText(telefone, texto);
+  const envio = await sendText(telefone, texto, { delayMs: digitacaoMs });
   const agora = new Date();
 
   await prisma.message.update({

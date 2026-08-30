@@ -23,12 +23,31 @@ export interface BotNodeData {
   text?: string;
   /** QUESTION: o que se oferece. `key` é o que o cliente digita ("1", "2"). */
   options?: Array<{ key: string; label: string }>;
+  /**
+   * QUESTION: como as opções chegam ao cliente.
+   *
+   * `LISTA` numera (`1) Comercial`); `NATURAL` escreve em frase corrida;
+   * `LIVRE` não lista nada, porque a pergunta já diz quais são as respostas —
+   * é o caso de toda pergunta de sim ou não, em que enumerar as opções produz
+   * "Você ainda precisa? Ainda preciso ou Já resolvi?".
+   *
+   * Vazio segue a configuração da organização — que é o normal, para o
+   * interruptor de humanização valer para o fluxo inteiro de uma vez.
+   */
+  estilo?: 'LISTA' | 'NATURAL' | 'LIVRE';
+  /** QUESTION: abertura da segunda tentativa, quando o cliente não entendeu. */
+  reperguntaTexto?: string;
   /** CONDITION: variável comparada e o valor esperado. */
   variable?: string;
   equals?: string;
   /** CAPTURE: nome do campo em `contacts.custom_fields`. */
   field?: string;
-  /** TRANSFER: setor de destino. Nulo cai na distribuição padrão da F3. */
+  /**
+   * TRANSFER: setor de destino. Nulo cai na distribuição padrão da F3.
+   *
+   * O `text` deste nó, quando escrito, é a última frase antes de uma pessoa
+   * assumir. Vazio usa a frase padrão do motor.
+   */
   departmentId?: string | null;
 }
 

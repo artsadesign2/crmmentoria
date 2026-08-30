@@ -380,6 +380,7 @@ export default function AtendimentoAutomaticoPage() {
             onSelecionar={(id) => void abrir(id)}
             onCriar={() => void criar('/api/crm/bot/flows')}
             onCriarTriagem={() => void criar('/api/crm/bot/triagem')}
+            onCriarRetomada={() => void criar('/api/crm/bot/retomada')}
           />
         </aside>
 

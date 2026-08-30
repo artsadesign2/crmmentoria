@@ -34,8 +34,30 @@ export type SendResult =
   | { ok: true; externalId: string | null }
   | { ok: false; error: string };
 
+export interface SendTextOptions {
+  /**
+   * Milissegundos de "digitando…" antes de a mensagem sair.
+   *
+   * `delay` é o único campo necessário para isso, e é o que o schema da
+   * Evolution declara. Com ele preenchido, o serviço assina a presença do
+   * destinatário, publica `composing`, espera, publica `paused` e só então
+   * envia — o mesmo indicador que uma pessoa produz ao escrever. Mandar
+   * `presence` junto seria repetir o padrão dele com um campo que o schema não
+   * declara.
+   *
+   * A chamada HTTP fica aberta durante a espera, então quem passa um valor
+   * aqui está gastando tempo do próprio webhook: ver `ORCAMENTO_TOTAL_MS` em
+   * `lib/bot/cadence.ts`.
+   */
+  delayMs?: number;
+}
+
 /** Envia texto pelo número central da empresa. */
-export async function sendText(phone: string, text: string): Promise<SendResult> {
+export async function sendText(
+  phone: string,
+  text: string,
+  options: SendTextOptions = {}
+): Promise<SendResult> {
   const env = readEvolutionEnv();
   if (!env) {
     return {
@@ -46,11 +68,16 @@ export async function sendText(phone: string, text: string): Promise<SendResult>
 
   const url = `${env.serverUrl}/message/sendText/${encodeURIComponent(env.instanceName)}`;
 
+  // Só vai no corpo quando há pausa a pedir: `delay: 0` faria o indicador
+  // piscar por um instante antes de toda mensagem instantânea, que é pior que
+  // não mandar nada.
+  const ritmo = options.delayMs && options.delayMs > 0 ? { delay: Math.round(options.delayMs) } : {};
+
   try {
     const resposta = await fetch(url, {
       method: 'POST',
       headers: { apikey: env.apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: phone, text }),
+      body: JSON.stringify({ number: phone, text, ...ritmo }),
       cache: 'no-store',
     });
 

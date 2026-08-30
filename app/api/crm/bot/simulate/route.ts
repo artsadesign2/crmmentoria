@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireSession, withAuth } from '@/lib/auth/session';
 import { sessaoInicial, step } from '@/lib/bot/engine';
 import { validateGraph } from '@/lib/bot/validate';
+import { getVozConfig } from '@/lib/bot/settings';
 import { asGraph, type BotGraph, type BotSessionState } from '@/lib/bot/types';
 
 /**
@@ -29,7 +30,7 @@ const MAX_NOS = 300;
 const MAX_ARESTAS = 600;
 
 export const POST = withAuth(async (request: Request) => {
-  await requireSession();
+  const session = await requireSession();
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
@@ -52,9 +53,20 @@ export const POST = withAuth(async (request: Request) => {
   const contato = lerContato(body.contato);
   const sessao = lerSessao(body.sessao, graph);
 
+  /**
+   * A voz sai da configuração da organização, não do corpo do pedido.
+   *
+   * Simular com humanização diferente da que está valendo produziria uma
+   * prévia que mente: alguém testaria o menu em frase corrida e publicaria um
+   * fluxo que, no ar, mandaria lista numerada. A prévia precisa ser a coisa.
+   */
+  const voz = await getVozConfig(session.organizationId);
+
   const resultado = step(graph, sessao, {
     texto: typeof body.texto === 'string' ? body.texto : '',
     contato,
+    humanizado: voz.humanized,
+    persona: voz.personaName,
     ...(typeof body.respostaIa === 'string' ? { respostaIa: body.respostaIa } : {}),
   });
 

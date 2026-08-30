@@ -47,6 +47,46 @@ export async function getBotSettings(organizationId: string): Promise<RetomadaCo
   };
 }
 
+/**
+ * Como o robô soa, separado de quando ele age.
+ *
+ * Fica fora de `RetomadaConfig` porque a regra pura da retomada não tem nada a
+ * ver com voz: ela decide *se* o robô volta, e este tipo descreve *como* ele
+ * fala quando volta. Juntar os dois faria a regra de abandono carregar um nome
+ * de persona por todo lado sem nunca usá-lo.
+ */
+export interface VozConfig {
+  /**
+   * Primeiro nome com que o robô se apresenta.
+   *
+   * Vazio é o estado normal, não um campo por preencher: sem nome, ele
+   * simplesmente não se apresenta — que é o que a maioria das empresas quer.
+   */
+  personaName: string;
+  /** Ritmo de digitação, mensagens curtas e menu em linguagem natural. */
+  humanized: boolean;
+}
+
+export const VOZ_PADRAO: VozConfig = { personaName: '', humanized: true };
+
+/** Teto do nome: é um primeiro nome, não uma assinatura de e-mail. */
+const MAX_PERSONA = 60;
+
+/**
+ * A voz da organização. Como `getBotSettings`, recebe só o id — quem mais
+ * chama é o executor, a partir de um webhook sem usuário logado.
+ */
+export async function getVozConfig(organizationId: string): Promise<VozConfig> {
+  const salva = await prisma.botSettings.findUnique({
+    where: { organizationId },
+    select: { personaName: true, humanized: true },
+  });
+
+  if (!salva) return VOZ_PADRAO;
+
+  return { personaName: salva.personaName.trim(), humanized: salva.humanized };
+}
+
 export interface EntradaBotSettings {
   reengageEnabled?: boolean;
   reengageAfterHours?: number;
@@ -58,6 +98,10 @@ export interface EntradaBotSettings {
   notifyByWhatsapp?: boolean;
   /** Reserva, usada quando o atendente não tem telefone ou o envio falha. */
   notifyByEmail?: boolean;
+  /** Primeiro nome do robô. Vazio faz ele não se apresentar. */
+  personaName?: string;
+  /** Desligado, devolve o robô instantâneo e o menu numerado. */
+  humanized?: boolean;
 }
 
 /**
@@ -107,6 +151,10 @@ export async function saveBotSettings(
       ? {}
       : { notifyByWhatsapp: entrada.notifyByWhatsapp }),
     ...(entrada.notifyByEmail === undefined ? {} : { notifyByEmail: entrada.notifyByEmail }),
+    ...(entrada.personaName === undefined
+      ? {}
+      : { personaName: normalizarPersona(entrada.personaName) }),
+    ...(entrada.humanized === undefined ? {} : { humanized: entrada.humanized }),
   };
 
   await prisma.botSettings.upsert({
@@ -144,6 +192,21 @@ function limpar(entrada: EntradaBotSettings): Partial<RetomadaConfig> {
   }
 
   return saida;
+}
+
+/**
+ * O nome da persona chega de um campo de texto livre e vai para dentro de toda
+ * mensagem que o robô manda.
+ *
+ * Uma linha só, sem quebra: um nome com `\n` transformaria a saudação em duas
+ * mensagens tortas. Cortado no tamanho da coluna, para o banco não recusar o
+ * salvamento inteiro por causa de um nome comprido.
+ */
+function normalizarPersona(bruto: string): string {
+  return String(bruto ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_PERSONA);
 }
 
 function fusoValido(timeZone: string): boolean {

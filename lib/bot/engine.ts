@@ -37,6 +37,25 @@ export interface StepInput {
   contato: { nome: string; empresa: string | null };
   /** Resposta do Gemini, realimentada pelo executor. */
   respostaIa?: string;
+  /**
+   * Escreve como gente: menu em linguagem corrida em vez de lista numerada,
+   * repergunta reformulada em vez de repetida, e uma frase antes de entregar a
+   * conversa a uma pessoa.
+   *
+   * Chega por aqui, e não de uma leitura de configuração, porque o motor é
+   * puro: quem lê `bot_settings` é o executor. É também o que permite ao
+   * simulador mostrar os dois comportamentos lado a lado.
+   */
+  humanizado?: boolean;
+  /**
+   * Primeiro nome com que o robô assina, resolvendo `{{atendente}}`.
+   *
+   * Vazio some do texto — e é por isso que ele só deve aparecer em frase que
+   * sobrevive à ausência dele. O menu de triagem pronto resolve isso de outro
+   * jeito: quando há nome, ele ganha uma apresentação inteira a mais; quando
+   * não há, a frase simplesmente não existe no fluxo.
+   */
+  persona?: string;
 }
 
 export interface StepResult {
@@ -53,6 +72,46 @@ export const TETO_MENSAGENS = 5;
 
 /** Trocas com o nó de IA por sessão. Barra conversa infinita com o robô. */
 export const TETO_TROCAS_IA = 3;
+
+/**
+ * Quantas vezes o cliente pode errar a escolha antes de virar caso de gente.
+ *
+ * Antes disto, o motor repetia a mesma pergunta indefinidamente, palavra por
+ * palavra. Duas coisas erradas ao mesmo tempo: nenhuma pessoa se repete assim,
+ * e quem não entendeu na segunda tentativa não vai entender na sétima — vai
+ * desistir. Duas chances, e a segunda com outras palavras.
+ */
+export const TETO_TENTATIVAS = 2;
+
+/**
+ * A variável interna que conta os erros na pergunta atual.
+ *
+ * Vive em `variables` com o prefixo `__`, a mesma convenção de
+ * `__ultimaResposta`: é estado do motor, não campo capturado, e nenhum nó de
+ * captura escreve com esse prefixo. Guardar aqui evita uma coluna nova em
+ * `bot_sessions` para um contador que morre junto com a pergunta.
+ */
+const VAR_TENTATIVAS = '__tentativas';
+
+/**
+ * O que o robô diz ao entregar a conversa, quando ninguém escreveu nada no nó.
+ *
+ * Não menciona transferência, setor, fila nem robô. É de propósito: a frase
+ * existe para que a pessoa que assumir possa continuar dali sem emenda, e
+ * qualquer uma dessas palavras denunciaria a troca. "Deixa eu ver" também
+ * mantém a primeira pessoa — quem chega depois não precisa se reapresentar.
+ */
+export const ENTREGA_PADRAO = 'Deixa eu ver isso certinho pra você, um minutinho.';
+
+/**
+ * A abertura da segunda tentativa.
+ *
+ * Não promete reformular, porque o motor não reformula nada — ele repete a
+ * mesma pergunta com outra abertura. "Deixa eu perguntar de outro jeito"
+ * seguido da pergunta idêntica é pior que não se desculpar: entrega que quem
+ * está do outro lado não é capaz de dizer a mesma coisa de duas maneiras.
+ */
+export const REPERGUNTA_PADRAO = 'Desculpa, não entendi.';
 
 /**
  * O nó de início, ou `null`.
@@ -188,11 +247,24 @@ function retomar(p: Passada): StepResult | null {
   const escolhida = casarOpcao(opcoes, resposta);
 
   if (!escolhida) {
+    const tentativas = Number(p.sessao.variables[VAR_TENTATIVAS] ?? '0') + 1;
+
+    // Esgotadas as chances, entregar a uma pessoa. Continuar reperguntando é o
+    // caminho para o cliente sair da conversa achando que ninguém o entende.
+    if (tentativas >= TETO_TENTATIVAS) {
+      return transferir(p, null, 'O cliente não conseguiu escolher no menu.');
+    }
+
     // Repetir, não transferir e não calar. Quem digitou errado precisa de outra
     // chance — transferir na primeira confusão joga fora o fluxo inteiro.
-    enviar(p, textoDaPergunta(p, atual));
+    enviar(p, textoDaPergunta(p, atual, tentativas));
+
     return {
-      proximaSessao: { ...p.sessao, awaitingInput: true },
+      proximaSessao: {
+        ...p.sessao,
+        variables: { ...p.sessao.variables, [VAR_TENTATIVAS]: String(tentativas) },
+        awaitingInput: true,
+      },
       acoes: p.acoes,
       status: 'RUNNING',
     };
@@ -205,7 +277,9 @@ function retomar(p: Passada): StepResult | null {
 
   p.sessao = {
     ...p.sessao,
-    variables: { ...p.sessao.variables, __ultimaResposta: escolhida.key },
+    // O contador zera junto com a pergunta: um tropeço no menu de setor não
+    // pode encurtar a paciência do robô numa pergunta seguinte.
+    variables: { ...p.sessao.variables, __ultimaResposta: escolhida.key, [VAR_TENTATIVAS]: '0' },
     currentNodeId: saida.destino,
     awaitingInput: false,
   };
@@ -327,7 +401,8 @@ function avancar(p: Passada): StepResult {
         return transferir(
           p,
           atual.data.departmentId ?? null,
-          'Fluxo encaminhou para o setor.'
+          'Fluxo encaminhou para o setor.',
+          interpolar(p, atual.data.text)
         );
 
       case 'END': {
@@ -380,48 +455,139 @@ function seguir(grafo: BotGraph, origem: string, handle: string | null): Saida {
   return { tipo: 'OK', destino: aresta.target };
 }
 
+/** `{{atendente}}`, em qualquer caixa e com espaços à vontade. */
+const PLACEHOLDER_PERSONA = /\{\{\s*atendente\s*\}\}/gi;
+
 function interpolar(p: Passada, texto: string | undefined): string {
   if (!texto?.trim()) return '';
-  return renderTemplate(texto, {
+
+  // A persona é resolvida aqui, e não em `renderTemplate`, porque aquele
+  // arquivo também serve às campanhas de disparo — que não têm persona alguma.
+  // Ensinar `{{atendente}}` lá faria a prévia do disparo aceitar em silêncio
+  // uma variável que nunca seria preenchida.
+  const comPersona = texto.replace(PLACEHOLDER_PERSONA, p.entrada.persona?.trim() ?? '');
+
+  return renderTemplate(comPersona, {
     nome: p.entrada.contato.nome,
     empresa: p.entrada.contato.empresa,
   });
 }
 
 /**
- * O texto da pergunta com as opções listadas.
+ * O texto da pergunta, com as opções apresentadas.
  *
  * Sem as opções no corpo da mensagem, o cliente não tem como saber o que
- * digitar — o menu existiria só no desenho do fluxo.
+ * responder — o menu existiria só no desenho do fluxo.
+ *
+ * Dois formatos, e a diferença é o tell mais alto que um robô tem:
+ *
+ * - **LISTA** — `1) Comercial` / `2) Financeiro`. Confiável e inconfundível:
+ *   pessoa nenhuma escreve assim no WhatsApp.
+ * - **NATURAL** — as opções entram numa frase corrida. Se o autor do fluxo já
+ *   escreveu os rótulos dentro da pergunta, nada é acrescentado: reescrever
+ *   por cima do que alguém redigiu à mão sempre sai pior.
  */
-function textoDaPergunta(p: Passada, no: BotNode): string {
+function textoDaPergunta(p: Passada, no: BotNode, tentativa = 0): string {
   const cabeca = interpolar(p, no.data.text);
   const opcoes = no.data.options ?? [];
+  const estilo = no.data.estilo ?? (p.entrada.humanizado ? 'NATURAL' : 'LISTA');
 
-  if (opcoes.length === 0) return cabeca;
+  // Na repergunta, uma abertura diferente antes do mesmo conteúdo. Repetir
+  // palavra por palavra é o que denuncia a máquina — e o que faz o cliente
+  // achar que não foi lido.
+  const abertura =
+    tentativa > 0 && estilo !== 'LISTA'
+      ? `${no.data.reperguntaTexto?.trim() || REPERGUNTA_PADRAO} `
+      : '';
 
-  const linhas = opcoes.map((o) => `${o.key}) ${o.label}`);
-  return [cabeca, '', ...linhas].filter((l) => l !== undefined).join('\n');
+  if (opcoes.length === 0 || estilo === 'LIVRE') return `${abertura}${cabeca}`.trim();
+
+  if (estilo === 'LISTA') {
+    const linhas = opcoes.map((o) => `${o.key}) ${o.label}`);
+    return [cabeca, '', ...linhas].join('\n');
+  }
+
+  const rotulos = opcoes.map((o) => o.label);
+  const corpo = mencionaTodas(cabeca, rotulos) ? cabeca : `${cabeca}\n${enumerar(rotulos)}?`;
+
+  return `${abertura}${corpo}`.trim();
+}
+
+/** "A, B ou C" — como se escreve uma escolha em português. */
+function enumerar(rotulos: string[]): string {
+  if (rotulos.length === 0) return '';
+  if (rotulos.length === 1) return rotulos[0];
+
+  return `${rotulos.slice(0, -1).join(', ')} ou ${rotulos[rotulos.length - 1]}`;
+}
+
+/** Verdadeiro quando a pergunta já cita todos os rótulos por conta própria. */
+function mencionaTodas(texto: string, rotulos: string[]): boolean {
+  const alvo = normalizar(texto);
+  return rotulos.every((r) => alvo.includes(normalizar(r)));
 }
 
 /**
  * Casa a resposta do cliente com uma opção.
  *
- * Aceita a chave ("2"), a chave com pontuação ("2.") e o rótulo escrito por
- * extenso ("suporte") — as três formas em que uma pessoa responde a um menu.
+ * Quatro passadas, da mais segura para a mais tolerante. A ordem é o desenho:
+ * uma correspondência exata nunca pode perder para um palpite, e um palpite
+ * ambíguo nunca vira escolha — mandar o cliente para o setor errado é pior que
+ * perguntar de novo, porque o erro só aparece depois que uma pessoa já perdeu
+ * tempo com ele.
+ *
+ * O que cada passada resgata, na prática: "2", "Financeiro", "quero a 2",
+ * "é sobre vendas".
  */
-function casarOpcao(
+export function casarOpcao(
   opcoes: Array<{ key: string; label: string }>,
   resposta: string
 ): { key: string; label: string } | null {
   const limpo = normalizar(resposta);
   if (!limpo) return null;
 
-  return (
+  const exata =
     opcoes.find((o) => normalizar(o.key) === limpo) ??
-    opcoes.find((o) => normalizar(o.label) === limpo) ??
-    null
+    opcoes.find((o) => normalizar(o.label) === limpo);
+
+  if (exata) return exata;
+
+  const cercado = ` ${limpo} `;
+  const palavras = limpo.split(' ');
+
+  // "quero a 2", "pode ser a 1". Só em resposta curta: em "tenho 2 filhos" o
+  // número é dado do cliente, não escolha de menu.
+  if (palavras.length <= 4) {
+    const porChave = opcoes.filter((o) => cercado.includes(` ${normalizar(o.key)} `));
+    if (porChave.length === 1) return porChave[0];
+  }
+
+  // "é sobre vendas" contra o rótulo "Comercial & Vendas".
+  const porRotulo = opcoes.filter((o) =>
+    palavrasDoRotulo(o.label).some((termo) => palavras.some((dita) => casaPalavra(termo, dita)))
   );
+
+  return porRotulo.length === 1 ? porRotulo[0] : null;
+}
+
+/**
+ * As palavras de um rótulo que valem como pista.
+ *
+ * Curtas ficam de fora: "de", "e", "da" aparecem em qualquer frase e casariam
+ * com tudo. Quatro letras é onde "Vendas" e "Suporte" entram e o ruído não.
+ */
+function palavrasDoRotulo(rotulo: string): string[] {
+  return normalizar(rotulo)
+    .split(' ')
+    .filter((palavra) => palavra.length >= 4);
+}
+
+/** Tolera plural e flexão curta: "venda" casa com "vendas". */
+function casaPalavra(termo: string, dita: string): boolean {
+  if (termo === dita) return true;
+  if (dita.length >= 4 && termo.startsWith(dita)) return true;
+  if (termo.length >= 4 && dita.startsWith(termo)) return true;
+  return false;
 }
 
 function normalizar(texto: string): string {
@@ -462,13 +628,39 @@ function concluir(p: Passada, motivo: string): StepResult {
   };
 }
 
-function transferir(p: Passada, departmentId: string | null, motivo: string): StepResult {
+function transferir(
+  p: Passada,
+  departmentId: string | null,
+  motivo: string,
+  texto?: string
+): StepResult {
+  despedir(p, texto);
   p.acoes.push({ tipo: 'TRANSFERIR', departmentId, motivo });
   return {
     proximaSessao: { ...p.sessao, currentNodeId: null, awaitingInput: false },
     acoes: p.acoes,
     status: 'HANDED_OFF',
   };
+}
+
+/**
+ * A frase antes de entregar a conversa a uma pessoa.
+ *
+ * Antes disto, a entrega era muda: o cliente escolhia um setor e caía num vazio
+ * até alguém aparecer. Silêncio parece discreto e não é — é o modo de falha que
+ * faz o cliente perguntar "alô?" e concluir que foi ignorado.
+ *
+ * Texto escrito no nó vale sempre: alguém redigiu aquilo de propósito. A frase
+ * padrão só entra com a humanização ligada, para o interruptor devolver o
+ * comportamento anterior exatamente como era.
+ */
+function despedir(p: Passada, texto?: string): void {
+  const escrito = (texto ?? '').trim();
+  const frase = escrito || (p.entrada.humanizado ? ENTREGA_PADRAO : '');
+
+  if (!frase || p.mensagensEnviadas >= TETO_MENSAGENS) return;
+
+  enviar(p, frase);
 }
 
 /**
@@ -479,6 +671,9 @@ function transferir(p: Passada, departmentId: string | null, motivo: string): St
  * não fica sabendo.
  */
 function abortar(p: Passada, motivo: string): StepResult {
+  // O fluxo quebrou, mas quem está do outro lado não tem nada com isso: uma
+  // frase é o que separa "estão vendo meu caso" de "fui ignorado".
+  despedir(p);
   p.acoes.push({ tipo: 'TRANSFERIR', departmentId: null, motivo });
   return {
     proximaSessao: { ...p.sessao, currentNodeId: null, awaitingInput: false },

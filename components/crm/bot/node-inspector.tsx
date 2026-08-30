@@ -139,10 +139,19 @@ export function NodeInspector({
           />
         </div>
 
-        {(node.type === 'MESSAGE' || node.type === 'QUESTION' || node.type === 'END') && (
+        {(node.type === 'MESSAGE' ||
+          node.type === 'QUESTION' ||
+          node.type === 'END' ||
+          node.type === 'TRANSFER') && (
           <div>
-            <Rotulo dica="Aceita {{nome}} e {{empresa}}, trocados pelos dados do contato.">
-              Texto enviado
+            <Rotulo
+              dica={
+                node.type === 'TRANSFER'
+                  ? 'A última frase antes de uma pessoa assumir. Em branco, o robô usa a frase padrão. Aceita {{nome}}, {{empresa}} e {{atendente}}.'
+                  : 'Aceita {{nome}}, {{empresa}} e {{atendente}}, trocados na hora do envio.'
+              }
+            >
+              {node.type === 'TRANSFER' ? 'Frase antes de entregar' : 'Texto enviado'}
             </Rotulo>
             <textarea
               className={`${CAMPO} min-h-[110px] resize-y`}
@@ -150,7 +159,11 @@ export function NodeInspector({
               value={d.text ?? ''}
               disabled={somenteLeitura}
               onChange={(e) => alterar({ text: e.target.value })}
-              placeholder="Olá, {{nome}}! Como posso ajudar?"
+              placeholder={
+                node.type === 'TRANSFER'
+                  ? 'Perfeito, já vou olhar isso pra você.'
+                  : 'Oi, {{nome}}! Tudo bem?'
+              }
             />
           </div>
         )}
@@ -208,6 +221,60 @@ export function NodeInspector({
                 uma opção solta deixa o cliente sem resposta.
               </p>
             )}
+
+            {opcoes.length > 0 && (
+              <div className="mt-4">
+                <Rotulo dica="O cliente é entendido de qualquer jeito: pelo número, pelo nome da opção ou por uma palavra dela dentro da frase.">
+                  Como oferecer as opções
+                </Rotulo>
+                <select
+                  className={CAMPO}
+                  style={estiloCampo}
+                  value={d.estilo ?? ''}
+                  disabled={somenteLeitura}
+                  onChange={(e) =>
+                    alterar({
+                      estilo: e.target.value
+                        ? (e.target.value as 'LISTA' | 'NATURAL' | 'LIVRE')
+                        : undefined,
+                    })
+                  }
+                >
+                  <option value="">Como estiver configurado para a empresa</option>
+                  <option value="NATURAL">Em frase: “Vendas, Financeiro ou Suporte?”</option>
+                  <option value="LISTA">Numerada: “1) Vendas”, “2) Financeiro”</option>
+                  <option value="LIVRE">Não listar — a pergunta já diz quais são</option>
+                </select>
+                <p
+                  className="mt-1.5 text-[11px] leading-snug"
+                  style={{ color: 'var(--theme-text-secondary)' }}
+                >
+                  Lista numerada é a coisa que mais denuncia um robô. Só vale a
+                  pena quando as opções são muitas ou muito parecidas entre si.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4">
+              <Rotulo dica="Vai na frente da pergunta quando o cliente responde algo que não casa com opção nenhuma.">
+                Se o cliente não entender
+              </Rotulo>
+              <input
+                className={CAMPO}
+                style={estiloCampo}
+                value={d.reperguntaTexto ?? ''}
+                disabled={somenteLeitura}
+                onChange={(e) => alterar({ reperguntaTexto: e.target.value || undefined })}
+                placeholder="Foi mal, deixa eu perguntar de outro jeito."
+              />
+              <p
+                className="mt-1.5 text-[11px] leading-snug"
+                style={{ color: 'var(--theme-text-secondary)' }}
+              >
+                Na segunda vez sem se entenderem, o robô para de insistir e
+                entrega a conversa a uma pessoa.
+              </p>
+            </div>
           </div>
         )}
 

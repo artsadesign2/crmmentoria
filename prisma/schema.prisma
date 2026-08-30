@@ -1002,6 +1002,12 @@ model BotSettings {
   notifyByWhatsapp   Boolean  @default(true) @map("notify_by_whatsapp")
   /// Reserva: vale quando o atendente nao tem telefone ou o envio falha.
   notifyByEmail      Boolean  @default(true) @map("notify_by_email")
+  /// Primeiro nome com que o robo se apresenta. Vazio e o estado normal: sem
+  /// nome, ele simplesmente nao se apresenta.
+  personaName        String   @default("") @map("persona_name") @db.VarChar(60)
+  /// Ritmo de digitacao, mensagens curtas e menu em linguagem natural.
+  /// Desligado, devolve o comportamento anterior sem precisar de deploy.
+  humanized          Boolean  @default(true) @map("humanized")
   updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
