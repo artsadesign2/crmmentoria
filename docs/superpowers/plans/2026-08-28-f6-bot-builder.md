@@ -522,23 +522,29 @@ export async function responderComIa(organizationId: string, conversationId: str
 `components/crm/bot/node-palette.tsx`, `components/crm/bot/node-inspector.tsx`,
 `components/crm/bot/bot-nodes.tsx`; modificar `package.json`.
 
-- [ ] `npm install @xyflow/react`. Conferir que o build continua passando —
+- [x] `npm install @xyflow/react`. Conferir que o build continua passando —
       é a primeira dependência de UI pesada do projeto.
-- [ ] Um componente de nó por tipo, no design escuro/dourado existente
+- [x] Um componente de nó por tipo, no design escuro/dourado existente
       (`var(--primary-color)`, `var(--theme-surface)`, `var(--theme-border)`).
       Cada tipo com ícone e cor próprios: num canvas, forma e cor são como se
       lê o fluxo de longe.
-- [ ] Alças de saída nomeadas: QUESTION uma por opção, CONDITION duas
+- [x] Alças de saída nomeadas: QUESTION uma por opção, CONDITION duas
       (`true`/`false`). O `sourceHandle` da aresta é o que o motor lê.
-- [ ] `node-inspector` edita o nó selecionado: texto, opções, campo de captura,
+- [x] `node-inspector` edita o nó selecionado: texto, opções, campo de captura,
       setor de destino.
-- [ ] Salvar posição junto com o grafo — o motor ignora `position`, o editor
+- [x] Salvar posição junto com o grafo — o motor ignora `position`, o editor
       precisa dela.
-- [ ] Botão publicar mostrando os problemas da validação **ancorados no nó**,
+- [x] Botão publicar mostrando os problemas da validação **ancorados no nó**,
       não uma lista solta: um problema que não diz onde é um problema que
       ninguém conserta.
-- [ ] `npx tsc --noEmit` e `npm run build`
-- [ ] Commit: `feat(bot): add the React Flow canvas and node inspector`
+- [x] `npx tsc --noEmit` e `npm run build`
+- [x] Uma saída, um destino: ligar duas arestas na mesma alça **troca** em vez
+      de acumular. O motor lê a primeira e ignora as outras, então acumular
+      desenharia no canvas uma bifurcação que não existe na execução.
+- [x] `paraGrafo` reduz cada nó aos quatro campos que importam. O React Flow
+      acrescenta `selected`, `dragging`, `measured` — estado de interface que
+      muda a cada clique e não significa nada para o motor.
+- [x] Commit: `feat(bot): add the React Flow canvas and node inspector`
 
 ---
 
@@ -548,23 +554,31 @@ export async function responderComIa(organizationId: string, conversationId: str
 `components/crm/bot/flow-simulator.tsx`, `components/crm/bot/flow-list.tsx`;
 modificar `components/sidebar.tsx`.
 
-- [ ] Tela com lista de fluxos à esquerda e canvas à direita.
-- [ ] Simulador: conversa de mentira ao lado do canvas, chamando
+- [x] Tela com lista de fluxos à esquerda e canvas à direita.
+- [x] Simulador: conversa de mentira ao lado do canvas, chamando
       `/api/crm/bot/simulate`. Nenhuma mensagem sai, nada é gravado.
-- [ ] O simulador mostra **qual nó está ativo** a cada passo — é assim que se
+- [x] O simulador mostra **qual nó está ativo** a cada passo — é assim que se
       descobre que a opção "3" não leva a lugar nenhum.
-- [ ] Marcar um fluxo como gatilho exige confirmação dizendo o que muda: a
+- [x] Marcar um fluxo como gatilho exige confirmação dizendo o que muda: a
       partir dali o robô fala com clientes reais. O mesmo vale para marcá-lo
       como fluxo de **retomada**.
-- [ ] Configuração da retomada (Tarefa 3.5) na tela: interruptor, horas até
+- [x] Configuração da retomada (Tarefa 3.5) na tela: interruptor, horas até
       considerar abandono, dias e horário de expediente, fuso, aviso por
       e-mail. Chama `saveBotSettings`.
-- [ ] Sidebar: "Atendimento automático" depois de "Disparos",
+- [x] Sidebar: "Atendimento automático" depois de "Disparos",
       `permissionKey: 'viewCRM'`, ícone `Bot`.
-- [ ] Estado vazio com um botão "criar menu de triagem", chamando
+- [x] Estado vazio com um botão "criar menu de triagem", chamando
       `criarFluxoTriagem` da Tarefa 3.
-- [ ] `npx tsc --noEmit` e `npm run build`
-- [ ] Commit: `feat(bot): add the automation screen and flow simulator`
+- [x] `npx tsc --noEmit` e `npm run build`
+- [x] **Duas rotas a mais:** `/api/crm/bot/settings` (a configuração da
+      retomada) e `/api/crm/bot/triagem` (o botão do estado vazio).
+- [x] O rascunho salva sozinho, com atraso. Um construtor com botão "salvar"
+      perde trabalho: a pessoa arrasta dez nós, fecha a aba, e nada ficou.
+      Publicar continua explícito — é ele que faz o robô falar com clientes.
+- [x] A validação roda no navegador, com a **mesma função pura** do
+      `publishFlow`. Não há duas verdades: o que a tela acende em vermelho é o
+      que vai barrar a publicação.
+- [x] Commit: `feat(bot): add the automation screen and flow simulator`
 
 ---
 

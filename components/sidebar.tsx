@@ -18,6 +18,7 @@ import {
   Target,
   MessagesSquare,
   Megaphone,
+  Bot,
   Users,
   X,
   Trophy,
@@ -64,6 +65,12 @@ export const NAVIGATION_ITEMS: {
     name: 'Disparos',
     href: '/disparos',
     icon: Megaphone,
+    permissionKey: 'viewCRM',
+  },
+  {
+    name: 'Atendimento automático',
+    href: '/atendimento-automatico',
+    icon: Bot,
     permissionKey: 'viewCRM',
   },
   {
