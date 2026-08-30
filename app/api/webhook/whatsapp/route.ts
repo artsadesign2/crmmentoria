@@ -5,8 +5,11 @@ import { findOrCreateConversation } from '@/lib/crm/conversations';
 import { recordInboundMessage } from '@/lib/crm/messages';
 import { findOrCreateByPhone } from '@/lib/crm/contacts';
 import { formatPhoneBr } from '@/lib/crm/phone';
+import { isNumeroInterno } from '@/lib/crm/internal-phones';
 import { readEvolutionEnv, verifyWebhookToken } from '@/lib/evolution/server';
 import { isOptOutMessage, optOutContact } from '@/lib/dispatch/optout';
+import { executarBot, type ResultadoBot } from '@/lib/bot/executor';
+import { encerrarSessao } from '@/lib/bot/sessions';
 
 /**
  * Recebe os eventos da Evolution API e grava o que for conversa.
@@ -68,6 +71,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, handled: 'NO_ORG' });
     }
 
+    /**
+     * Número da própria equipe: descartar antes de gravar qualquer coisa.
+     *
+     * A Evolution dispara `messages.upsert` também para o que a instância
+     * **envia**, e nesse evento o `remoteJid` é o **destinatário**. Enquanto o
+     * sistema só falava com clientes isso era inofensivo. Desde que o robô
+     * avisa o atendente pelo WhatsApp, sem este filtro o primeiro aviso criaria
+     * um contato com o nome do atendente, uma conversa entrando na
+     * distribuição, e o menu de triagem sendo oferecido à própria equipe.
+     *
+     * Cobre também a resposta: quem responder "ok" ao aviso não vira lead.
+     */
+    if (await isNumeroInterno(organizationId, evento.phone)) {
+      console.log('[webhook] numero da equipe; nada gravado.');
+      return NextResponse.json({ ok: true, handled: 'INTERNAL' });
+    }
+
     const { contact } = await findOrCreateByPhone(
       organizationId,
       evento.phone,
@@ -101,11 +121,37 @@ export async function POST(request: Request) {
       console.log(`[webhook] contato ${contact.id} descadastrado do disparo.`);
     }
 
+    /**
+     * O bot roda por último, e só sobre mensagem nova do cliente.
+     *
+     * Três condições, cada uma evitando um estrago diferente:
+     *
+     * - `!duplicated`: a Evolution reenvia webhooks. Mensagem duplicada no
+     *   histórico é feia; bot executado duas vezes manda o texto em dobro para
+     *   o cliente. A idempotência da F3 passa a proteger o robô.
+     * - `!evento.fromMe`: mensagem enviada do próprio celular é uma pessoa
+     *   atendendo. O robô sai de cena — quem chega depois é sempre o humano.
+     * - `contentType === 'TEXT'`: o motor lê texto. Áudio e imagem vão para um
+     *   atendente, que é quem sabe o que fazer com eles.
+     *
+     * O robô decide sozinho se a conversa é dele. Ele atende as que ainda não
+     * têm dono e, desde a retomada, volta às que têm dono mas ficaram paradas
+     * ou chegaram fora do expediente — ver `lib/bot/reengage.ts`.
+     */
+    let bot: ResultadoBot = { atuou: false, enviadas: 0, retomada: null };
+
+    if (evento.fromMe) {
+      await encerrarSessao(conversa.id, 'Um atendente respondeu pelo aparelho.');
+    } else if (!duplicated && evento.contentType === 'TEXT') {
+      bot = await executarBot(organizationId, conversa.id, evento.content);
+    }
+
     return NextResponse.json({
       ok: true,
       handled: 'MESSAGE',
       duplicated,
       optedOut: descadastrou,
+      bot: bot.atuou ? { enviadas: bot.enviadas, retomada: bot.retomada } : null,
       conversationId: conversa.id,
     });
   } catch (error) {

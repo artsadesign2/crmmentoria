@@ -56,6 +56,13 @@ model Organization {
   dispatchSettings  DispatchSettings?
   quickReplies      QuickReply[]
 
+  // F6 - bot
+  botFlows          BotFlow[]
+  botFlowVersions   BotFlowVersion[]
+  botSessions       BotSession[]
+  botEvents         BotEvent[]
+  botSettings       BotSettings?
+
   @@map("organizations")
 }
 
@@ -98,6 +105,10 @@ model User {
 
   // F5 - disparo
   dispatchCampaigns     DispatchCampaign[]
+
+  // F6 - bot
+  botFlows              BotFlow[]
+  botFlowVersions       BotFlowVersion[]
 
   /// Escopado por organização: o mesmo e-mail pode existir em tenants distintos.
   @@unique([organizationId, email])
@@ -677,6 +688,9 @@ model Conversation {
   department   Department?  @relation(fields: [departmentId], references: [id], onUpdate: NoAction)
   messages     Message[]
 
+  // F6 - bot
+  botSessions  BotSession[]
+
   @@index([organizationId, status, lastMessageAt(sort: Desc)], map: "conversations_org_status_idx")
   /// Caixa de um atendente e a contagem que a distribuição por menor carga faz.
   @@index([organizationId, assignedUserId, status], map: "conversations_org_assigned_idx")
@@ -848,4 +862,149 @@ model QuickReply {
 
   @@unique([organizationId, shortcut], map: "quick_replies_org_shortcut_key")
   @@map("quick_replies")
+}
+
+// ===========================================================================
+// F6 — Bot builder e motor de execucao
+// ===========================================================================
+
+/// Fluxo de atendimento automatico. O rascunho, que o canvas edita.
+///
+/// `graph` NAO e o que roda: quem roda e a versao congelada em
+/// BotFlowVersion. Separar os dois impede o pior modo de falha da fase --
+/// editar o fluxo as 14h e fazer quem esta no meio de um atendimento pular
+/// para um no que nao existe mais.
+model BotFlow {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  createdByUserId  String?  @map("created_by_user_id") @db.Uuid
+  name             String   @db.VarChar(200)
+  /// { nodes: BotNode[], edges: BotEdge[] } — ver lib/bot/types.ts.
+  graph            Json     @default("{\"nodes\":[],\"edges\":[]}")
+  /// DRAFT | PUBLISHED
+  status           String   @default("DRAFT") @db.VarChar(20)
+  /// Fluxo que atende conversa nova.
+  ///
+  /// No maximo um por organizacao, garantido por um indice unico PARCIAL
+  /// (`bot_flows_trigger_key`) que o Prisma nao sabe declarar — ele vive na
+  /// migracao f6-bot, como o departments_default_inbox_key da F3.
+  isTrigger        Boolean  @default(false) @map("is_trigger")
+  /// Fluxo que retoma conversa abandonada ou fora do expediente.
+  ///
+  /// No maximo um por organizacao (`bot_flows_reengage_key`, indice parcial na
+  /// migracao f6-retomada). Sem ele o sistema cai no fluxo-gatilho; sem os
+  /// dois, a devolucao para a fila e o e-mail acontecem do mesmo jeito.
+  isReengage       Boolean  @default(false) @map("is_reengage")
+  /// Versao em execucao. Nulo enquanto nunca foi publicado.
+  publishedVersion Int?     @map("published_version")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdBy    User?             @relation(fields: [createdByUserId], references: [id], onUpdate: NoAction)
+  versions     BotFlowVersion[]
+  sessions     BotSession[]
+
+  @@index([organizationId, status], map: "bot_flows_org_status_idx")
+  @@map("bot_flows")
+}
+
+/// Versao publicada, imutavel: nada aqui e atualizado, so inserido.
+model BotFlowVersion {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  flowId            String   @map("flow_id") @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  version           Int
+  graph             Json
+  publishedAt       DateTime @default(now()) @map("published_at") @db.Timestamp(6)
+  publishedByUserId String?  @map("published_by_user_id") @db.Uuid
+
+  flow         BotFlow      @relation(fields: [flowId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  publishedBy  User?        @relation(fields: [publishedByUserId], references: [id], onUpdate: NoAction)
+
+  @@unique([flowId, version], map: "bot_flow_versions_flow_version_key")
+  @@map("bot_flow_versions")
+}
+
+/// Estado de uma conversa dentro de um fluxo.
+///
+/// `version` amarra a sessao a versao congelada: o executor carrega o grafo de
+/// BotFlowVersion, nunca de BotFlow.
+///
+/// No maximo uma RUNNING por conversa, garantido por indice unico PARCIAL
+/// (`bot_sessions_active_key`) na migracao f6-bot. Duas fariam o bot responder
+/// duas vezes a cada mensagem.
+model BotSession {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  flowId         String   @map("flow_id") @db.Uuid
+  version        Int
+  currentNodeId  String?  @map("current_node_id") @db.VarChar(80)
+  /// O que os nos de captura guardaram, e o que as condicoes leem.
+  variables      Json     @default("{}")
+  /// Teto de trocas com a IA. Sem ele, a conversa com o robo nao termina.
+  aiTurns        Int      @default(0) @map("ai_turns")
+  awaitingInput  Boolean  @default(false) @map("awaiting_input")
+  /// RUNNING | HANDED_OFF | DONE | ABORTED
+  status         String   @default("RUNNING") @db.VarChar(20)
+  startedAt      DateTime @default(now()) @map("started_at") @db.Timestamp(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  flow         BotFlow      @relation(fields: [flowId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  events       BotEvent[]
+
+  @@index([organizationId, status], map: "bot_sessions_org_status_idx")
+  @@map("bot_sessions")
+}
+
+/// Trilha do que o bot fez.
+///
+/// Sem ela, "o bot mandou uma coisa estranha para o cliente" e impossivel de
+/// investigar: o historico mostra o texto, mas nao por qual no ele passou.
+model BotEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId      String   @map("session_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  nodeId         String?  @map("node_id") @db.VarChar(80)
+  /// ENTER | SEND | CAPTURE | TRANSFER | AI | ABORT
+  kind           String   @db.VarChar(30)
+  detail         String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  session      BotSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sessionId, createdAt], map: "bot_events_session_idx")
+  @@map("bot_events")
+}
+
+/// Quando o robo retoma um lead que o atendimento humano deixou parado.
+///
+/// Separada de `dispatch_settings` de proposito: a janela do disparo responde
+/// "quando e aceitavel incomodar um desconhecido"; a do expediente responde
+/// "quando existe gente trabalhando". Sao perguntas diferentes.
+model BotSettings {
+  organizationId     String   @id @map("organization_id") @db.Uuid
+  reengageEnabled    Boolean  @default(true) @map("reengage_enabled")
+  /// Silencio humano que caracteriza abandono.
+  reengageAfterHours Int      @default(24) @map("reengage_after_hours")
+  /// Dias de expediente, 0 = domingo. Padrao: segunda a sexta.
+  officeDays         String   @default("1,2,3,4,5") @map("office_days") @db.VarChar(20)
+  officeStartHour    Int      @default(9) @map("office_start_hour")
+  officeEndHour      Int      @default(18) @map("office_end_hour")
+  timeZone           String   @default("America/Sao_Paulo") @map("time_zone") @db.VarChar(60)
+  /// Aviso pelo WhatsApp da empresa para o numero pessoal do atendente. E onde
+  /// ele esta o dia inteiro, entao e a rota principal.
+  notifyByWhatsapp   Boolean  @default(true) @map("notify_by_whatsapp")
+  /// Reserva: vale quando o atendente nao tem telefone ou o envio falha.
+  notifyByEmail      Boolean  @default(true) @map("notify_by_email")
+  updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("bot_settings")
 }

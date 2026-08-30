@@ -3,6 +3,7 @@ import { hasAtLeastRole } from '@/lib/auth/roles';
 import type { SessionPayload } from '@/lib/auth/jwt';
 import { formatPhoneBr } from './phone';
 import { routeConversation } from './routing';
+import { encerrarSessao } from '@/lib/bot/sessions';
 import type { ChannelType } from './types';
 import type {
   ConversationDTO,
@@ -390,6 +391,12 @@ export async function assignConversation(
     if (!destino) throw new ConversationForbiddenError('Atendente não encontrado nesta organização.');
   }
 
+  // Assumir tira o robô de cena. Devolver à fila (targetUserId nulo) não:
+  // a conversa volta a não ter dono, e o fluxo pode legitimamente continuar.
+  if (targetUserId) {
+    await encerrarSessao(id, 'Conversa assumida por um atendente.');
+  }
+
   const atualizada = await prisma.conversation.update({
     where: { id },
     data: { assignedUserId: targetUserId, updatedAt: new Date() },
@@ -435,6 +442,10 @@ export async function transferConversation(
     });
     if (!setor) throw new ConversationForbiddenError('Setor não encontrado nesta organização.');
   }
+
+  // Uma pessoa mexeu no encaminhamento: o robô não deve continuar decidindo
+  // para onde a conversa vai.
+  await encerrarSessao(id, 'Conversa transferida por um atendente.');
 
   // Transferir de setor devolve a conversa à fila do setor de destino: manter o
   // responsável antigo esvaziaria o sentido da transferência.
