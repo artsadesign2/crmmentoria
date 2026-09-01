@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Bot,
+  ChevronLeft,
   CheckCircle2,
   Loader2,
   MessageSquareWarning,
@@ -368,9 +369,22 @@ export default function AtendimentoAutomaticoPage() {
         </p>
       )}
 
-      <div className="flex min-h-0 flex-1 gap-3">
+      {/*
+        Mestre–detalhe no celular, três colunas no desktop.
+
+        As três colunas lado a lado sobreviviam a 390px porque nada estourava a
+        largura — a coluna da direita apenas encolhia para uns 110px e o texto
+        quebrava em uma palavra por linha. É o modo de falha que auditoria de
+        `scrollWidth` não pega: a página está tecnicamente correta e
+        praticamente inutilizável.
+
+        No celular, a lista some quando um fluxo é aberto, e volta pelo botão.
+      */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <aside
-          className="w-64 shrink-0 rounded-xl border"
+          className={`w-full shrink-0 rounded-xl border lg:w-64 ${
+            detalhe ? 'hidden lg:block' : 'flex-1 lg:flex-none'
+          }`}
           style={{ background: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
         >
           <FlowList
@@ -391,7 +405,10 @@ export default function AtendimentoAutomaticoPage() {
           >
             <Bot size={32} style={{ color: 'var(--theme-text-secondary)' }} />
             <p className="mt-3 text-sm" style={{ color: 'var(--theme-text-primary)' }}>
-              Escolha um fluxo à esquerda, ou crie um.
+              {/* "à esquerda" só é verdade no desktop: no celular a lista fica
+                  acima, e uma instrução que aponta para o lugar errado é pior
+                  que uma instrução genérica. */}
+              Escolha um fluxo na lista, ou crie um.
             </p>
             <p
               className="mt-1 max-w-sm text-xs leading-relaxed"
@@ -408,6 +425,20 @@ export default function AtendimentoAutomaticoPage() {
               className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
               style={{ background: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
             >
+              {/* Só no celular: no desktop a lista está do lado, sempre visível. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setDetalhe(null);
+                  setSelecionadoId(null);
+                  setNoSelecionado(null);
+                }}
+                className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/5 lg:hidden"
+                aria-label="Voltar para a lista de fluxos"
+              >
+                <ChevronLeft size={18} style={{ color: 'var(--theme-text-secondary)' }} />
+              </button>
+
               <input
                 className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none"
                 style={{ color: 'var(--theme-text-primary)' }}
@@ -501,15 +532,23 @@ export default function AtendimentoAutomaticoPage() {
               </p>
             )}
 
-            <div className="flex min-h-0 flex-1 gap-3">
+            {/*
+              Paleta, canvas e inspetor empilham no celular.
+
+              Lado a lado em 390px, o canvas ficaria com uns 150px de largura —
+              espaço em que não cabe um nó inteiro, quanto mais dois ligados. A
+              altura mínima existe pelo mesmo motivo: sem ela, o canvas dentro
+              de uma coluna flexível colapsa para quase nada.
+            */}
+            <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
               {podeEditar && (
-                <div className="w-40 shrink-0 overflow-y-auto">
+                <div className="w-full shrink-0 overflow-x-auto lg:w-40 lg:overflow-y-auto">
                   <NodePalette onAdicionar={adicionarNo} desabilitado={!podeEditar} />
                 </div>
               )}
 
               <div
-                className="min-w-0 flex-1 overflow-hidden rounded-xl border"
+                className="min-h-[55vh] min-w-0 flex-1 overflow-hidden rounded-xl border lg:min-h-0"
                 style={{ borderColor: 'var(--theme-border)' }}
               >
                 <FlowCanvas

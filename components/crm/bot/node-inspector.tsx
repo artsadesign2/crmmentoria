@@ -87,7 +87,7 @@ export function NodeInspector({
 
   return (
     <aside
-      className="flex h-full w-80 shrink-0 flex-col border-l"
+      className="flex h-full w-full shrink-0 flex-col border-t lg:w-80 lg:border-l lg:border-t-0"
       style={{ background: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
     >
       <header

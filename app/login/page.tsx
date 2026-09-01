@@ -94,7 +94,6 @@ function LoginForm() {
 
   const primaryColor = activePalette.rawTokens.primary;
   const glowColor = activePalette.rawTokens.glow;
-  const gradientColor = activePalette.rawTokens.primaryGradient;
 
   return (
     <div className="min-h-screen w-screen bg-[#05070D] relative overflow-hidden flex items-center justify-center p-4">
@@ -247,13 +246,30 @@ function LoginForm() {
                 </motion.div>
 
                 <div>
+                  {/*
+                    Cor sólida, e não o gradiente da paleta.
+
+                    Dois motivos, e o segundo é o que decide. O primeiro: sem a
+                    propriedade padrão `background-clip` ao lado da versão
+                    `-webkit-`, o recorte não se aplica em parte dos
+                    navegadores — e aí `WebkitTextFillColor: transparent`
+                    continua valendo sozinho, o gradiente pinta a caixa inteira
+                    e o nome da marca simplesmente some. Numa tela de login,
+                    esse é o texto que menos pode falhar.
+
+                    O segundo: todos os `primaryGradient` terminam num tom
+                    escuro (#4338CA no índigo, #9F1239 no rose) e este card é
+                    fixo escuro (#0B0F17), independente da paleta escolhida. O
+                    fim da palavra ficaria em 2,3:1 — abaixo de qualquer
+                    limite legível — mesmo com o recorte funcionando.
+
+                    A identidade da paleta continua na tela: o emblema, as
+                    linhas de destaque, o brilho ambiente e o botão. Ela não
+                    precisa estar no único texto que precisa ser lido.
+                  */}
                   <h1
                     className="text-2xl font-black uppercase tracking-tight"
-                    style={{
-                      background: gradientColor,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
+                    style={{ color: '#F8FAFC', textShadow: `0 0 28px ${glowColor}` }}
                   >
                     {brandName}
                   </h1>

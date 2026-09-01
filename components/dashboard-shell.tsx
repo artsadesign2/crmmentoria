@@ -10,7 +10,10 @@ import {
   GraduationCap,
   Menu,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/sidebar';
+import { MobileNav } from '@/components/mobile-nav';
+import { MenuToggle } from '@/components/menu-toggle';
 import { Topbar } from '@/components/topbar';
 import { CommandPalette } from '@/components/command-palette';
 import { NotificationProvider } from '@/lib/notification-context';
@@ -39,13 +42,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           color: activePalette.tokens.textPrimary,
         }}
       >
-        {/* Main Sidebar (Fixed Desktop + Slide-over Mobile) */}
+        {/* Barra fixa do desktop */}
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          mobileOpen={mobileMenuOpen}
-          onCloseMobile={() => setMobileMenuOpen(false)}
         />
+
+        {/* Gaveta do celular, com entrada e saída próprias */}
+        <MobileNav aberto={mobileMenuOpen} onFechar={() => setMobileMenuOpen(false)} />
 
         {/* Main Content Wrapper - Dynamic Margin on Desktop, 0 Margin on Mobile/Tablet */}
         <div
@@ -65,15 +69,25 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
 
-        {/* Mobile Bottom Navigation Bar (Ultra-Convenient Thumb Navigation for Phones) */}
-        <div
-          className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-pb ${
+        {/*
+          Navegação inferior, ao alcance do polegar.
+
+          Ela sai de cena quando a gaveta abre, em vez de disputar espaço com o
+          fundo escurecido. Sem isso, os quatro atalhos ficariam clicáveis por
+          cima de um modal — e a mesma tela teria duas navegações ativas ao
+          mesmo tempo, cada uma cobrindo metade da outra.
+        */}
+        <motion.div
+          className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-2xl border-t px-2 py-1 flex items-center justify-around shadow-2xl safe-area-pb ${
             isLightMode ? 'bg-white/95 border-slate-200' : 'bg-[#131926]/95 border-[#1F293D]'
           }`}
           style={{
             backgroundColor: activePalette.tokens.surface + 'f2',
             borderColor: activePalette.tokens.surfaceBorder,
           }}
+          initial={false}
+          animate={{ y: mobileMenuOpen ? '110%' : '0%' }}
+          transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
         >
           {[
             { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -89,31 +103,32 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 key={nav.href}
                 href={nav.href}
                 prefetch={true}
-                className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
-                  isActive ? 'font-bold scale-105' : 'text-slate-400 hover:text-slate-200'
+                // 44px de altura mínima: é o alvo do guia da Apple e o mínimo
+                // do WCAG 2.5.5. A barra tinha 30px, o que obriga a mirar.
+                className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 transition-all ${
+                  isActive ? 'font-bold' : 'text-slate-400 hover:text-slate-200'
                 }`}
                 style={isActive ? { color: activePalette.tokens.primary } : {}}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <Icon
-                  size={18}
+                  size={19}
                   style={isActive ? { color: activePalette.tokens.primary } : {}}
                   className={!isActive ? (isLightMode ? 'text-slate-500' : 'text-slate-400') : ''}
                 />
-                <span className="text-[10px] mt-0.5 tracking-tight">{nav.name}</span>
+                <span className="text-[10px] tracking-tight">{nav.name}</span>
               </Link>
             );
           })}
 
-          {/* More / Menu Drawer Toggle on Bottom Bar */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-slate-400 transition-all"
-            style={{ color: activePalette.tokens.textSecondary }}
-          >
-            <Menu size={18} />
-            <span className="text-[10px] mt-0.5 tracking-tight">Mais</span>
-          </button>
-        </div>
+          {/* O controle do menu: mesmo botão para abrir e para fechar. */}
+          <MenuToggle
+            aberto={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            variante="bar"
+            rotulo="Menu"
+          />
+        </motion.div>
 
         {/* Command Palette Overlay */}
         <CommandPalette

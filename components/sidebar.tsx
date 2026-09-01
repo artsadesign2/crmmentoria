@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Kanban,
   GraduationCap,
   BookOpen,
   TrendingUp,
@@ -20,12 +19,11 @@ import {
   Megaphone,
   Bot,
   Users,
-  X,
   Trophy,
   Award,
   LogOut,
 } from 'lucide-react';
-import { DEFAULT_TENANT, hasFeature } from '@/lib/tenant';
+import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import { ROLE_HIERARCHIES, RolePermissions } from '@/lib/permissions';
@@ -126,15 +124,11 @@ export const NAVIGATION_ITEMS: {
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
-  mobileOpen: boolean;
-  onCloseMobile: () => void;
 }
 
 export function Sidebar({
   collapsed,
   onToggleCollapse,
-  mobileOpen,
-  onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname();
   const { currentUser, currentRole, canAccessModule, isMaster, logout } = useAuth();
@@ -158,29 +152,29 @@ export function Sidebar({
   }, []);
 
   const roleInfo = ROLE_HIERARCHIES[currentRole] || ROLE_HIERARCHIES['Usuário'];
-  const isCollapsedDesktop = collapsed && !mobileOpen;
+  const isCollapsedDesktop = collapsed;
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
-      {mobileOpen && (
-        <div
-          onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden transition-opacity duration-300 animate-in fade-in"
-          aria-hidden="true"
-        />
-      )}
+      {/*
+        Barra do desktop, e só dela.
 
-      {/* Main Sidebar */}
+        Antes este mesmo elemento virava a gaveta do celular por translação. Era
+        econômico e custava caro: a gaveta herdava a densidade de uma barra
+        desenhada para mouse, e — pior — `transition-all` animava largura e
+        cores junto com o deslocamento, então fechar produzia um borrão em vez
+        de um movimento. O celular agora tem `MobileNav`, com entrada e saída
+        próprias.
+
+        `transition-[width]` no lugar de `transition-all`: aqui a única coisa
+        que muda de tamanho é a largura, ao recolher.
+      */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 flex flex-col justify-between border-r ${
+        className={`fixed top-0 left-0 z-50 h-screen transition-[width] duration-300 hidden lg:flex flex-col justify-between border-r ${
           isLightMode
             ? 'bg-white/95 text-slate-800 border-slate-200'
             : 'bg-[#131926]/95 text-slate-100 border-[#1F293D]'
         } backdrop-blur-2xl ${
-          // Mobile drawer state
-          mobileOpen ? 'translate-x-0 w-72 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-        } ${
           // Desktop collapsed width
           collapsed ? 'lg:w-20' : 'lg:w-64'
         }`}
@@ -194,7 +188,6 @@ export function Sidebar({
           >
             <Link
               href="/dashboard"
-              onClick={onCloseMobile}
               className={`flex items-center gap-3 ${
                 isCollapsedDesktop ? 'justify-center w-full' : 'overflow-hidden flex-1'
               }`}
@@ -286,18 +279,6 @@ export function Sidebar({
               </button>
             )}
 
-            {/* Mobile Close Drawer Button */}
-            <button
-              onClick={onCloseMobile}
-              className={`lg:hidden p-2 rounded-xl border transition-colors ${
-                isLightMode
-                  ? 'bg-slate-100 text-slate-600 border-slate-200'
-                  : 'bg-[#0B0F17] text-slate-400 hover:text-slate-100 border-[#1F293D]'
-              }`}
-              title="Fechar Menu"
-            >
-              <X size={18} />
-            </button>
           </div>
 
           {/* Navigation Menu Items */}
@@ -324,7 +305,6 @@ export function Sidebar({
                     key={item.href}
                     href={item.href}
                     prefetch={true}
-                    onClick={onCloseMobile}
                     className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative group shrink-0 ${
                       isActive
                         ? 'font-bold shadow-lg'
@@ -373,7 +353,6 @@ export function Sidebar({
                   key={item.href}
                   href={item.href}
                   prefetch={true}
-                  onClick={onCloseMobile}
                   className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'shadow-md'

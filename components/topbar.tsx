@@ -44,6 +44,7 @@ import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
+import { MenuToggle } from '@/components/menu-toggle';
 import { toast } from '@/lib/toast-context';
 import { ROLE_HIERARCHIES, UserRole } from '@/lib/permissions';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
@@ -178,23 +179,25 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
     >
       {/* Left: Mobile Toggle & Brand */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {onOpenMobileMenu && (
-          <button
-            type="button"
-            onClick={onOpenMobileMenu}
-            className={`md:hidden p-2 rounded-xl border transition-colors ${
-              isLightMode
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                : 'bg-[#111728] hover:bg-[#1A2234] text-slate-300 border-[#1F293D]'
-            }`}
-            title="Abrir Menu Lateral"
-          >
-            <Menu size={18} />
-          </button>
-        )}
+        {/*
+          `lg:hidden`, e não `md:hidden`.
 
+          A barra lateral só ancora em `lg`. Com o botão sumindo em `md`, o
+          tablet ficava numa faixa de 768px a 1023px sem barra fixa e sem
+          hamburguer no topo — a navegação inteira dependia da barra de baixo.
+        */}
+        {onOpenMobileMenu && <MenuToggle aberto={false} onClick={onOpenMobileMenu} />}
+
+        {/*
+          Escondido no celular.
+
+          Com os controles da direita em 44px, o chip do plano truncava para
+          "ENTE" — um rótulo cortado ocupa o mesmo espaço e não informa nada. A
+          marca já aparece no cabeçalho da gaveta, que é onde alguém procura
+          por ela.
+        */}
         <div
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold max-w-[160px] sm:max-w-[240px] truncate ${
+          className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold max-w-[160px] sm:max-w-[240px] truncate ${
             isLightMode
               ? 'bg-slate-100 text-slate-700 border-slate-200'
               : 'bg-[#111728] text-slate-300 border-[#1F293D]'
@@ -219,7 +222,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         {/* Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-medium border flex items-center gap-2 transition-all ${
+          className={`min-h-[44px] min-w-[44px] justify-center px-3 sm:py-2 sm:min-h-0 sm:min-w-0 sm:justify-start sm:px-4 rounded-xl text-xs font-medium border flex items-center gap-2 transition-all ${
             isLightMode
               ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200 hover:text-slate-900'
               : 'bg-[#111728] hover:bg-[#1A2234] text-slate-400 border-[#1F293D] hover:text-slate-200'
@@ -236,7 +239,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl border transition-all flex items-center justify-center ${
+            className={`relative w-11 h-11 sm:w-10 sm:h-10 rounded-xl border transition-all flex items-center justify-center ${
               isNotifOpen
                 ? 'shadow-md'
                 : isLightMode
@@ -484,7 +487,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         <div className={`flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
           <button
             onClick={() => setIsProfileOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
+            className="flex min-h-[44px] items-center gap-1.5 px-2.5 sm:min-h-0 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold border transition-all"
             style={{
               backgroundColor: activePalette.tokens.badgeBg,
               color: activePalette.tokens.primary,
@@ -501,7 +504,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
           <button
             type="button"
             onClick={handleLogout}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
+            className="w-11 h-11 sm:w-9 sm:h-9 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
             title="Sair da Conta"
           >
             <LogOut size={15} />
