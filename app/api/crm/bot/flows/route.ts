@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { listFlows, saveFlow } from '@/lib/bot/flows';
 import { asGraph, BotError, GRAFO_VAZIO } from '@/lib/bot/types';
 
@@ -13,14 +13,14 @@ import { asGraph, BotError, GRAFO_VAZIO } from '@/lib/bot/types';
  */
 
 export const GET = withAuth(async () => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const flows = await listFlows(session);
 
   return NextResponse.json({ ok: true, flows });
 });
 
 export const POST = withAuth(async (request: Request) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
   try {

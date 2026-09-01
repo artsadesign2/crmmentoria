@@ -34,6 +34,8 @@ export const NAVIGATION_ITEMS: {
   icon: any;
   feature?: string;
   permissionKey: keyof RolePermissions;
+  /** Some do menu para quem não é Master, por mais permissões que tenha. */
+  somenteMaster?: boolean;
 }[] = [
   {
     name: 'Dashboard',
@@ -69,6 +71,7 @@ export const NAVIGATION_ITEMS: {
     name: 'Atendimento automático',
     href: '/atendimento-automatico',
     icon: Bot,
+    somenteMaster: true,
     permissionKey: 'viewCRM',
   },
   {
@@ -290,6 +293,11 @@ export function Sidebar({
             }`}
           >
             {NAVIGATION_ITEMS.map((item) => {
+              // Telas de configuração do robô só existem para o Master.
+              if (item.somenteMaster && !isMaster) {
+                return null;
+              }
+
               // Check RBAC permission for this role
               if (!canAccessModule(item.permissionKey) && !isMaster) {
                 return null;

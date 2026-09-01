@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { criarFluxoRetomada } from '@/lib/bot/seed-triagem';
 import { getFlow } from '@/lib/bot/flows';
 import { BotError } from '@/lib/bot/types';
@@ -17,7 +17,7 @@ import { BotError } from '@/lib/bot/types';
  * distribuição padrão, que é o certo para uma conversa que já tinha dono.
  */
 export const POST = withAuth(async () => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
 
   try {
     const { flowId } = await criarFluxoRetomada(session);

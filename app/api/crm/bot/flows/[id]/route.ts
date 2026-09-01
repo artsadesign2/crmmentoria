@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { deleteFlow, getFlow, saveFlow } from '@/lib/bot/flows';
 import { asGraph, BotError } from '@/lib/bot/types';
 
@@ -16,7 +16,7 @@ const NAO_ENCONTRADO = NextResponse.json(
 
 /** O fluxo com o rascunho e a validação já feita, para o canvas abrir. */
 export const GET = withAuth<Ctx>(async (_request, { params }) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const { id } = await params;
 
   const flow = await getFlow(session, id);
@@ -33,7 +33,7 @@ export const GET = withAuth<Ctx>(async (_request, { params }) => {
  * alguém apertar publicar.
  */
 export const PATCH = withAuth<Ctx>(async (request, { params }) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const { id } = await params;
 
   const atual = await getFlow(session, id);
@@ -68,7 +68,7 @@ export const PATCH = withAuth<Ctx>(async (request, { params }) => {
  * estado, e a mensagem diz o que fazer no lugar.
  */
 export const DELETE = withAuth<Ctx>(async (_request, { params }) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const { id } = await params;
 
   try {

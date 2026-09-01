@@ -81,7 +81,9 @@ export function MobileNav({ aberto, onFechar }: { aberto: boolean; onFechar: () 
     };
   }, [aberto, onFechar]);
 
-  const itens = NAVIGATION_ITEMS.filter((i) => canAccessModule(i.permissionKey) || isMaster);
+  const itens = NAVIGATION_ITEMS.filter(
+    (i) => (canAccessModule(i.permissionKey) || isMaster) && (!i.somenteMaster || isMaster)
+  );
 
   return (
     <AnimatePresence>

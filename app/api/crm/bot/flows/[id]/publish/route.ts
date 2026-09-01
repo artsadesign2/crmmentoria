@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { publishFlow } from '@/lib/bot/flows';
 import { BotError } from '@/lib/bot/types';
 
@@ -15,7 +15,7 @@ type Ctx = { params: Promise<{ id: string }> };
  * vez de mostrar "erro ao publicar".
  */
 export const POST = withAuth<Ctx>(async (_request, { params }) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const { id } = await params;
 
   try {

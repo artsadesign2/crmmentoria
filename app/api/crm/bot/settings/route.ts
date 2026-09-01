@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { getBotSettings, saveBotSettings } from '@/lib/bot/settings';
 import { BotError } from '@/lib/bot/types';
 
@@ -13,7 +13,7 @@ import { BotError } from '@/lib/bot/types';
  * verdadeiro em vez de um padrão inventado na tela.
  */
 export const GET = withAuth(async () => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
 
   const config = await getBotSettings(session.organizationId);
   const linha = await prisma.botSettings.findUnique({
@@ -37,7 +37,7 @@ export const GET = withAuth(async () => {
 
 /** Salvar exige Administrador — a checagem vive no serviço. */
 export const PUT = withAuth(async (request: Request) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
   try {

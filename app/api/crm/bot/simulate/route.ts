@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { sessaoInicial, step } from '@/lib/bot/engine';
 import { validateGraph } from '@/lib/bot/validate';
 import { getVozConfig } from '@/lib/bot/settings';
@@ -30,7 +30,7 @@ const MAX_NOS = 300;
 const MAX_ARESTAS = 600;
 
 export const POST = withAuth(async (request: Request) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 

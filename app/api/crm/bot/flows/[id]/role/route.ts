@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireSession, withAuth } from '@/lib/auth/session';
+import { requireRole, withAuth } from '@/lib/auth/session';
 import { getFlow, setFlowRole } from '@/lib/bot/flows';
 import { BotError } from '@/lib/bot/types';
 import type { PapelDoFluxo } from '@/lib/bot/sessions';
@@ -17,7 +17,7 @@ const PAPEIS: PapelDoFluxo[] = ['TRIGGER', 'REENGAGE'];
  * grave viajar de carona na corriqueira.
  */
 export const POST = withAuth<Ctx>(async (request, { params }) => {
-  const session = await requireSession();
+  const session = await requireRole('Master');
   const { id } = await params;
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
