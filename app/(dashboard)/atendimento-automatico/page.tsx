@@ -10,12 +10,15 @@ import {
   MessageSquareWarning,
   Radio,
   RotateCcw,
+  Download,
   Settings2,
   Trash2,
   Upload,
 } from 'lucide-react';
 import { FlowCanvas } from '@/components/crm/bot/flow-canvas';
+import { FlowImport } from '@/components/crm/bot/flow-import';
 import { FlowList } from '@/components/crm/bot/flow-list';
+import { FlowOutline } from '@/components/crm/bot/flow-outline';
 import { FlowSimulator } from '@/components/crm/bot/flow-simulator';
 import { NodeInspector, type SetorOpcao } from '@/components/crm/bot/node-inspector';
 import { NodePalette } from '@/components/crm/bot/node-palette';
@@ -23,6 +26,7 @@ import { ReengageSettings } from '@/components/crm/bot/reengage-settings';
 import { useAuth } from '@/lib/auth-context';
 import { validateGraph, type ProblemaGrafo } from '@/lib/bot/validate';
 import type { FlowDTO, FlowDetailDTO } from '@/lib/bot/flows';
+import { exportarGrafo } from '@/lib/bot/import';
 import type { BotGraph, BotNodeData, BotNodeType } from '@/lib/bot/types';
 
 /**
@@ -64,6 +68,7 @@ export default function AtendimentoAutomaticoPage() {
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [problemasPublicacao, setProblemasPublicacao] = useState<ProblemaGrafo[]>([]);
   const [configAberta, setConfigAberta] = useState(false);
+  const [importAberto, setImportAberto] = useState(false);
 
   const timerSalvar = useRef<ReturnType<typeof setTimeout> | null>(null);
   const grafoSalvo = useRef<string>('');
@@ -325,6 +330,28 @@ export default function AtendimentoAutomaticoPage() {
     }
   };
 
+  /**
+   * Baixa o fluxo como JSON.
+   *
+   * Importar sem exportar seria meia funcionalidade: sem um arquivo de
+   * exemplo, ninguém descobre o formato — nem a pessoa, nem a IA a quem ela
+   * vai pedir um fluxo. Exportar é o que torna o formato aprendível.
+   */
+  const exportar = () => {
+    if (!detalhe) return;
+
+    const arquivo = new Blob([exportarGrafo(detalhe.name, grafo)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `${detalhe.name.replace(/[^\w\s-]/g, '').trim() || 'fluxo'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const no = grafo.nodes.find((n) => n.id === noSelecionado) ?? null;
   const listaProblemas = problemasPublicacao.length > 0 ? problemasPublicacao : problemas;
 
@@ -395,6 +422,7 @@ export default function AtendimentoAutomaticoPage() {
             onCriar={() => void criar('/api/crm/bot/flows')}
             onCriarTriagem={() => void criar('/api/crm/bot/triagem')}
             onCriarRetomada={() => void criar('/api/crm/bot/retomada')}
+            onImportar={() => setImportAberto(true)}
           />
         </aside>
 
@@ -503,6 +531,17 @@ export default function AtendimentoAutomaticoPage() {
 
                   <button
                     type="button"
+                    onClick={exportar}
+                    className="rounded-lg border p-1.5 transition-colors hover:bg-white/5"
+                    style={{ borderColor: 'var(--theme-border)' }}
+                    title="Baixar este fluxo como JSON"
+                    aria-label="Exportar fluxo"
+                  >
+                    <Download size={13} style={{ color: 'var(--theme-text-secondary)' }} />
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={apagar}
                     className="rounded-lg border p-1.5 transition-colors hover:bg-red-500/10"
                     style={{ borderColor: 'var(--theme-border)' }}
@@ -533,22 +572,28 @@ export default function AtendimentoAutomaticoPage() {
             )}
 
             {/*
-              Paleta, canvas e inspetor empilham no celular.
+              O canvas é do computador; o celular lê o fluxo como roteiro.
 
-              Lado a lado em 390px, o canvas ficaria com uns 150px de largura —
-              espaço em que não cabe um nó inteiro, quanto mais dois ligados. A
-              altura mínima existe pelo mesmo motivo: sem ela, o canvas dentro
-              de uma coluna flexível colapsa para quase nada.
+              Empilhar as três colunas resolvia a largura e não resolvia o
+              gesto: arrastar nó e ligar aresta com o polegar não funciona com
+              arranjo de CSS nenhum. Em vez de espremer o desenho, a tela troca
+              de representação — FlowOutline mostra a mesma conversa de cima
+              para baixo, com os mesmos erros em vermelho.
+
+              O que sobra no telefone é o trabalho que se faz longe da mesa:
+              ler, testar no simulador, publicar e ativar. A paleta fica de
+              fora porque um nó criado aqui nasceria numa posição que ninguém
+              consegue arrumar — viraria órfão.
             */}
             <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
               {podeEditar && (
-                <div className="w-full shrink-0 overflow-x-auto lg:w-40 lg:overflow-y-auto">
+                <div className="hidden shrink-0 lg:block lg:w-40 lg:overflow-y-auto">
                   <NodePalette onAdicionar={adicionarNo} desabilitado={!podeEditar} />
                 </div>
               )}
 
               <div
-                className="min-h-[55vh] min-w-0 flex-1 overflow-hidden rounded-xl border lg:min-h-0"
+                className="hidden min-w-0 flex-1 overflow-hidden rounded-xl border lg:block"
                 style={{ borderColor: 'var(--theme-border)' }}
               >
                 <FlowCanvas
@@ -557,6 +602,17 @@ export default function AtendimentoAutomaticoPage() {
                   selecionadoId={noSelecionado}
                   somenteLeitura={!podeEditar}
                   onChange={mudarGrafo}
+                  onSelecionar={setNoSelecionado}
+                />
+              </div>
+
+              <div
+                className="min-h-[45vh] min-w-0 flex-1 overflow-hidden rounded-xl border lg:hidden"
+                style={{ background: 'var(--theme-bg)', borderColor: 'var(--theme-border)' }}
+              >
+                <FlowOutline
+                  graph={grafo}
+                  problemas={listaProblemas}
                   onSelecionar={setNoSelecionado}
                 />
               </div>
@@ -573,7 +629,7 @@ export default function AtendimentoAutomaticoPage() {
                 />
               ) : (
                 <aside
-                  className="w-80 shrink-0 rounded-xl border"
+                  className="w-full shrink-0 rounded-xl border lg:w-80"
                   style={{ background: 'var(--theme-surface)', borderColor: 'var(--theme-border)' }}
                 >
                   <FlowSimulator graph={grafo} />
@@ -586,6 +642,25 @@ export default function AtendimentoAutomaticoPage() {
 
       {configAberta && (
         <ReengageSettings podeEditar={podeEditar} onFechar={() => setConfigAberta(false)} />
+      )}
+
+      {importAberto && (
+        <FlowImport
+          onFechar={() => setImportAberto(false)}
+          onCriado={async (flow, avisos) => {
+            setImportAberto(false);
+            await carregarLista();
+            await abrir(flow.id);
+            // Os avisos contam o que foi consertado na entrada. Escondê-los
+            // deixaria a pessoa procurando no canvas por que um passo mudou
+            // de id ou uma ligação sumiu.
+            setMensagem(
+              avisos.length > 0
+                ? `Fluxo criado com ${avisos.length} ajuste(s): ${avisos.join(' ')}`
+                : 'Fluxo criado como rascunho. Confira o texto antes de publicar.'
+            );
+          }}
+        />
       )}
     </div>
   );

@@ -474,7 +474,7 @@ export default function DashboardPage() {
             </h2>
             <Link
               href="/events"
-              className="text-xs font-bold hover:underline"
+              className="inline-flex items-center text-xs font-bold hover:underline"
               style={{ color: activePalette.tokens.primary }}
             >
               Ver todos

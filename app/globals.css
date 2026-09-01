@@ -225,3 +225,43 @@ body.theme-light .glass-card:hover {
 .modal-card-animate {
   animation: modalCardFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/*
+  Alvos de toque de 44px no celular.
+
+  WCAG 2.5.5 e o guia da Apple pedem 44px; o app inteiro foi desenhado para
+  mouse, com `py-1.5` e `text-xs`, e chegava a controles de 23px. Uma auditoria
+  em 390px encontrou 293 alvos abaixo do mínimo em 14 telas — mas não 293
+  desenhos diferentes: são poucos componentes repetidos (um card de mentorado
+  com quatro botões, vezes 33 cards). Por isso a correção é uma regra, e não
+  293 edições: a regra também vale para o botão que alguém escrever amanhã.
+
+  Só `min-height`, nunca `height`: o controle cresce até o mínimo e para. E
+  `min-width` fica para os botões sem rótulo, porque forçar largura em botão
+  com texto empurraria linhas inteiras para fora da tela.
+
+  `pointer: coarse` restringe ao dedo. Um laptop de tela pequena continua com
+  a densidade de mouse, que é a certa para ele.
+*/
+@media (max-width: 1023px) and (pointer: coarse) {
+  button:not(.alvo-livre),
+  [role='button']:not(.alvo-livre),
+  select:not(.alvo-livre) {
+    min-height: 44px;
+  }
+
+  /*
+    Botão sem rótulo é quadrado: o ícone de 14px dentro de uma caixa de 25px é
+    o pior caso da auditoria, e é justamente o botão de apagar.
+  */
+  button:not(.alvo-livre):has(> svg:only-child),
+  a[href]:not(.alvo-livre):has(> svg:only-child),
+  [role='button']:not(.alvo-livre):has(> svg:only-child) {
+    min-width: 44px;
+  }
+
+  /* Link só cresce quando já é caixa. Em texto corrido, continua texto. */
+  a[href]:not(.alvo-livre):is(.flex, .inline-flex, .block, .grid) {
+    min-height: 44px;
+  }
+}

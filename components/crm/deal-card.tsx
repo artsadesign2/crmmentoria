@@ -180,7 +180,7 @@ export function DealCard({ deal, onOpen, onWhatsApp, onRemoveTag, isDragging }: 
             title="Ligar"
             aria-label="Ligar"
             onClick={(e) => e.stopPropagation()}
-            className="rounded-md p-1 text-cyan-400 transition-colors hover:bg-cyan-500/15"
+            className="inline-flex items-center justify-center rounded-md p-1 text-cyan-400 transition-colors hover:bg-cyan-500/15"
           >
             <Phone size={13} />
           </a>

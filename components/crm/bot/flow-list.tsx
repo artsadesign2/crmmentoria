@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, CheckCircle2, CirclePlus, FileEdit, RotateCcw } from 'lucide-react';
+import { Bot, CheckCircle2, CirclePlus, FileEdit, RotateCcw, Sparkles } from 'lucide-react';
 import type { FlowDTO } from '@/lib/bot/flows';
 
 /**
@@ -20,6 +20,7 @@ export function FlowList({
   onCriar,
   onCriarTriagem,
   onCriarRetomada,
+  onImportar,
 }: {
   flows: FlowDTO[];
   selecionadoId: string | null;
@@ -28,6 +29,7 @@ export function FlowList({
   onCriar: () => void;
   onCriarTriagem: () => void;
   onCriarRetomada: () => void;
+  onImportar: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -60,6 +62,21 @@ export function FlowList({
           style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
         >
           <RotateCcw size={14} /> Retomada pronta
+        </button>
+
+        {/*
+          Descrever e colar são a mesma decisão vista de dois lados, então
+          moram atrás do mesmo botão. Dois itens aqui obrigariam a pessoa a
+          saber que os dois existem antes de clicar em qualquer um.
+        */}
+        <button
+          type="button"
+          onClick={onImportar}
+          disabled={ocupado}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs transition-colors disabled:opacity-40"
+          style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
+        >
+          <Sparkles size={14} /> Descrever ou colar JSON
         </button>
       </div>
 
