@@ -1,27 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   BookOpen,
   Search,
   Plus,
-  Eye,
-  FileText,
   Building,
   Clock,
   Sparkles,
-  X,
   Youtube,
-  ExternalLink,
-  Play,
-  CheckCircle2,
-  Folder,
-  Layers,
   ArrowRight,
+  Video,
+  FileText,
 } from 'lucide-react';
-import { ArticleCard } from '@/components/ui/blog-post-card';
 import { Modal } from '@/components/ui/modal';
-import { Article, MOCK_ARTICLES } from '@/lib/mock-data';
+import { INITIAL_WIKI_ARTICLES, WikiArticleItem } from '@/lib/wiki/wiki-service';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 
@@ -29,11 +24,12 @@ const DEPARTMENTS = ['Todos', 'Operacional', 'Comercial', 'Financeiro', 'Jurídi
 const CATEGORIES = ['Processos', 'SOPs', 'Treinamento', 'Atendimento', 'Vendas', 'Geral'];
 
 export default function WikiPage() {
+  const router = useRouter();
   const { isLightMode, activePalette } = useTheme();
-  const [articles, setArticles] = useState<Article[]>(MOCK_ARTICLES);
+
+  const [articles, setArticles] = useState<WikiArticleItem[]>(INITIAL_WIKI_ARTICLES);
   const [selectedDept, setSelectedDept] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
   // Modal Manual
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -42,8 +38,6 @@ export default function WikiPage() {
   const [newContent, setNewContent] = useState('');
   const [newDept, setNewDept] = useState('Operacional');
   const [newCategory, setNewCategory] = useState('Processos');
-  const [newCoverImage, setNewCoverImage] = useState('');
-  const [newVideoUrl, setNewVideoUrl] = useState('');
 
   // Modal YouTube AI Importer
   const [isYouTubeModalOpen, setIsYouTubeModalOpen] = useState(false);
@@ -52,11 +46,35 @@ export default function WikiPage() {
   const [ytCategory, setYtCategory] = useState('Treinamento');
   const [loadingYouTube, setLoadingYouTube] = useState(false);
 
+  // Carrega artigos salvos localmente
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('rocket_custom_wiki_articles');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setArticles([...parsed, ...INITIAL_WIKI_ARTICLES]);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const saveCustomArticle = (newArt: WikiArticleItem) => {
+    try {
+      const currentStored = localStorage.getItem('rocket_custom_wiki_articles');
+      const list = currentStored ? JSON.parse(currentStored) : [];
+      const updated = [newArt, ...list];
+      localStorage.setItem('rocket_custom_wiki_articles', JSON.stringify(updated));
+    } catch {}
+    setArticles((prev) => [newArt, ...prev]);
+  };
+
   const filteredArticles = articles.filter((art) => {
     const matchesDept = selectedDept === 'Todos' || art.department === selectedDept;
     const matchesSearch =
       art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      art.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      art.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (art.category && art.category.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesDept && matchesSearch;
   });
 
@@ -64,26 +82,26 @@ export default function WikiPage() {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    const article: Article = {
+    const newArt: WikiArticleItem = {
       id: `a-${Date.now()}`,
-      title: newTitle,
-      summary: newSummary || 'Sem resumo cadastrado.',
-      content: newContent || 'Conteúdo do artigo...',
+      title: newTitle.trim(),
+      summary: newSummary.trim() || 'Documento oficial de processos e diretrizes operacionais da equipe.',
+      content: newContent.trim() || `# ${newTitle.trim()}\n\nConteúdo cadastrado pela equipe.`,
       category: newCategory,
       department: newDept,
       viewsCount: 1,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toLocaleDateString('pt-BR'),
       author: 'Comandante Master',
+      readingTimeMinutes: 4,
     };
 
-    setArticles([article, ...articles]);
+    saveCustomArticle(newArt);
     setNewTitle('');
     setNewSummary('');
     setNewContent('');
-    setNewCoverImage('');
-    setNewVideoUrl('');
     setIsAddModalOpen(false);
-    toast.success('Artigo publicado na Wiki!', `O documento "${article.title}" já está disponível para consulta.`);
+    toast.success('Artigo Publicado!', `O documento "${newArt.title}" já está disponível.`);
+    router.push(`/wiki/${newArt.id}`);
   };
 
   const handleImportYouTube = async (e: React.FormEvent) => {
@@ -110,7 +128,7 @@ export default function WikiPage() {
 
       const { data } = json;
 
-      const newArt: Article = {
+      const newArt: WikiArticleItem = {
         id: `yt-${Date.now()}`,
         title: data.title,
         summary: data.generatedSummary,
@@ -118,18 +136,22 @@ export default function WikiPage() {
         category: ytCategory,
         department: ytDept,
         viewsCount: 1,
-        createdAt: new Date().toISOString().split('T')[0],
-        author: data.author || 'YouTube AI Extractor',
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        author: data.author || 'YouTube Treinamento',
+        videoUrl: data.videoUrl,
+        coverImage: data.thumbnailUrl,
+        readingTimeMinutes: data.readingTimeMinutes || 5,
+        tags: data.tags,
       };
 
-      setArticles([newArt, ...articles]);
+      saveCustomArticle(newArt);
       setYoutubeUrl('');
       setIsYouTubeModalOpen(false);
-      setSelectedArticle(newArt);
       toast.success(
         'Base de Conhecimento Criada!',
         `O vídeo "${data.title}" foi transformado em um SOP completo com sucesso.`
       );
+      router.push(`/wiki/${newArt.id}`);
     } catch (err) {
       toast.error('Falha de Conexão', 'Erro ao conectar com o serviço de extração.');
     } finally {
@@ -138,18 +160,18 @@ export default function WikiPage() {
   };
 
   return (
-    <div className="w-full space-y-8 animate-in fade-in duration-300 pb-12">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0F172A]/80 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-xl">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-amber-500/10 text-amber-400 border border-amber-500/20">
+    <div className="w-full space-y-8 animate-in fade-in duration-300 pb-16">
+      {/* Top Banner Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#0F172A]/90 border border-slate-800/90 rounded-3xl p-8 backdrop-blur-xl shadow-xl">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/25">
             <BookOpen size={14} /> Wiki & Base de Conhecimento
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             Central de Processos & Documentação
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Artigos, SOPs, diretrizes da equipe e treinamentos importados do YouTube com IA.
+          <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+            Consulte manuais, SOPs, diretrizes operacionais e treinamentos em vídeo convertidos em artigos estruturados para a equipe.
           </p>
         </div>
 
@@ -157,35 +179,35 @@ export default function WikiPage() {
           {/* Botão Importar YouTube com IA */}
           <button
             onClick={() => setIsYouTubeModalOpen(true)}
-            className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
+            className="px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-2xl text-xs font-bold flex items-center space-x-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
           >
-            <Youtube size={16} className="text-red-400" />
-            <span>Importar YouTube com IA</span>
+            <Youtube size={17} className="text-red-400" />
+            <span>Importar Vídeo do YouTube com IA</span>
           </button>
 
           {/* Botão Novo Artigo Manual */}
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-amber-500/20"
+            className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl text-xs flex items-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-amber-500/20"
           >
-            <Plus size={15} />
-            <span>Novo Artigo</span>
+            <Plus size={16} />
+            <span>Publicar Artigo</span>
           </button>
         </div>
       </div>
 
-      {/* Barra de Filtros e Busca */}
+      {/* Barra de Filtros & Busca */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Filtros de Departamentos */}
+        {/* Filtro por Departamento */}
         <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 custom-scrollbar">
           {DEPARTMENTS.map((dept) => (
             <button
               key={dept}
               onClick={() => setSelectedDept(dept)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                 selectedDept === dept
-                  ? 'bg-slate-800 text-amber-400 border border-amber-500/30 shadow-sm'
-                  : 'bg-[#131B2E]/60 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  ? 'bg-slate-800 text-amber-400 border border-amber-500/40 shadow-sm font-bold'
+                  : 'bg-[#131B2E]/70 text-slate-400 hover:text-slate-200 border border-slate-800'
               }`}
             >
               {dept}
@@ -195,89 +217,83 @@ export default function WikiPage() {
 
         {/* Input de Busca */}
         <div className="relative w-full md:w-80">
-          <Search size={14} className="absolute left-3.5 top-3 text-slate-500" />
+          <Search size={15} className="absolute left-3.5 top-3 text-slate-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Pesquisar na Wiki..."
-            className="w-full bg-[#131B2E]/80 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+            placeholder="Pesquisar por título, SOP ou assunto..."
+            className="w-full bg-[#131B2E]/90 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
           />
         </div>
       </div>
 
       {/* Grid de Artigos */}
       {filteredArticles.length === 0 ? (
-        <div className="py-20 text-center text-slate-500 space-y-3 bg-[#131B2E]/40 border border-slate-800 rounded-2xl">
-          <BookOpen size={36} className="mx-auto text-slate-600" />
-          <p className="text-sm font-medium">Nenhum artigo encontrado nesta categoria.</p>
+        <div className="py-24 text-center text-slate-500 space-y-4 bg-[#131B2E]/40 border border-slate-800 rounded-3xl p-8">
+          <BookOpen size={42} className="mx-auto text-slate-600" />
+          <h3 className="text-base font-bold text-slate-300">Nenhum documento encontrado</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Não foram encontrados artigos para o filtro selecionado. Experimente buscar outro termo ou publicar um novo documento.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredArticles.map((article) => (
-            <div
-              key={article.id}
-              onClick={() => setSelectedArticle(article)}
-              className="group cursor-pointer bg-[#131B2E]/70 hover:bg-[#1E293B]/80 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider bg-slate-800/80 text-amber-400 px-2.5 py-1 rounded-md border border-slate-700/60">
-                    {article.category}
-                  </span>
-                  <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                    <Building size={11} /> {article.department}
-                  </span>
+          {filteredArticles.map((article) => {
+            const hasVideo = Boolean(article.videoUrl);
+
+            return (
+              <Link
+                key={article.id}
+                href={`/wiki/${article.id}`}
+                className="group bg-[#0F172A]/80 hover:bg-[#131B2E] border border-slate-800/90 hover:border-amber-500/40 rounded-3xl p-7 transition-all duration-200 hover:shadow-2xl flex flex-col justify-between space-y-5"
+              >
+                {/* Top Info */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-lg">
+                      {article.category}
+                    </span>
+
+                    {hasVideo ? (
+                      <span className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-lg font-semibold flex items-center gap-1">
+                        <Video size={12} />
+                        Vídeo
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                        <Building size={12} className="text-slate-500" />
+                        {article.department}
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                    {article.title}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-slate-400 line-clamp-3 leading-relaxed">
+                    {article.summary}
+                  </p>
                 </div>
 
-                <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
-                  {article.title}
-                </h3>
+                {/* Footer do Card */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={13} className="text-slate-500" />
+                    <span>{article.readingTimeMinutes || 4} min de leitura</span>
+                  </div>
 
-                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                  {article.summary}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 text-[11px] text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <Clock size={12} />
-                  <span>{article.createdAt}</span>
+                  <div className="flex items-center gap-1.5 text-amber-400 font-bold group-hover:translate-x-1 transition-transform">
+                    <span>Acessar</span>
+                    <ArrowRight size={14} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-amber-400 font-semibold group-hover:translate-x-0.5 transition-transform">
-                  <span>Ler artigo</span>
-                  <ArrowRight size={12} />
-                </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
-
-      {/* Modal Leitor do Artigo */}
-      <Modal
-        isOpen={Boolean(selectedArticle)}
-        onClose={() => setSelectedArticle(null)}
-        title={selectedArticle?.title || 'Detalhes do Artigo'}
-      >
-        {selectedArticle && (
-          <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-            <div className="flex items-center gap-3 text-xs text-slate-400 pb-3 border-b border-slate-800">
-              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-md font-semibold">
-                {selectedArticle.category}
-              </span>
-              <span>•</span>
-              <span>Departamento: <strong className="text-slate-200">{selectedArticle.department}</strong></span>
-              <span>•</span>
-              <span>Autor: <strong className="text-slate-200">{selectedArticle.author}</strong></span>
-            </div>
-
-            <div className="prose prose-invert max-w-none text-xs text-slate-300 leading-relaxed whitespace-pre-line space-y-4">
-              {selectedArticle.content}
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Modal Importar YouTube com IA */}
       <Modal
@@ -286,13 +302,13 @@ export default function WikiPage() {
         title="Importar Vídeo do YouTube com IA"
       >
         <form onSubmit={handleImportYouTube} className="space-y-4">
-          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-2">
+          <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 space-y-2">
             <div className="flex items-center gap-2 text-red-400 text-xs font-bold">
-              <Youtube size={16} />
+              <Youtube size={17} />
               <span>Transformador de Vídeo em SOP & Base de Conhecimento</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Cole o link de um vídeo do YouTube. Nossa IA extrairá o conteúdo, resumirá os pontos-chave e criará uma documentação completa e estruturada pronta para consulta da equipe.
+              Cole o link de uma aula ou treinamento do YouTube. A IA analisará o conteúdo e criará uma página completa com o vídeo embutido, resumo executivo, tópicos e checklist operacional.
             </p>
           </div>
 
@@ -358,7 +374,7 @@ export default function WikiPage() {
             <button
               type="submit"
               disabled={loadingYouTube || !youtubeUrl.trim()}
-              className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all disabled:opacity-50"
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-2 transition-all disabled:opacity-50 shadow-md"
             >
               {loadingYouTube ? (
                 <>
@@ -368,7 +384,7 @@ export default function WikiPage() {
               ) : (
                 <>
                   <Sparkles size={14} />
-                  <span>Gerar Base de Conhecimento</span>
+                  <span>Gerar Página de Conhecimento</span>
                 </>
               )}
             </button>
@@ -442,13 +458,13 @@ export default function WikiPage() {
               value={newSummary}
               onChange={(e) => setNewSummary(e.target.value)}
               placeholder="Breve descrição do objetivo deste material..."
-              className="w-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500"
+              className="w-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-amber-500"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-              Conteúdo em Markdown
+              Conteúdo do Documento (Markdown)
             </label>
             <textarea
               rows={6}
