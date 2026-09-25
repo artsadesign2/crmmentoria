@@ -14,11 +14,15 @@ import {
   ArrowRight,
   Video,
   FileText,
+  CheckCircle2,
+  Tag,
+  Loader2,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { INITIAL_WIKI_ARTICLES, WikiArticleItem } from '@/lib/wiki/wiki-service';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
+import { extractYouTubeVideoId, YouTubePreviewData } from '@/lib/wiki/youtube-importer';
 
 const DEPARTMENTS = ['Todos', 'Operacional', 'Comercial', 'Financeiro', 'Jurídico', 'Academy'];
 const CATEGORIES = ['Processos', 'SOPs', 'Treinamento', 'Atendimento', 'Vendas', 'Geral'];
@@ -46,6 +50,10 @@ export default function WikiPage() {
   const [ytCategory, setYtCategory] = useState('Treinamento');
   const [loadingYouTube, setLoadingYouTube] = useState(false);
 
+  // Pré-processamento e Auto-Classificação em Tempo Real
+  const [previewData, setPreviewData] = useState<YouTubePreviewData | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
   // Carrega artigos salvos localmente
   useEffect(() => {
     try {
@@ -58,6 +66,47 @@ export default function WikiPage() {
       }
     } catch {}
   }, []);
+
+  // Monitora digitação da URL do YouTube para pré-processamento inteligente
+  useEffect(() => {
+    if (!youtubeUrl.trim()) {
+      setPreviewData(null);
+      setLoadingPreview(false);
+      return;
+    }
+
+    const videoId = extractYouTubeVideoId(youtubeUrl.trim());
+    if (!videoId) {
+      setPreviewData(null);
+      setLoadingPreview(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingPreview(true);
+      try {
+        const res = await fetch('/api/wiki/preview-youtube', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: youtubeUrl.trim() }),
+        });
+
+        const json = await res.json();
+        if (json.ok && json.preview) {
+          const prev: YouTubePreviewData = json.preview;
+          setPreviewData(prev);
+          setYtDept(prev.suggestedDepartment);
+          setYtCategory(prev.suggestedCategory);
+        }
+      } catch (err) {
+        console.warn('Erro ao pré-processar vídeo:', err);
+      } finally {
+        setLoadingPreview(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [youtubeUrl]);
 
   const saveCustomArticle = (newArt: WikiArticleItem) => {
     try {
@@ -140,12 +189,13 @@ export default function WikiPage() {
         author: data.author || 'YouTube Treinamento',
         videoUrl: data.videoUrl,
         coverImage: data.thumbnailUrl,
-        readingTimeMinutes: data.readingTimeMinutes || 5,
+        readingTimeMinutes: data.readingTimeMinutes || 7,
         tags: data.tags,
       };
 
       saveCustomArticle(newArt);
       setYoutubeUrl('');
+      setPreviewData(null);
       setIsYouTubeModalOpen(false);
       toast.success(
         'Base de Conhecimento Criada!',
@@ -178,7 +228,11 @@ export default function WikiPage() {
         <div className="flex items-center gap-3 flex-wrap">
           {/* Botão Importar YouTube com IA */}
           <button
-            onClick={() => setIsYouTubeModalOpen(true)}
+            onClick={() => {
+              setPreviewData(null);
+              setYoutubeUrl('');
+              setIsYouTubeModalOpen(true);
+            }}
             className="px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-2xl text-xs font-bold flex items-center space-x-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
           >
             <Youtube size={17} className="text-red-400" />
@@ -295,27 +349,36 @@ export default function WikiPage() {
         </div>
       )}
 
-      {/* Modal Importar YouTube com IA */}
+      {/* Modal Importar YouTube com IA & Auto-Classificação */}
       <Modal
         isOpen={isYouTubeModalOpen}
         onClose={() => !loadingYouTube && setIsYouTubeModalOpen(false)}
         title="Importar Vídeo do YouTube com IA"
       >
         <form onSubmit={handleImportYouTube} className="space-y-4">
-          <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 space-y-2">
+          <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2 text-red-400 text-xs font-bold">
               <Youtube size={17} />
-              <span>Transformador de Vídeo em SOP & Base de Conhecimento</span>
+              <span>Auto-Detecção Inteligente & Gerador de Manual SOP</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Cole o link de uma aula ou treinamento do YouTube. A IA analisará o conteúdo e criará uma página completa com o vídeo embutido, resumo executivo, tópicos e checklist operacional.
+              Cole o link do YouTube. O sistema analisará o contexto em tempo real, sugerindo automaticamente o <strong>Departamento</strong> e <strong>Categoria</strong> ideais, e gerará uma documentação completa e aprofundada.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-              Link do Vídeo do YouTube *
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-400">
+                Link do Vídeo do YouTube *
+              </label>
+              {loadingPreview && (
+                <span className="text-[11px] text-amber-400 flex items-center gap-1">
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>Analisando contexto do vídeo...</span>
+                </span>
+              )}
+            </div>
+
             <input
               type="url"
               required
@@ -325,6 +388,39 @@ export default function WikiPage() {
               className="w-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
+
+          {/* Pré-visualização do Vídeo & Auto-Classificação */}
+          {previewData && (
+            <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <Sparkles size={14} /> Classificação Automática por IA
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {previewData.confidenceScore}% de assertividade
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src={previewData.thumbnailUrl}
+                  alt={previewData.title}
+                  className="w-24 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
+                />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <h4 className="text-xs font-bold text-white truncate">{previewData.title}</h4>
+                  <p className="text-[11px] text-slate-400 truncate">Canal / Autor: {previewData.author}</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-amber-400 shrink-0" />
+                <span>
+                  Sugerido: <strong>{previewData.suggestedDepartment}</strong> &bull; <strong>{previewData.suggestedCategory}</strong>. Você pode confirmar ou ajustar abaixo:
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -378,13 +474,13 @@ export default function WikiPage() {
             >
               {loadingYouTube ? (
                 <>
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-950 border-t-transparent" />
-                  <span>Processando Vídeo com IA...</span>
+                  <Loader2 size={14} className="animate-spin text-slate-950" />
+                  <span>Gerando Documentação Completa...</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={14} />
-                  <span>Gerar Página de Conhecimento</span>
+                  <span>Gerar Manual de Conhecimento</span>
                 </>
               )}
             </button>
