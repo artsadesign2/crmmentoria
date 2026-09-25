@@ -63,6 +63,11 @@ model Organization {
   botEvents         BotEvent[]
   botSettings       BotSettings?
 
+  // F7 - Tarefas & Projetos
+  taskProjects      TaskProject[]
+  tasks             Task[]
+  calendarSetting   CalendarSetting?
+
   @@map("organizations")
 }
 
@@ -109,6 +114,12 @@ model User {
   // F6 - bot
   botFlows              BotFlow[]
   botFlowVersions       BotFlowVersion[]
+
+  // F7 - Tarefas & Projetos
+  createdProjects       TaskProject[]  @relation("ProjectCreatedBy")
+  assignedTasks         Task[]         @relation("TaskAssignedTo")
+  createdTasks          Task[]         @relation("TaskCreatedBy")
+  taskComments          TaskComment[]
 
   /// Escopado por organização: o mesmo e-mail pode existir em tenants distintos.
   @@unique([organizationId, email])
@@ -1014,3 +1025,123 @@ model BotSettings {
 
   @@map("bot_settings")
 }
+
+// ===========================================================================
+// F7 — Gestão de Projetos e Tarefas (ClickUp + Notion + Todoist)
+// ===========================================================================
+
+model TaskProject {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  name           String       @db.VarChar(150)
+  description    String?
+  icon           String       @default("folder") @db.VarChar(50)
+  colorHex       String       @default("#EAB308") @map("color_hex") @db.VarChar(20)
+  isArchived     Boolean      @default(false) @map("is_archived")
+  createdById    String?      @map("created_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime     @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdBy    User?        @relation("ProjectCreatedBy", fields: [createdById], references: [id], onUpdate: NoAction)
+  columns      TaskColumn[]
+  tasks        Task[]
+
+  @@index([organizationId, isArchived], map: "task_projects_org_idx")
+  @@map("task_projects")
+}
+
+model TaskColumn {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String      @map("project_id") @db.Uuid
+  name              String      @db.VarChar(100)
+  colorHex          String      @default("#64748B") @map("color_hex") @db.VarChar(20)
+  position          Int         @default(0)
+  isCompletedColumn Boolean     @default(false) @map("is_completed_column")
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  project TaskProject @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tasks   Task[]
+
+  @@index([projectId, position], map: "task_columns_proj_idx")
+  @@map("task_columns")
+}
+
+model Task {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  projectId     String    @map("project_id") @db.Uuid
+  columnId      String    @map("column_id") @db.Uuid
+  title         String    @db.VarChar(255)
+  description   String?
+  priority      String    @default("MEDIA") @db.VarChar(20)
+  position      Int       @default(0)
+  startDate     DateTime? @map("start_date") @db.Timestamp(6)
+  dueDate       DateTime? @map("due_date") @db.Timestamp(6)
+  assignedToId  String?   @map("assigned_to_id") @db.Uuid
+  createdById   String?   @map("created_by_id") @db.Uuid
+  googleEventId String?   @map("google_event_id") @db.VarChar(255)
+  isArchived    Boolean   @default(false) @map("is_archived")
+  completedAt   DateTime? @map("completed_at") @db.Timestamp(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  project      TaskProject   @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  column       TaskColumn    @relation(fields: [columnId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assignedTo   User?         @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onUpdate: NoAction)
+  createdBy    User?         @relation("TaskCreatedBy", fields: [createdById], references: [id], onUpdate: NoAction)
+  subtasks     TaskSubtask[]
+  comments     TaskComment[]
+
+  @@index([organizationId, projectId, columnId], map: "tasks_org_proj_idx")
+  @@index([organizationId, dueDate], map: "tasks_due_date_idx")
+  @@index([assignedToId, isArchived], map: "tasks_assigned_idx")
+  @@map("tasks")
+}
+
+model TaskSubtask {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String    @map("task_id") @db.Uuid
+  title       String    @db.VarChar(255)
+  isCompleted Boolean   @default(false) @map("is_completed")
+  position    Int       @default(0)
+  completedAt DateTime? @map("completed_at") @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([taskId, position], map: "task_subtasks_task_idx")
+  @@map("task_subtasks")
+}
+
+model TaskComment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([taskId, createdAt], map: "task_comments_task_idx")
+  @@map("task_comments")
+}
+
+model CalendarSetting {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String   @unique @map("organization_id") @db.Uuid
+  feedToken          String   @unique @map("feed_token") @db.VarChar(64)
+  googleCalendarId   String?  @map("google_calendar_id") @db.VarChar(255)
+  googleRefreshToken String?  @map("google_refresh_token")
+  syncEnabled        Boolean  @default(false) @map("sync_enabled")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([feedToken], map: "calendar_settings_token_idx")
+  @@map("calendar_settings")
+}
+

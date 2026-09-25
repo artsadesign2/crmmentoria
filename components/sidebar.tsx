@@ -22,6 +22,7 @@ import {
   Trophy,
   Award,
   LogOut,
+  CheckSquare,
 } from 'lucide-react';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth-context';
@@ -42,6 +43,12 @@ export const NAVIGATION_ITEMS: {
     href: '/dashboard',
     icon: LayoutDashboard,
     permissionKey: 'viewDashboard',
+  },
+  {
+    name: 'Projetos & Tarefas',
+    href: '/kanban',
+    icon: CheckSquare,
+    permissionKey: 'viewKanban',
   },
   {
     name: 'Portal do Mentorado',
