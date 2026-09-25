@@ -331,10 +331,10 @@ export default function TasksWorkspacePage() {
             className="bg-slate-900 text-xs text-slate-300 border border-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none"
           >
             <option value="">Todas Prioridades</option>
-            <option value="URGENTE">🔴 Urgentes</option>
-            <option value="ALTA">🟠 Altas</option>
-            <option value="MEDIA">🟡 Médias</option>
-            <option value="BAIXA">🟢 Baixas</option>
+            <option value="URGENTE">Urgente</option>
+            <option value="ALTA">Alta</option>
+            <option value="MEDIA">Média</option>
+            <option value="BAIXA">Baixa</option>
           </select>
         </div>
       </div>

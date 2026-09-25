@@ -151,12 +151,12 @@ export function NewTaskModal({
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-yellow-400"
+                    className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500"
                   >
-                    <option value="URGENTE">🔴 Urgente</option>
-                    <option value="ALTA">🟠 Alta</option>
-                    <option value="MEDIA">🟡 Média</option>
-                    <option value="BAIXA">🟢 Baixa</option>
+                    <option value="URGENTE">Urgente</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="MEDIA">Média</option>
+                    <option value="BAIXA">Baixa</option>
                   </select>
                 </div>
               </div>

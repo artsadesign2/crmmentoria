@@ -51,14 +51,34 @@ export function TaskBoard({
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'URGENTE':
-        return <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold px-2 py-0.5 rounded">🔴 Urgente</span>;
+        return (
+          <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            <AlertCircle size={11} className="text-red-400" />
+            <span>Urgente</span>
+          </span>
+        );
       case 'ALTA':
-        return <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-bold px-2 py-0.5 rounded">🟠 Alta</span>;
+        return (
+          <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            <Flag size={11} className="text-amber-400" />
+            <span>Alta</span>
+          </span>
+        );
       case 'MEDIA':
-        return <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-[10px] font-bold px-2 py-0.5 rounded">🟡 Média</span>;
+        return (
+          <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            <Flag size={11} className="text-blue-400" />
+            <span>Média</span>
+          </span>
+        );
       case 'BAIXA':
       default:
-        return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded">🟢 Baixa</span>;
+        return (
+          <span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            <Flag size={11} className="text-slate-400" />
+            <span>Baixa</span>
+          </span>
+        );
     }
   };
 
@@ -86,16 +106,16 @@ export function TaskBoard({
 
     if (isOverdue) {
       return (
-        <span className="flex items-center space-x-1 text-[11px] font-semibold text-red-400 bg-red-950/40 border border-red-500/40 px-1.5 py-0.5 rounded">
+        <span className="flex items-center space-x-1 text-[11px] font-medium text-red-400 bg-red-950/30 border border-red-500/30 px-2 py-0.5 rounded-md">
           <AlertCircle size={11} />
-          <span>{formatted} (Atrasado)</span>
+          <span>{formatted} • Atrasada</span>
         </span>
       );
     }
 
     if (isToday) {
       return (
-        <span className="flex items-center space-x-1 text-[11px] font-semibold text-yellow-400 bg-yellow-950/40 border border-yellow-500/40 px-1.5 py-0.5 rounded">
+        <span className="flex items-center space-x-1 text-[11px] font-medium text-amber-400 bg-amber-950/30 border border-amber-500/30 px-2 py-0.5 rounded-md">
           <Calendar size={11} />
           <span>Hoje</span>
         </span>

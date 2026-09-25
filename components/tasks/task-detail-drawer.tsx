@@ -278,12 +278,12 @@ export function TaskDetailDrawer({
                         setPriority(e.target.value);
                         handleUpdateField('priority', e.target.value);
                       }}
-                      className="flex-1 bg-slate-900 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-yellow-400"
+                      className="flex-1 bg-slate-900 text-xs font-medium text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
                     >
-                      <option value="URGENTE">🔴 Urgente</option>
-                      <option value="ALTA">🟠 Alta</option>
-                      <option value="MEDIA">🟡 Média</option>
-                      <option value="BAIXA">🟢 Baixa</option>
+                      <option value="URGENTE">Urgente</option>
+                      <option value="ALTA">Alta</option>
+                      <option value="MEDIA">Média</option>
+                      <option value="BAIXA">Baixa</option>
                     </select>
                   </div>
 

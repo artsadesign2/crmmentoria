@@ -29,14 +29,30 @@ export function TaskList({
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'URGENTE':
-        return <span className="text-[10px] font-bold text-red-400">🔴 Urgente</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">
+            <AlertCircle size={10} /> Urgente
+          </span>
+        );
       case 'ALTA':
-        return <span className="text-[10px] font-bold text-orange-400">🟠 Alta</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+            <Flag size={10} /> Alta
+          </span>
+        );
       case 'MEDIA':
-        return <span className="text-[10px] font-bold text-yellow-400">🟡 Média</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+            <Flag size={10} /> Média
+          </span>
+        );
       case 'BAIXA':
       default:
-        return <span className="text-[10px] font-bold text-emerald-400">🟢 Baixa</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2 py-0.5 rounded">
+            <Flag size={10} /> Baixa
+          </span>
+        );
     }
   };
 
