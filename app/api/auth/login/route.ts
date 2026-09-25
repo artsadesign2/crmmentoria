@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signSession, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth/jwt';
 import type { DbRole } from '@/lib/auth/roles';
+import { checkRateLimit, getClientIp } from '@/lib/auth/rate-limiter';
 
 /**
  * Mensagem única para e-mail inexistente e senha errada. Distinguir os dois
@@ -14,6 +15,24 @@ const INVALID = 'E-mail ou senha incorretos. Por favor, verifique suas credencia
 const DUMMY_HASH = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(`login:${ip}`, { limit: 5, windowMs: 60 * 1000 });
+
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'Muitas tentativas de login em sequência. Aguarde 1 minuto antes de tentar novamente.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((rateLimit.reset - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   const body = await request.json().catch(() => ({}));
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const password = typeof body.password === 'string' ? body.password : '';

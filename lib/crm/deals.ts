@@ -266,6 +266,32 @@ export async function updateDeal(
     include: withRelations,
   });
 
+  // Se a etapa mudou, dispara as automações assíncronas do CRM (WhatsApp + Hostinger/n8n)
+  if (input.stageId !== undefined) {
+    (async () => {
+      try {
+        const stage = await prisma.stage.findUnique({
+          where: { id: input.stageId },
+          select: { name: true },
+        });
+        if (stage) {
+          const { handleDealStageAutomation } = await import('./crm-automations');
+          await handleDealStageAutomation({
+            organizationId: session.organizationId,
+            dealId: deal.id,
+            dealTitle: deal.title,
+            dealValue: Number(deal.dealValue),
+            contactName: deal.contact.name,
+            contactPhone: deal.contact.phone,
+            stageName: stage.name,
+          });
+        }
+      } catch (err) {
+        console.warn('[CRM Stage Automation Warning]:', err);
+      }
+    })();
+  }
+
   return toDTO(deal);
 }
 

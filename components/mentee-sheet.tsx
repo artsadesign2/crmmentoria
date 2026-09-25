@@ -50,6 +50,8 @@ import {
   interpolateWhatsAppTemplate,
   INITIAL_DEFAULT_TEMPLATES,
 } from '@/lib/whatsapp-automations';
+import { generateMenteeDiagnosis, MenteeDiagnosisReport } from '@/lib/ai/mentee-diagnosis';
+import { Copy, CheckCheck, Bot, Brain, TrendingUp, AlertOctagon, HelpCircle, FileCheck } from 'lucide-react';
 
 interface MenteeSheetProps {
   member: (Member & { excludeFromBook?: boolean }) | null;
@@ -91,6 +93,11 @@ export function MenteeSheet({
   const [renewalPlanDays, setRenewalPlanDays] = useState('15');
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [whatsAppFeedback, setWhatsAppFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  // AI Strategic Diagnosis States
+  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [copiedDossier, setCopiedDossier] = useState(false);
+  const [copiedQuestions, setCopiedQuestions] = useState(false);
 
   // Animation States for Smooth Enter & Exit
   const [isMounted, setIsMounted] = useState(false);
@@ -364,6 +371,16 @@ export function MenteeSheet({
               title="Baixar Ficha em PDF"
             >
               <FileText size={15} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDiagnosisModal(true)}
+              className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-yellow-400 border border-yellow-500/30 transition-all hover:scale-105 flex items-center gap-1.5"
+              title="Gerar Diagnóstico Estratégico com IA"
+            >
+              <Sparkles size={15} className="text-yellow-400 animate-pulse" />
+              <span className="text-[11px] font-bold hidden sm:inline">Diagnóstico IA</span>
             </button>
 
             {formData.phone && (
@@ -1605,6 +1622,209 @@ export function MenteeSheet({
             </div>
           </div>
         )}
+
+        {/* AI STRATEGIC DIAGNOSIS MODAL (100% Custo Zero) */}
+        {showDiagnosisModal && (() => {
+          const report = generateMenteeDiagnosis(formData);
+          const handleCopyFullDossier = () => {
+            const text = `# DIAGNÓSTICO ESTRATÉGICO 1-ON-1 - ROCKET CLUB\n\n` +
+              `**Mentorado:** ${formData.name || 'Mentorado'}\n` +
+              `**Empresa:** ${formData.companyName || formData.tradeName || 'N/A'}\n` +
+              `**Nicho:** ${formData.specialty || 'N/A'}\n` +
+              `**Score de Saúde:** ${report.healthScore}%\n` +
+              `**Risco de Churn:** ${report.churnRisk}\n` +
+              `**Faturamento Atual:** ${report.currentRevenueFormatted}\n` +
+              `**Meta de Faturamento:** ${report.targetRevenueFormatted}\n` +
+              `**Gap Financeiro:** ${report.revenueGap}\n\n` +
+              `## RESUMO EXECUTIVO\n${report.summaryExecutive}\n\n` +
+              `## PRINCIPAIS GARGALOS\n${report.keyBottlenecks.map(b => `- ${b}`).join('\n')}\n\n` +
+              `## ROTEIRO DE PERGUNTAS PARA REUNIÃO 1-ON-1\n${report.meetingScriptQuestions.map(q => q).join('\n')}\n\n` +
+              `## ENTREGÁVEIS RECOMENDADOS (PRÓXIMOS 15 DIAS)\n${report.recommendedDeliverables.map(d => `- [ ] ${d}`).join('\n')}\n`;
+
+            navigator.clipboard.writeText(text);
+            setCopiedDossier(true);
+            toast.success('Dossiê Copiado!', 'O diagnóstico completo foi copiado para sua área de transferência.');
+            setTimeout(() => setCopiedDossier(false), 2500);
+          };
+
+          const handleCopyQuestions = () => {
+            const text = report.meetingScriptQuestions.join('\n\n');
+            navigator.clipboard.writeText(text);
+            setCopiedQuestions(true);
+            toast.success('Perguntas Copiadas!', 'Roteiro de perguntas copiado para sua área de transferência.');
+            setTimeout(() => setCopiedQuestions(false), 2500);
+          };
+
+          return (
+            <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+              <div className="bg-[#0F1626] border border-yellow-500/40 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl shadow-yellow-500/10 overflow-hidden">
+                {/* Modal Header */}
+                <div className="p-4 sm:p-5 border-b border-[#1F293D] bg-[#141C30] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-yellow-500/20">
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-extrabold text-slate-100">
+                          Diagnóstico Estratégico IA • 1-on-1
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">
+                          Custo Zero
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        Síntese executiva e roteiro de aceleração para <strong>{formData.name || 'Mentorado'}</strong>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDiagnosisModal(false)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-[#1E293B] transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-slate-200">
+                  {/* Top Stats Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Health Score */}
+                    <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Score de Saúde</div>
+                        <div className="text-xl font-black text-yellow-400">{report.healthScore}%</div>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center border border-yellow-500/20">
+                        <Activity size={18} />
+                      </div>
+                    </div>
+
+                    {/* Churn Risk */}
+                    <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Risco de Churn</div>
+                        <div className={`text-sm font-black ${
+                          report.churnRisk === 'ALTO' ? 'text-red-400' :
+                          report.churnRisk === 'MÉDIO' ? 'text-amber-400' : 'text-emerald-400'
+                        }`}>
+                          {report.churnRisk}
+                        </div>
+                      </div>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                        report.churnRisk === 'ALTO' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                        report.churnRisk === 'MÉDIO' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}>
+                        <AlertTriangle size={18} />
+                      </div>
+                    </div>
+
+                    {/* Gap de Faturamento */}
+                    <div className="p-3.5 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase">Gap p/ Meta</div>
+                        <div className="text-sm font-black text-emerald-400">{report.revenueGap}</div>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                        <TrendingUp size={18} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resumo Executivo */}
+                  <div className="p-4 rounded-xl bg-[#0B0F17] border border-[#1F293D] space-y-1.5">
+                    <h4 className="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Brain size={14} /> Resumo Executivo da Operação
+                    </h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {report.summaryExecutive}
+                    </p>
+                  </div>
+
+                  {/* Gargalos Detectados */}
+                  <div className="p-4 rounded-xl bg-[#0B0F17] border border-red-500/20 space-y-2">
+                    <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertOctagon size={14} /> Gargalos Estratégicos Detectados
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {report.keyBottlenecks.map((b, i) => (
+                        <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
+                          <span className="text-red-400 font-bold shrink-0">•</span>
+                          <span>{b}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Roteiro de Perguntas 1-on-1 */}
+                  <div className="p-4 rounded-xl bg-[#0B0F17] border border-yellow-500/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <HelpCircle size={14} /> Roteiro de Perguntas para Reunião 1-on-1
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={handleCopyQuestions}
+                        className="text-[11px] text-yellow-400 hover:text-yellow-300 flex items-center gap-1 font-bold"
+                      >
+                        {copiedQuestions ? <CheckCheck size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                        <span>{copiedQuestions ? 'Copiado!' : 'Copiar Perguntas'}</span>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {report.meetingScriptQuestions.map((q, i) => (
+                        <div key={i} className="p-2.5 rounded-lg bg-[#141C30] border border-[#1F293D] text-xs text-slate-200 leading-relaxed">
+                          {q}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Entregáveis dos Próximos 15 Dias */}
+                  <div className="p-4 rounded-xl bg-[#0B0F17] border border-emerald-500/20 space-y-2">
+                    <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileCheck size={14} /> Entregáveis Recomendados (Próximos 15 Dias)
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {report.recommendedDeliverables.map((d, i) => (
+                        <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
+                          <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-[#1F293D] bg-[#141C30] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                  <div className="text-[11px] text-slate-400">
+                    💡 Dica: Copie o dossiê para levar insights prontos para a chamada.
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowDiagnosisModal(false)}
+                      className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 text-xs font-semibold"
+                    >
+                      Fechar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyFullDossier}
+                      className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-400 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-black text-xs shadow-lg shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      {copiedDossier ? <CheckCheck size={15} /> : <Copy size={15} />}
+                      <span>{copiedDossier ? 'Dossiê Copiado com Sucesso!' : 'Copiar Dossiê Completo'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

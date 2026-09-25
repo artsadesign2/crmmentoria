@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireSession, withAuth } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { sendWikiShareEmail } from '@/lib/wiki/wiki-notifications';
+import { broadcastNotificationToOrg } from '@/lib/notifications-stream';
 
 export const POST = withAuth(async (request: Request) => {
   const session = await requireSession();
@@ -73,6 +74,23 @@ export const POST = withAuth(async (request: Request) => {
     } catch (err: any) {
       errors.push(`Erro ao enviar para ${user.email}: ${err.message}`);
     }
+  }
+
+  // Disparo em tempo real no stream SSE da organização (Zero Custo)
+  try {
+    broadcastNotificationToOrg(session.organizationId, {
+      id: `notif-${Date.now()}`,
+      sector: 'wiki',
+      type: 'info',
+      title: '📚 Recomendação de Treinamento',
+      message: `${senderName} recomendou o artigo "${articleTitle}" para a equipe.`,
+      link: `/wiki/${articleId}`,
+      actionText: 'Acessar Artigo',
+      createdAt: 'Agora mesmo',
+      read: false,
+    });
+  } catch (err) {
+    console.warn('[SSE Broadcast Warning]:', err);
   }
 
   return NextResponse.json({

@@ -252,6 +252,18 @@ export default function WikiArticlePage() {
         </Link>
 
         <div className="flex items-center space-x-2">
+          {/* Botão Exportar PDF */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') window.print();
+            }}
+            className="px-3.5 py-2 bg-[#131B2E] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
+            title="Exportar PDF / Imprimir SOP"
+          >
+            <FileText size={14} className="text-amber-400" />
+            <span>Baixar PDF</span>
+          </button>
+
           {/* Botão Compartilhar nas Redes Sociais */}
           <button
             onClick={() => setIsSocialModalOpen(true)}

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { NotificationItem, INITIAL_NOTIFICATIONS, NotificationSector, NotificationType } from './notifications';
+import { toast } from './toast-context';
 
 interface NotificationContextType {
   notifications: NotificationItem[];
@@ -41,6 +42,7 @@ function getSessionUser(): string | null {
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
 
+  // 1. Carrega notificações salvas no localStorage
   useEffect(() => {
     try {
       const user = getSessionUser();
@@ -54,7 +56,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const saveNotifications = (items: NotificationItem[]) => {
+  const saveNotifications = useCallback((items: NotificationItem[]) => {
     setNotifications(items);
     try {
       const user = getSessionUser();
@@ -65,7 +67,52 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       // ignore
     }
-  };
+  }, []);
+
+  // 2. Conexão SSE em tempo real (100% Zero Custo / Server-Sent Events nativo)
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    let retryTimer: NodeJS.Timeout | null = null;
+
+    function connectSSE() {
+      try {
+        eventSource = new EventSource('/api/notifications/stream');
+
+        eventSource.addEventListener('notification', (event) => {
+          try {
+            const newNotif: NotificationItem = JSON.parse(event.data);
+            setNotifications((prev) => {
+              const updated = [newNotif, ...prev.filter((n) => n.id !== newNotif.id)];
+              try {
+                localStorage.setItem('rocket_club_notifications', JSON.stringify(updated));
+              } catch {}
+              return updated;
+            });
+
+            // Feedback visual com Toast
+            toast.info(newNotif.title, newNotif.message);
+          } catch (err) {
+            console.warn('[SSE] Falha ao processar payload da notificação:', err);
+          }
+        });
+
+        eventSource.onerror = () => {
+          if (eventSource) eventSource.close();
+          // Tenta reconectar suavemente após 10 segundos
+          retryTimer = setTimeout(connectSSE, 10000);
+        };
+      } catch (err) {
+        console.warn('[SSE] Conexão indisponível:', err);
+      }
+    }
+
+    connectSSE();
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
