@@ -10,6 +10,7 @@ export interface MenteeDiagnosisReport {
   meetingScriptQuestions: string[];
   recommendedDeliverables: string[];
   summaryExecutive: string;
+  executionCapacity: string;
 }
 
 export function generateMenteeDiagnosis(member: Partial<Member>): MenteeDiagnosisReport {
@@ -18,7 +19,6 @@ export function generateMenteeDiagnosis(member: Partial<Member>): MenteeDiagnosi
   if (typeof member.monthlyRevenue === 'string') {
     const digitsOnly = member.monthlyRevenue.replace(/[^\d]/g, '');
     if (digitsOnly) {
-      // Se tiver centavos implícitos ou formato normal
       const num = parseInt(digitsOnly, 10);
       currentRev = member.monthlyRevenue.includes(',') ? num / 100 : num;
     }
@@ -78,51 +78,68 @@ export function generateMenteeDiagnosis(member: Partial<Member>): MenteeDiagnosi
   const scriptQuestions: string[] = [];
   const deliverables: string[] = [];
 
-  if (member.biggestChallenge && member.biggestChallenge.trim().length > 10) {
-    bottlenecks.push(`Desafio Central: "${member.biggestChallenge.trim()}"`);
+  // Análise dos Desafios Reais
+  if (member.biggestChallenge && member.biggestChallenge.trim().length > 5) {
+    bottlenecks.push(`Gargalo Prioritário Declarado: "${member.biggestChallenge.trim()}"`);
+  }
+
+  if (member.mainGoal && member.mainGoal.trim().length > 5) {
+    scriptQuestions.push(`1. Sobre seu objetivo "${member.mainGoal.trim()}": Quais os 2 maiores obstáculos práticos que surgiram nesta semana?`);
+  } else {
+    scriptQuestions.push(`1. Qual é o principal indicador de resultado (faturamento ou novos clientes) que você precisa destravar esta semana?`);
   }
 
   if (currentRev < 30000) {
-    bottlenecks.push('Gargalo na geração e qualificação de leads diários.');
-    bottlenecks.push('Falta de script de vendas estruturado para contornar objeções de preço.');
-    bottlenecks.push('Dependência de indicações orgânicas sem canal de aquisição previsível.');
+    bottlenecks.push('Volume insuficiente de reuniões comerciais agendadas por semana.');
+    bottlenecks.push('Necessidade de estruturar script de fechamento e contorno de objeções.');
+    if (!member.biggestChallenge) {
+      bottlenecks.push('Dependência de indicações sem canal previsível de tráfego pago ou prospecção ativa.');
+    }
 
-    scriptQuestions.push(`1. Qual é o seu CPL (Custo por Lead) atual e quantas reuniões de fechamento seu time realizou nos últimos 7 dias?`);
-    scriptQuestions.push(`2. Como você está apresentando sua oferta hoje e qual é a principal objeção que impede o fechamento imediato?`);
-    scriptQuestions.push(`3. O que falta para você atingir a meta de curto prazo de ${targetFormatted}?`);
+    scriptQuestions.push(`2. Como está seu funil de prospecção diário e quantas pessoas demonstraram interesse nos últimos 7 dias?`);
+    scriptQuestions.push(`3. O que falta para você acelerar as vendas e alcançar a meta intermediária de ${targetFormatted}?`);
 
-    deliverables.push('Implementar o SOP de Prospecção Ativa da Wiki do Rocket Club.');
-    deliverables.push('Ajustar o script de qualificação de SDR para elevar a taxa de comparecimento nas reuniões.');
-    deliverables.push('Configurar o CRM para registrar motivos de perda em cada oportunidade.');
+    deliverables.push('Executar o SOP de Prospecção Ativa da Wiki do Rocket Club.');
+    deliverables.push('Padronizar o roteiro de qualificação rápida no WhatsApp.');
+    deliverables.push('Alinhar oferta principal para ticket mínimo viável de alto impacto.');
   } else if (currentRev < 100000) {
-    bottlenecks.push('Centralização operacional no fundador (sobrecarga de entregas diárias).');
-    bottlenecks.push('Ausência de uma oferta High-Ticket (ticket acima de R$ 10k) para elevar o LTV.');
-    bottlenecks.push('Taxa de conversão oscilante por falta de processos comerciais padronizados.');
+    bottlenecks.push('Sobrecarga operacional do fundador na execução direta dos serviços.');
+    bottlenecks.push('Potencial inexplorado para empacotamento de oferta High-Ticket (R$ 10k+).');
+    if (!member.biggestChallenge) {
+      bottlenecks.push('Oscilação de taxa de conversão por falta de playbook comercial padronizado.');
+    }
 
-    scriptQuestions.push(`1. Quais atividades da sua operação hoje poderiam ser delegadas para liberar 10 horas semanais de estratégia?`);
-    scriptQuestions.push(`2. Qual é a estrutura da sua oferta mais cara atualmente e como podemos empacotar um programa de maior valor?`);
-    scriptQuestions.push(`3. Como está a retenção e taxa de recompra/renovação dos seus clientes atuais?`);
+    scriptQuestions.push(`2. Quais tarefas operacionais poderiam ser delegadas imediatamente para liberar 8h semanais de foco estratégico?`);
+    scriptQuestions.push(`3. Qual a possibilidade de criarmos um programa de mentoria ou acompanhamento avançado para seus melhores clientes?`);
 
-    deliverables.push('Criar matriz de delegação operacional e contratar/treinar um assistente executivo.');
-    deliverables.push('Desenhar a oferta High-Ticket de mentoria/consultoria com margem de 80%+.');
-    deliverables.push('Ativar o bot de WhatsApp para qualificação automática no pré-atendimento.');
+    deliverables.push('Construir matriz de delegação operacional e definição de prioridades.');
+    deliverables.push('Desenhar a nova oferta High-Ticket com margem de contribuição superior a 80%.');
+    deliverables.push('Implementar funil de qualificação automática de leads no WhatsApp.');
   } else {
-    bottlenecks.push('Estruturação de lideranças e governança para sustentar escala sem perda de qualidade.');
-    bottlenecks.push('Otimização tributária e gestão de fluxo de caixa para expansão.');
-    bottlenecks.push('Construção de ecossistema de produtos recorrentes (MRR/LTV).');
+    bottlenecks.push('Formação e alinhamento de lideranças intermediárias (vendas, operações, tráfego).');
+    bottlenecks.push('Otimização da retenção, LTV e ecossistema de esteira de produtos.');
+    if (!member.biggestChallenge) {
+      bottlenecks.push('Estruturação de processos e governança para expansão acelerada sem perda de qualidade.');
+    }
 
-    scriptQuestions.push(`1. Quais são as métricas de CAC, LTV e Churn do último trimestre?`);
-    scriptQuestions.push(`2. Como está o plano de sucessão ou formação de novos líderes nos departamentos?`);
-    scriptQuestions.push(`3. Qual canal de aquisição ainda não foi explorado no seu nicho?`);
+    scriptQuestions.push(`2. Como estão os indicadores de CAC, LTV e margem líquida dos últimos 3 meses?`);
+    scriptQuestions.push(`3. Quem na sua equipe hoje está pronto para assumir maior autonomia operacional?`);
 
-    deliverables.push('Estruturar programa de formação interna de líderes e gestores de tráfego/vendas.');
-    deliverables.push('Implementar painel de DRE mensal e conciliação bancária automatizada.');
-    deliverables.push('Modelar novo formato de imersão presencial ou franquia para os próximos 6 meses.');
+    deliverables.push('Estruturar o programa interno de capacitação e metas da liderança.');
+    deliverables.push('Implantar rotina semanal de DRE gerencial e métricas de conversão.');
+    deliverables.push('Planejar evento presencial ou formato de mentoria em grupo exclusiva.');
+  }
+
+  // Se tiver frentes de interesse declaradas
+  if (member.mentorshipInterest && member.mentorshipInterest.trim().length > 3) {
+    deliverables.push(`Aprofundar diretrizes em "${member.mentorshipInterest.trim()}".`);
   }
 
   const company = member.companyName || member.tradeName || 'Operação Individual';
   const niche = member.specialty || 'Geral';
-  const summaryExecutive = `Mentorado ${member.name || 'Membro'} (${company} - Nicho: ${niche}). Faturamento atual de ${currentFormatted} para uma meta de ${targetFormatted} (gap de ${gapFormatted}). Apresenta Score de Saúde de ${healthScore}% com risco de churn ${churnRisk}. Foco prioritário recomendado: resolução de gargalos operacionais e aceleração de conversão no funil comercial.`;
+  const availability = member.weeklyAvailability || '10 horas semanais';
+  
+  const summaryExecutive = `Mentorado ${member.name || 'Membro'} (${company} - Nicho: ${niche}). Faturamento atual de ${currentFormatted} com meta projetada de ${targetFormatted} (gap de ${gapFormatted}). Score de Saúde em ${healthScore}% com risco de churn ${churnRisk}. Capacidade de execução informada: ${availability}.`;
 
   return {
     healthScore,
@@ -134,5 +151,6 @@ export function generateMenteeDiagnosis(member: Partial<Member>): MenteeDiagnosi
     meetingScriptQuestions: scriptQuestions,
     recommendedDeliverables: deliverables,
     summaryExecutive,
+    executionCapacity: availability,
   };
 }
