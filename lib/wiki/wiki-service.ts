@@ -14,6 +14,34 @@ export interface WikiArticleItem {
   tags?: string[];
 }
 
+export function getArticleCover(article: Partial<WikiArticleItem>): string {
+  if (article.coverImage && article.coverImage.trim()) return article.coverImage.trim();
+  
+  if (article.videoUrl) {
+    const matchWatch = article.videoUrl.match(/(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/);
+    const matchShort = article.videoUrl.match(/youtu\.be\/([\w-]{11})/);
+    const vId = matchWatch ? matchWatch[1] : matchShort ? matchShort[1] : null;
+    if (vId) return `https://img.youtube.com/vi/${vId}/hqdefault.jpg`;
+  }
+
+  const dept = (article.department || '').toLowerCase();
+  if (dept.includes('comercial') || dept.includes('venda')) {
+    return 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200&auto=format&fit=crop';
+  }
+  if (dept.includes('financeiro') || dept.includes('finan')) {
+    return 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1200&auto=format&fit=crop';
+  }
+  if (dept.includes('academy') || dept.includes('treina') || dept.includes('aula')) {
+    return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop';
+  }
+  if (dept.includes('juríd') || dept.includes('jurid')) {
+    return 'https://images.unsplash.com/photo-1450133064473-71024230f91b?q=80&w=1200&auto=format&fit=crop';
+  }
+
+  // Operacional default
+  return 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=1200&auto=format&fit=crop';
+}
+
 export const INITIAL_WIKI_ARTICLES: WikiArticleItem[] = [
   {
     id: 'a1',
@@ -25,6 +53,7 @@ export const INITIAL_WIKI_ARTICLES: WikiArticleItem[] = [
     createdAt: '2026-08-01',
     author: 'Diretoria Executiva',
     readingTimeMinutes: 4,
+    coverImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop',
     tags: ['Cultura', 'Onboarding', 'Princípios'],
     content: `
 # Manual de Boas-Vindas & Cultura do Rocket Club
@@ -70,6 +99,7 @@ Para manter toda a equipe e os mentorados em sincronia, seguimos uma cadência e
     createdAt: '2026-08-05',
     author: 'Sucesso do Cliente',
     readingTimeMinutes: 5,
+    coverImage: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop',
     tags: ['SOP', 'Onboarding', 'CS'],
     content: `
 # SOP: Onboarding de Novo Mentorado
@@ -114,6 +144,7 @@ A retenção e o sucesso do mentorado dependem da sua ativação inicial:
     createdAt: '2026-08-08',
     author: 'Controladoria & Finanças',
     readingTimeMinutes: 3,
+    coverImage: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1200&auto=format&fit=crop',
     tags: ['Financeiro', 'Notas Fiscais', 'Cobrança'],
     content: `
 # Regulamento Financeiro & Emissão de Notas Fiscais

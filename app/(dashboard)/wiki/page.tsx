@@ -17,9 +17,10 @@ import {
   CheckCircle2,
   Tag,
   Loader2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
-import { INITIAL_WIKI_ARTICLES, WikiArticleItem } from '@/lib/wiki/wiki-service';
+import { INITIAL_WIKI_ARTICLES, WikiArticleItem, getArticleCover } from '@/lib/wiki/wiki-service';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 import { extractYouTubeVideoId, YouTubePreviewData } from '@/lib/wiki/youtube-importer';
@@ -42,6 +43,7 @@ export default function WikiPage() {
   const [newContent, setNewContent] = useState('');
   const [newDept, setNewDept] = useState('Operacional');
   const [newCategory, setNewCategory] = useState('Processos');
+  const [newCoverImage, setNewCoverImage] = useState('');
 
   // Modal YouTube AI Importer
   const [isYouTubeModalOpen, setIsYouTubeModalOpen] = useState(false);
@@ -131,6 +133,10 @@ export default function WikiPage() {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
+    const assignedCover =
+      newCoverImage.trim() ||
+      getArticleCover({ department: newDept, category: newCategory });
+
     const newArt: WikiArticleItem = {
       id: `a-${Date.now()}`,
       title: newTitle.trim(),
@@ -142,14 +148,16 @@ export default function WikiPage() {
       createdAt: new Date().toLocaleDateString('pt-BR'),
       author: 'Comandante Master',
       readingTimeMinutes: 4,
+      coverImage: assignedCover,
     };
 
     saveCustomArticle(newArt);
     setNewTitle('');
     setNewSummary('');
     setNewContent('');
+    setNewCoverImage('');
     setIsAddModalOpen(false);
-    toast.success('Artigo Publicado!', `O documento "${newArt.title}" já está disponível.`);
+    toast.success('Artigo Publicado!', `O documento "${newArt.title}" já está disponível com capa.`);
     router.push(`/wiki/${newArt.id}`);
   };
 
@@ -177,6 +185,10 @@ export default function WikiPage() {
 
       const { data } = json;
 
+      const coverImg =
+        data.thumbnailUrl ||
+        (data.videoId ? `https://img.youtube.com/vi/${data.videoId}/hqdefault.jpg` : undefined);
+
       const newArt: WikiArticleItem = {
         id: `yt-${Date.now()}`,
         title: data.title,
@@ -188,7 +200,7 @@ export default function WikiPage() {
         createdAt: new Date().toLocaleDateString('pt-BR'),
         author: data.author || 'YouTube Treinamento',
         videoUrl: data.videoUrl,
-        coverImage: data.thumbnailUrl,
+        coverImage: coverImg,
         readingTimeMinutes: data.readingTimeMinutes || 7,
         tags: data.tags,
       };
@@ -199,7 +211,7 @@ export default function WikiPage() {
       setIsYouTubeModalOpen(false);
       toast.success(
         'Base de Conhecimento Criada!',
-        `O vídeo "${data.title}" foi transformado em um SOP completo com sucesso.`
+        `O vídeo "${data.title}" foi transformado em um SOP completo com capa e vídeo incorporado.`
       );
       router.push(`/wiki/${newArt.id}`);
     } catch (err) {
@@ -282,7 +294,7 @@ export default function WikiPage() {
         </div>
       </div>
 
-      {/* Grid de Artigos */}
+      {/* Grid de Artigos com Capa Visual */}
       {filteredArticles.length === 0 ? (
         <div className="py-24 text-center text-slate-500 space-y-4 bg-[#131B2E]/40 border border-slate-800 rounded-3xl p-8">
           <BookOpen size={42} className="mx-auto text-slate-600" />
@@ -295,44 +307,61 @@ export default function WikiPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArticles.map((article) => {
             const hasVideo = Boolean(article.videoUrl);
+            const coverSrc = getArticleCover(article);
 
             return (
               <Link
                 key={article.id}
                 href={`/wiki/${article.id}`}
-                className="group bg-[#0F172A]/80 hover:bg-[#131B2E] border border-slate-800/90 hover:border-amber-500/40 rounded-3xl p-7 transition-all duration-200 hover:shadow-2xl flex flex-col justify-between space-y-5"
+                className="group bg-[#0F172A]/80 hover:bg-[#131B2E] border border-slate-800/90 hover:border-amber-500/40 rounded-3xl p-5 transition-all duration-200 hover:shadow-2xl flex flex-col justify-between overflow-hidden"
               >
-                {/* Top Info */}
-                <div className="space-y-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-lg">
-                      {article.category}
-                    </span>
+                {/* Imagem de Capa do Artigo */}
+                <div className="space-y-4">
+                  <div className="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800/80 group-hover:border-amber-500/30 transition-all">
+                    <img
+                      src={coverSrc}
+                      alt={article.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent opacity-80" />
 
-                    {hasVideo ? (
-                      <span className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-lg font-semibold flex items-center gap-1">
-                        <Video size={12} />
-                        Vídeo
+                    {/* Badges Flutuantes sobre a Capa */}
+                    <div className="absolute top-3 left-3 flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+                        {article.category}
                       </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                        <Building size={12} className="text-slate-500" />
-                        {article.department}
-                      </span>
-                    )}
+                    </div>
+
+                    <div className="absolute top-3 right-3">
+                      {hasVideo ? (
+                        <span className="text-[10px] text-red-400 bg-slate-950/80 backdrop-blur-md border border-red-500/30 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 shadow-sm">
+                          <Video size={12} />
+                          Vídeo
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-200 bg-slate-950/80 backdrop-blur-md border border-slate-700/60 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 shadow-sm">
+                          <Building size={11} className="text-slate-400" />
+                          {article.department}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
-                    {article.title}
-                  </h3>
+                  {/* Informações do Texto */}
+                  <div className="space-y-2 px-1">
+                    <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                      {article.title}
+                    </h3>
 
-                  <p className="text-xs sm:text-sm text-slate-400 line-clamp-3 leading-relaxed">
-                    {article.summary}
-                  </p>
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      {article.summary}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Footer do Card */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800/80 text-xs text-slate-500">
+                <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-800/80 text-xs text-slate-500 px-1">
                   <div className="flex items-center gap-1.5">
                     <Clock size={13} className="text-slate-500" />
                     <span>{article.readingTimeMinutes || 4} min de leitura</span>
@@ -362,7 +391,7 @@ export default function WikiPage() {
               <span>Auto-Detecção Inteligente & Gerador de Manual SOP</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Cole o link do YouTube. O sistema analisará o contexto em tempo real, sugerindo automaticamente o <strong>Departamento</strong> e <strong>Categoria</strong> ideais, e gerará uma documentação completa e aprofundada.
+              Cole o link do YouTube. O sistema analisará o vídeo em tempo real, extrairá a <strong>capa oficial</strong>, sugerirá automaticamente o <strong>Departamento</strong> e <strong>Categoria</strong> ideais, e gerará uma documentação completa e aprofundada.
             </p>
           </div>
 
@@ -374,7 +403,7 @@ export default function WikiPage() {
               {loadingPreview && (
                 <span className="text-[11px] text-amber-400 flex items-center gap-1">
                   <Loader2 size={12} className="animate-spin" />
-                  <span>Analisando contexto do vídeo...</span>
+                  <span>Extraindo capa e contexto...</span>
                 </span>
               )}
             </div>
@@ -389,12 +418,12 @@ export default function WikiPage() {
             />
           </div>
 
-          {/* Pré-visualização do Vídeo & Auto-Classificação */}
+          {/* Pré-visualização do Vídeo, Capa & Auto-Classificação */}
           {previewData && (
             <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 space-y-3 animate-in fade-in duration-200">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-amber-400 flex items-center gap-1.5">
-                  <Sparkles size={14} /> Classificação Automática por IA
+                  <Sparkles size={14} /> Capa Extraída & Classificação Automática
                 </span>
                 <span className="text-[11px] text-slate-400">
                   {previewData.confidenceScore}% de assertividade
@@ -405,11 +434,14 @@ export default function WikiPage() {
                 <img
                   src={previewData.thumbnailUrl}
                   alt={previewData.title}
-                  className="w-24 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
+                  className="w-28 h-16 rounded-xl object-cover border border-slate-700 shrink-0 shadow-md"
                 />
                 <div className="min-w-0 flex-1 space-y-1">
                   <h4 className="text-xs font-bold text-white truncate">{previewData.title}</h4>
                   <p className="text-[11px] text-slate-400 truncate">Canal / Autor: {previewData.author}</p>
+                  <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Capa do vídeo vinculada com sucesso
+                  </span>
                 </div>
               </div>
 
@@ -547,6 +579,21 @@ export default function WikiPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+              URL da Imagem de Capa (Opcional)
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={newCoverImage}
+                onChange={(e) => setNewCoverImage(e.target.value)}
+                placeholder="https://... (deixe em branco para capa automática de alta qualidade)"
+                className="w-full bg-slate-900 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5">
               Resumo / Sinopse
             </label>
             <input
@@ -582,7 +629,7 @@ export default function WikiPage() {
             <button
               type="submit"
               disabled={!newTitle.trim()}
-              className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all disabled:opacity-50"
+              className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all disabled:opacity-50 shadow-md"
             >
               Publicar Artigo
             </button>

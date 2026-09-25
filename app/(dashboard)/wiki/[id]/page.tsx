@@ -31,8 +31,9 @@ import {
   HelpCircle,
   AlertCircle,
   Globe,
+  Image as ImageIcon,
 } from 'lucide-react';
-import { INITIAL_WIKI_ARTICLES, WikiArticleItem } from '@/lib/wiki/wiki-service';
+import { INITIAL_WIKI_ARTICLES, WikiArticleItem, getArticleCover } from '@/lib/wiki/wiki-service';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 import { useNotifications } from '@/lib/notification-context';
@@ -236,6 +237,7 @@ export default function WikiArticlePage() {
 
   const youtubeId = article.videoUrl ? extractYouTubeVideoId(article.videoUrl) : null;
   const relatedArticles = INITIAL_WIKI_ARTICLES.filter((a) => a.id !== article.id).slice(0, 3);
+  const articleCover = getArticleCover(article);
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8 pb-20 animate-in fade-in duration-300">
@@ -323,8 +325,8 @@ export default function WikiArticlePage() {
             </div>
           </div>
 
-          {/* Player de Vídeo Incorporado (Se houver) */}
-          {youtubeId && (
+          {/* Player de Vídeo Incorporado OU Imagem de Capa do Artigo */}
+          {youtubeId ? (
             <div className="bg-[#0F172A]/90 border border-slate-800 rounded-3xl overflow-hidden p-6 space-y-4 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-sm font-bold text-white">
@@ -350,6 +352,20 @@ export default function WikiArticlePage() {
                   allowFullScreen
                   className="w-full h-full border-0"
                 />
+              </div>
+            </div>
+          ) : (
+            <div className="relative w-full h-64 sm:h-80 md:h-96 rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+              <img
+                src={articleCover}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent opacity-70" />
+              <div className="absolute bottom-4 left-6 flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider bg-slate-950/80 backdrop-blur-md text-amber-400 border border-amber-500/30 px-3.5 py-1.5 rounded-xl">
+                  {article.category} &bull; {article.department}
+                </span>
               </div>
             </div>
           )}
@@ -582,7 +598,7 @@ export default function WikiArticlePage() {
             </div>
           </div>
 
-          {/* Artigos Relacionados */}
+          {/* Artigos Relacionados com Thumbnail */}
           <div className="bg-[#0F172A]/90 border border-slate-800 rounded-3xl p-6 backdrop-blur-xl space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
               <BookOpen size={14} className="text-amber-400" />
@@ -590,23 +606,37 @@ export default function WikiArticlePage() {
             </h3>
 
             <div className="space-y-3">
-              {relatedArticles.map((rel) => (
-                <Link
-                  key={rel.id}
-                  href={`/wiki/${rel.id}`}
-                  className="group block p-3.5 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/30 rounded-2xl transition-all"
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-semibold text-amber-400 uppercase">
-                      {rel.category}
-                    </span>
-                    <span className="text-[10px] text-slate-500">{rel.createdAt}</span>
-                  </div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
-                    {rel.title}
-                  </h4>
-                </Link>
-              ))}
+              {relatedArticles.map((rel) => {
+                const relCover = getArticleCover(rel);
+
+                return (
+                  <Link
+                    key={rel.id}
+                    href={`/wiki/${rel.id}`}
+                    className="group flex items-center gap-3 p-3 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/30 rounded-2xl transition-all overflow-hidden"
+                  >
+                    <div className="w-16 h-14 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-700/60">
+                      <img
+                        src={relCover}
+                        alt={rel.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-semibold text-amber-400 uppercase">
+                          {rel.category}
+                        </span>
+                        <span className="text-slate-500">{rel.createdAt}</span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                        {rel.title}
+                      </h4>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
