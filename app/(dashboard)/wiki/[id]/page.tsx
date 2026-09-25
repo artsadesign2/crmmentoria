@@ -10,7 +10,6 @@ import {
   Building,
   User,
   Share2,
-  Printer,
   Copy,
   Check,
   Youtube,
@@ -31,6 +30,7 @@ import {
   ShieldCheck,
   HelpCircle,
   AlertCircle,
+  Globe,
 } from 'lucide-react';
 import { INITIAL_WIKI_ARTICLES, WikiArticleItem } from '@/lib/wiki/wiki-service';
 import { useTheme } from '@/lib/theme-context';
@@ -59,7 +59,10 @@ export default function WikiArticlePage() {
   const [article, setArticle] = useState<WikiArticleItem | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Modal Compartilhar com a Equipe
+  // Modal Compartilhar nas Redes Sociais
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
+
+  // Modal Compartilhar com a Equipe (Interno)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [teamUsers, setTeamUsers] = useState<TeamUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -87,7 +90,7 @@ export default function WikiArticlePage() {
     }
   }, [articleId]);
 
-  // Carrega lista de usuários ao abrir o modal de compartilhamento
+  // Carrega lista de usuários ao abrir o modal de compartilhamento com a equipe
   useEffect(() => {
     if (isShareModalOpen && teamUsers.length === 0) {
       setLoadingUsers(true);
@@ -112,9 +115,25 @@ export default function WikiArticlePage() {
     }
   };
 
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
+  const handleShareSocial = (platform: 'whatsapp' | 'linkedin' | 'twitter' | 'telegram') => {
+    if (!article || typeof window === 'undefined') return;
+
+    const currentUrl = window.location.href;
+    const shareMessage = `Confira este treinamento na Base de Conhecimento do Rocket Club:\n*${article.title}* (${article.department} • ${article.category})\n\n${currentUrl}`;
+
+    let shareUrl = '';
+    if (platform === 'whatsapp') {
+      shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
+    } else if (platform === 'linkedin') {
+      shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`;
+    } else if (platform === 'twitter') {
+      shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Confira "${article.title}" na Base de Conhecimento do Rocket Club:`)}&url=${encodeURIComponent(currentUrl)}`;
+    } else if (platform === 'telegram') {
+      shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(article.title)}`;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -231,15 +250,16 @@ export default function WikiArticlePage() {
         </Link>
 
         <div className="flex items-center space-x-2">
-          {/* Botão Compartilhar com Equipe no Topo */}
+          {/* Botão Compartilhar nas Redes Sociais */}
           <button
-            onClick={() => setIsShareModalOpen(true)}
-            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
+            onClick={() => setIsSocialModalOpen(true)}
+            className="px-3.5 py-2 bg-[#131B2E] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-sm"
           >
-            <Share2 size={14} />
-            <span>Compartilhar com a Equipe</span>
+            <Share2 size={14} className="text-amber-400" />
+            <span>Compartilhar nas Redes</span>
           </button>
 
+          {/* Botão Copiar Link */}
           <button
             onClick={handleCopyLink}
             className="p-2 bg-[#131B2E] hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors"
@@ -247,15 +267,6 @@ export default function WikiArticlePage() {
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
             <span className="hidden sm:inline">{copied ? 'Copiado' : 'Copiar Link'}</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="p-2 bg-[#131B2E] hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors"
-            title="Imprimir documento"
-          >
-            <Printer size={14} />
-            <span className="hidden sm:inline">Imprimir</span>
           </button>
         </div>
       </div>
@@ -560,11 +571,12 @@ export default function WikiArticlePage() {
             </div>
 
             <div className="pt-2">
+              {/* Botão Único e Exclusivo de Compartilhar com a Equipe */}
               <button
                 onClick={() => setIsShareModalOpen(true)}
                 className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-amber-500/20"
               >
-                <Share2 size={15} />
+                <Users size={15} />
                 <span>Compartilhar com a Equipe</span>
               </button>
             </div>
@@ -599,6 +611,116 @@ export default function WikiArticlePage() {
           </div>
         </div>
       </div>
+
+      {/* Modal: Compartilhar nas Redes Sociais */}
+      <Modal
+        isOpen={isSocialModalOpen}
+        onClose={() => setIsSocialModalOpen(false)}
+        title="Compartilhar nas Redes Sociais"
+      >
+        <div className="space-y-5">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-2">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded">
+              {article.category} &bull; {article.department}
+            </span>
+            <h4 className="text-sm font-bold text-white leading-snug">{article.title}</h4>
+            <p className="text-xs text-slate-400 line-clamp-2">{article.summary}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* WhatsApp */}
+            <button
+              onClick={() => handleShareSocial('whatsapp')}
+              className="p-3.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 hover:border-[#25D366]/50 rounded-2xl flex items-center space-x-3 transition-all group text-left"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-5.805 1.554zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white group-hover:text-[#25D366] transition-colors">
+                  WhatsApp
+                </div>
+                <div className="text-[11px] text-slate-400">Conversas & Grupos</div>
+              </div>
+            </button>
+
+            {/* LinkedIn */}
+            <button
+              onClick={() => handleShareSocial('linkedin')}
+              className="p-3.5 bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 hover:border-[#0A66C2]/50 rounded-2xl flex items-center space-x-3 transition-all group text-left"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#0A66C2] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white group-hover:text-[#0A66C2] transition-colors">
+                  LinkedIn
+                </div>
+                <div className="text-[11px] text-slate-400">Feed & Conexões</div>
+              </div>
+            </button>
+
+            {/* X / Twitter */}
+            <button
+              onClick={() => handleShareSocial('twitter')}
+              className="p-3.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-2xl flex items-center space-x-3 transition-all group text-left"
+            >
+              <div className="w-8 h-8 rounded-xl bg-black border border-slate-700 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                  X / Twitter
+                </div>
+                <div className="text-[11px] text-slate-400">Post & Comunidade</div>
+              </div>
+            </button>
+
+            {/* Telegram */}
+            <button
+              onClick={() => handleShareSocial('telegram')}
+              className="p-3.5 bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 hover:border-[#229ED9]/50 rounded-2xl flex items-center space-x-3 transition-all group text-left"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#229ED9] text-white flex items-center justify-center shrink-0 shadow-sm">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white group-hover:text-[#229ED9] transition-colors">
+                  Telegram
+                </div>
+                <div className="text-[11px] text-slate-400">Canais & Grupos</div>
+              </div>
+            </button>
+          </div>
+
+          <div className="pt-2 border-t border-slate-800 space-y-2">
+            <label className="text-xs font-semibold text-slate-400">Link Direto do Artigo</label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                readOnly
+                value={typeof window !== 'undefined' ? window.location.href : ''}
+                className="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono select-all focus:outline-none"
+              />
+              <button
+                onClick={handleCopyLink}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1.5 shrink-0 transition-colors shadow-sm"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal Interativo: Compartilhar com a Equipe por E-mail (Resend) e Notificação */}
       <Modal
