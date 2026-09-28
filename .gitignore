@@ -37,6 +37,8 @@ error.log
 # Agent / Temp folders
 .temp_ag_kit/
 scratch/
+tmp/
+/tmp/
 
 # PHP / Python dependencies
 vendor/

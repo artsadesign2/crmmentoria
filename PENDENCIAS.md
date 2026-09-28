@@ -59,13 +59,8 @@ GEMINI_API_KEY="AIzaSy..."
 
 ## 🔀 3. Git & Deploy para Produção
 
-- [ ] **Revisão / Merge**: Fazer o merge da branch `feat/f6-bot-humanizado` para a branch principal `main` antes do deploy.
-  ```bash
-  git checkout main
-  git merge feat/f6-bot-humanizado
-  git push origin main
-  ```
-- [ ] **Limpeza de Testes Locais (Opcional)**: A pasta `tmp/` contém scripts temporários (`.mts`) e capturas de testes usadas durante a validação. Podem ser removidos ou mantidos no `.gitignore`.
+- [x] **Revisão / Merge**: Realizado o merge da branch `feat/f6-bot-humanizado` para a branch principal `main` e validação da suite de testes.
+- [x] **Limpeza de Testes Locais**: Pasta `tmp/` devidamente adicionada ao `.gitignore` e workspace protegido contra arquivos temporários.
 
 ---
 
