@@ -14,6 +14,7 @@ const PUBLIC_API = [
   '/api/auth/logout',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
+  '/api/agendar',
 ];
 
 /**
@@ -63,6 +64,10 @@ export async function middleware(request: NextRequest) {
         { ok: false, error: 'Sessão inválida ou expirada.' },
         { status: 401 }
       );
+    }
+
+    if (pathname.startsWith('/agendar')) {
+      return NextResponse.next();
     }
 
     if (isLoginPage) {
