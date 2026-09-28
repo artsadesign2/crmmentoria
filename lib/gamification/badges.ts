@@ -197,3 +197,40 @@ export function evaluateUnlockedBadges(stats: {
     totalCalculatedXp: totalXp,
   };
 }
+
+/**
+ * Retorna dados de gamificação síncronos e instantâneos para um mentorado específico
+ */
+export function getInitialGamificationForMember(memberId: string, memberData?: any): {
+  xp: number;
+  unlockedBadgeIds: string[];
+} {
+  const PRESET_MEMBER_XP: Record<string, { xp: number; badges: string[] }> = {
+    '1': { xp: 3450, badges: ['FIRST_MISSION', 'ACADEMY_HALF', 'ACADEMY_MASTER', 'HIGH_ROLLER', 'NETWORK_BUILDER'] },
+    '2': { xp: 2200, badges: ['FIRST_MISSION', 'ACADEMY_HALF', 'NETWORK_BUILDER', 'COMMUNITY_LEADER'] },
+    '3': { xp: 1850, badges: ['FIRST_MISSION', 'ACADEMY_HALF', 'NETWORK_BUILDER'] },
+    '4': { xp: 1100, badges: ['FIRST_MISSION', 'NETWORK_BUILDER'] },
+    '5': { xp: 650, badges: ['FIRST_MISSION'] },
+  };
+
+  if (PRESET_MEMBER_XP[memberId]) {
+    return {
+      xp: PRESET_MEMBER_XP[memberId].xp,
+      unlockedBadgeIds: PRESET_MEMBER_XP[memberId].badges,
+    };
+  }
+
+  // Se não for preset, calcular a partir dos dados do membro
+  const isHighTier = memberData?.status === 'ouro' || memberData?.status === 'diamante';
+  const hasCompany = Boolean(memberData?.companyName || memberData?.tradeName);
+  const baseScore = isHighTier ? 2400 : hasCompany ? 1500 : 750;
+  const badges = ['FIRST_MISSION'];
+  if (isHighTier) badges.push('HIGH_ROLLER', 'ACADEMY_HALF', 'NETWORK_BUILDER');
+  else if (hasCompany) badges.push('NETWORK_BUILDER');
+
+  return {
+    xp: baseScore,
+    unlockedBadgeIds: badges,
+  };
+}
+

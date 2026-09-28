@@ -17,6 +17,7 @@ import {
   BadgeDefinition,
   getAllBadges,
   calculateGamificationLevel,
+  getInitialGamificationForMember,
 } from '@/lib/gamification/badges';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
@@ -30,27 +31,31 @@ interface GamificationBadgeListProps {
 
 // Cache em memória client-side para evitar refetches ao alternar abas
 const gamificationClientCache = new Map<string, { xp: number; unlockedBadges: string[]; timestamp: number }>();
-const CLIENT_CACHE_TTL = 120000; // 2 minutos
+const CLIENT_CACHE_TTL = 300000; // 5 minutos
 
 export function GamificationBadgeList({
   memberId = '1',
-  initialXp = 1850,
-  initialUnlockedBadges = ['FIRST_MISSION', 'ACADEMY_HALF', 'NETWORK_BUILDER'],
+  initialXp,
+  initialUnlockedBadges,
   isMentorView = true,
 }: GamificationBadgeListProps) {
   const { activePalette } = useTheme();
   
-  // Inicializa com cache se disponível
+  // Computa estado inicial imediato de forma 100% síncrona
+  const defaultMemberData = getInitialGamificationForMember(memberId);
+  const effectiveInitialXp = initialXp ?? defaultMemberData.xp;
+  const effectiveInitialBadges = initialUnlockedBadges ?? defaultMemberData.unlockedBadgeIds;
+
   const cached = gamificationClientCache.get(memberId);
-  const [xp, setXp] = useState(cached?.xp ?? initialXp);
-  const [unlockedBadges, setUnlockedBadges] = useState<string[]>(cached?.unlockedBadges ?? initialUnlockedBadges);
+  const [xp, setXp] = useState(cached?.xp ?? effectiveInitialXp);
+  const [unlockedBadges, setUnlockedBadges] = useState<string[]>(cached?.unlockedBadges ?? effectiveInitialBadges);
   const [badges] = useState<BadgeDefinition[]>(() => getAllBadges());
   const [isLoading, setIsLoading] = useState(false);
   const [showAddXpModal, setShowAddXpModal] = useState(false);
   const [bonusXpInput, setBonusXpInput] = useState('100');
   const [selectedBadgeToUnlock, setSelectedBadgeToUnlock] = useState('');
 
-  // Sincronizar dados com o backend apenas se cache expirado
+  // Sincronizar dados em background silenciosamente sem travar a renderização
   useEffect(() => {
     const existing = gamificationClientCache.get(memberId);
     if (existing && Date.now() - existing.timestamp < CLIENT_CACHE_TTL) {
@@ -59,29 +64,26 @@ export function GamificationBadgeList({
       return;
     }
 
-    async function loadGamification() {
-      try {
-        const res = await fetch(`/api/gamification?memberId=${memberId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ok) {
-            const newXp = data.xp || initialXp;
-            const newBadges = data.unlockedBadges || initialUnlockedBadges;
-            setXp(newXp);
-            setUnlockedBadges(newBadges);
-            gamificationClientCache.set(memberId, {
-              xp: newXp,
-              unlockedBadges: newBadges,
-              timestamp: Date.now(),
-            });
-          }
+    const abortController = new AbortController();
+    fetch(`/api/gamification?memberId=${memberId}`, { signal: abortController.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ok) {
+          const newXp = data.xp || effectiveInitialXp;
+          const newBadges = data.unlockedBadges || effectiveInitialBadges;
+          setXp(newXp);
+          setUnlockedBadges(newBadges);
+          gamificationClientCache.set(memberId, {
+            xp: newXp,
+            unlockedBadges: newBadges,
+            timestamp: Date.now(),
+          });
         }
-      } catch (err) {
-        console.warn('Erro ao carregar gamificação:', err);
-      }
-    }
-    loadGamification();
-  }, [memberId]);
+      })
+      .catch(() => {});
+
+    return () => abortController.abort();
+  }, [memberId, effectiveInitialXp, effectiveInitialBadges]);
 
   const levelInfo = calculateGamificationLevel(xp);
 

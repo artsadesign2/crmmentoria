@@ -921,11 +921,10 @@ export function MenteeSheet({
 
           {/* TAB 4: METAS, DESAFIOS & MURAL DE CONQUISTAS */}
           {activeTab === 'achievements' && (
-            <div className="space-y-6 animate-in fade-in duration-150">
+            <div className="space-y-6">
               {/* Gamification Engine & Badge Catalog */}
               <GamificationBadgeList
                 memberId={member.id}
-                initialXp={1850}
                 isMentorView={true}
               />
 
