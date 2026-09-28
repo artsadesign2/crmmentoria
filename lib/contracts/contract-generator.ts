@@ -1,4 +1,10 @@
 import crypto from 'crypto';
+import {
+  ContractTemplateConfig,
+  DEFAULT_CONTRACT_TEMPLATE,
+  getStoredContractTemplate,
+  interpolateContractTemplate,
+} from './contract-template';
 
 export interface ContractParty {
   name: string;
@@ -20,6 +26,9 @@ export interface ContractDetails {
   contractor: ContractParty;
   contractee: ContractParty;
   clauses?: string[];
+  clausesText?: string;
+  pdfReferenceUrl?: string;
+  pdfReferenceName?: string;
 }
 
 export interface SignedContractMetadata {
@@ -44,35 +53,76 @@ export const DEFAULT_CONTRACT_CLAUSES = [
 ];
 
 /**
+ * Divide o texto do contrato em blocos/cláusulas organizados para exibição
+ */
+export function splitContractClauses(text: string): string[] {
+  if (!text) return DEFAULT_CONTRACT_CLAUSES;
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter((b) => b.length > 0);
+  return blocks.length > 0 ? blocks : [text];
+}
+
+/**
  * Gera os dados consolidados do contrato
  */
-export function generateContractModel(params: {
-  clientName: string;
-  clientDoc?: string;
-  clientEmail: string;
-  clientPhone?: string;
-  clientAddress?: string;
-  programName?: string;
-  durationMonths?: number;
-  value: number;
-  paymentMethod?: string;
-}): ContractDetails {
+export function generateContractModel(
+  params: {
+    clientName: string;
+    clientDoc?: string;
+    clientEmail: string;
+    clientPhone?: string;
+    clientAddress?: string;
+    companyName?: string;
+    specialty?: string;
+    programName?: string;
+    durationMonths?: number;
+    value: number;
+    paymentMethod?: string;
+    startDate?: string;
+  },
+  customTemplate?: ContractTemplateConfig
+): ContractDetails {
   const contractNumber = `RKT-CTR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const template = customTemplate || getStoredContractTemplate() || DEFAULT_CONTRACT_TEMPLATE;
+
+  const startDateStr = params.startDate || new Date().toLocaleDateString('pt-BR');
+
+  const interpolatedText = interpolateContractTemplate(template.clausesText, {
+    nomeMentorado: params.clientName,
+    documento: params.clientDoc || '000.000.000-00',
+    email: params.clientEmail,
+    telefone: params.clientPhone || '',
+    endereco: params.clientAddress || 'Endereço Comercial / Residencial',
+    empresaCliente: params.companyName || 'Empresa do Mentorado',
+    especialidade: params.specialty || 'Negócios & Estratégia',
+    programaMentoria: params.programName || 'Mentoria Rocket Scale High-Ticket',
+    valorTotal: params.value,
+    duracaoMeses: params.durationMonths || 6,
+    formaPagamento: params.paymentMethod || 'Pix / Cartão de Crédito via Gateway Seguro',
+    dataInicio: startDateStr,
+    razaoSocialContratada: template.contractorName,
+    cnpjContratada: template.contractorDocument,
+    enderecoContratada: template.contractorAddress,
+  });
+
+  const clausesList = splitContractClauses(interpolatedText);
 
   return {
     contractNumber,
-    title: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MENTORIA EXECUTIVA & ACELERAÇÃO',
+    title: template.title || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MENTORIA EXECUTIVA & ACELERAÇÃO',
     mentorProgram: params.programName || 'Mentoria Rocket Scale High-Ticket',
     durationMonths: params.durationMonths || 6,
     totalValue: params.value,
     paymentMethod: params.paymentMethod || 'Pix / Cartão de Crédito via Gateway Seguro',
-    startDate: new Date().toLocaleDateString('pt-BR'),
+    startDate: startDateStr,
     contractor: {
-      name: 'ROCKET CLUB GESTÃO & CONSULTORIA LTDA',
-      document: '48.912.345/0001-89',
-      email: 'contratos@rocketclub.com.br',
-      phone: '(11) 99530-2672',
-      address: 'Av. Paulista, 1000 - São Paulo/SP',
+      name: template.contractorName || 'ROCKET CLUB GESTÃO & CONSULTORIA LTDA',
+      document: template.contractorDocument || '48.912.345/0001-89',
+      email: template.contractorEmail || 'contratos@rocketclub.com.br',
+      phone: template.contractorPhone || '(11) 99530-2672',
+      address: template.contractorAddress || 'Av. Paulista, 1000 - São Paulo/SP',
       role: 'CONTRATADA',
     },
     contractee: {
@@ -83,7 +133,10 @@ export function generateContractModel(params: {
       address: params.clientAddress || 'Endereço Comercial',
       role: 'CONTRATANTE',
     },
-    clauses: DEFAULT_CONTRACT_CLAUSES,
+    clauses: clausesList,
+    clausesText: interpolatedText,
+    pdfReferenceUrl: template.pdfReferenceUrl,
+    pdfReferenceName: template.pdfReferenceName,
   };
 }
 
@@ -99,3 +152,4 @@ export function generateSignatureAuditHash(
   const payload = `${contractId}|${signerEmail}|${timestamp}|${ipAddress}|ROCKET-CLUB-LEGAL-INTEGRITY`;
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
+

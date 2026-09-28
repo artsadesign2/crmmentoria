@@ -19,8 +19,16 @@ import {
   DollarSign,
   Calendar,
   Lock,
+  FileText,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { ContractDetails, SignedContractMetadata, generateContractModel } from '@/lib/contracts/contract-generator';
+import {
+  ContractTemplateConfig,
+  DEFAULT_CONTRACT_TEMPLATE,
+  getStoredContractTemplate,
+} from '@/lib/contracts/contract-template';
 import { maskCpf, maskCnpj, maskPhone } from '@/lib/masks';
 import { toast } from '@/lib/toast-context';
 import { useTheme } from '@/lib/theme-context';
@@ -35,6 +43,9 @@ interface ContractSignModalProps {
     clientEmail?: string;
     clientPhone?: string;
     clientDoc?: string;
+    clientAddress?: string;
+    companyName?: string;
+    specialty?: string;
     programName?: string;
     durationMonths?: number;
     value?: number;
@@ -51,6 +62,8 @@ export function ContractSignModal({
 }: ContractSignModalProps) {
   const { activePalette } = useTheme();
   const [contract, setContract] = useState<ContractDetails | null>(null);
+  const [template, setTemplate] = useState<ContractTemplateConfig>(DEFAULT_CONTRACT_TEMPLATE);
+  const [isFullTextExpanded, setIsFullTextExpanded] = useState(false);
   const [signerName, setSignerName] = useState(clientData.clientName || '');
   const [signerDocument, setSignerDocument] = useState(clientData.clientDoc || '');
   const [signerEmail, setSignerEmail] = useState(clientData.clientEmail || '');
@@ -64,19 +77,30 @@ export function ContractSignModal({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
 
-  // Carregar/gerar o modelo ao abrir
+  // Carregar modelo homologado e gerar minuta ao abrir
   useEffect(() => {
     if (isOpen) {
-      const generated = generateContractModel({
-        clientName: clientData.clientName || 'Cliente Rocket Club',
-        clientDoc: clientData.clientDoc || '',
-        clientEmail: clientData.clientEmail || '',
-        clientPhone: clientData.clientPhone || '',
-        programName: clientData.programName || 'Mentoria Rocket Scale High-Ticket',
-        durationMonths: clientData.durationMonths || 6,
-        value: clientData.value || 12000,
-        paymentMethod: clientData.paymentMethod || 'Pix / Cartão de Crédito',
-      });
+      // 1. Pega do localStorage imediato
+      const cached = getStoredContractTemplate();
+      const initialTemplate = cached || DEFAULT_CONTRACT_TEMPLATE;
+      setTemplate(initialTemplate);
+
+      const generated = generateContractModel(
+        {
+          clientName: clientData.clientName || 'Cliente Rocket Club',
+          clientDoc: clientData.clientDoc || '',
+          clientEmail: clientData.clientEmail || '',
+          clientPhone: clientData.clientPhone || '',
+          clientAddress: clientData.clientAddress || '',
+          companyName: clientData.companyName || '',
+          specialty: clientData.specialty || '',
+          programName: clientData.programName || 'Mentoria Rocket Scale High-Ticket',
+          durationMonths: clientData.durationMonths || 6,
+          value: clientData.value || 12000,
+          paymentMethod: clientData.paymentMethod || 'Pix / Cartão de Crédito',
+        },
+        initialTemplate
+      );
       setContract(generated);
       setSignerName(clientData.clientName || '');
       setSignerDocument(clientData.clientDoc || '');
@@ -85,8 +109,37 @@ export function ContractSignModal({
       setSignedResult(null);
       setHasSignature(false);
       setAgreedTerms(false);
+      setIsFullTextExpanded(false);
+
+      // 2. Busca da API da organização
+      fetch('/api/contracts/template')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ok && data.template) {
+            setTemplate(data.template);
+            const freshContract = generateContractModel(
+              {
+                clientName: clientData.clientName || 'Cliente Rocket Club',
+                clientDoc: clientData.clientDoc || '',
+                clientEmail: clientData.clientEmail || '',
+                clientPhone: clientData.clientPhone || '',
+                clientAddress: clientData.clientAddress || '',
+                companyName: clientData.companyName || '',
+                specialty: clientData.specialty || '',
+                programName: clientData.programName || 'Mentoria Rocket Scale High-Ticket',
+                durationMonths: clientData.durationMonths || 6,
+                value: clientData.value || 12000,
+                paymentMethod: clientData.paymentMethod || 'Pix / Cartão de Crédito',
+              },
+              data.template
+            );
+            setContract(freshContract);
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen, clientData]);
+
 
   // Inicializar Canvas
   useEffect(() => {
@@ -314,22 +367,24 @@ export function ContractSignModal({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
-                    <Building size={12} className="text-yellow-400" /> CONTRATADA
+                    <Building size={12} className="text-yellow-400" /> CONTRATADA (Oficial)
                   </span>
-                  <p className="text-xs font-bold text-slate-200 mt-1 truncate">
-                    ROCKET CLUB LTDA
+                  <p className="text-xs font-bold text-slate-200 mt-1 truncate" title={contract?.contractor.name}>
+                    {contract?.contractor.name || template.contractorName}
                   </p>
-                  <p className="text-[11px] text-slate-400 font-mono">48.912.345/0001-89</p>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {contract?.contractor.document || template.contractorDocument}
+                  </p>
                 </div>
 
                 <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
-                    <User size={12} className="text-yellow-400" /> CONTRATANTE
+                    <User size={12} className="text-yellow-400" /> CONTRATANTE (Mentorado)
                   </span>
                   <p className="text-xs font-bold text-slate-200 mt-1 truncate">
                     {clientData.clientName || 'Mentorado'}
                   </p>
-                  <p className="text-[11px] text-slate-400">{clientData.clientEmail || 'email@exemplo.com'}</p>
+                  <p className="text-[11px] text-slate-400 truncate">{clientData.clientEmail || 'email@exemplo.com'}</p>
                 </div>
 
                 <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
@@ -343,16 +398,62 @@ export function ContractSignModal({
                 </div>
               </div>
 
-              {/* Cláusulas Contratuais */}
+              {/* Cláusulas Contratuais Homologadas */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                  <Lock size={13} className="text-yellow-400" />
-                  Termos e Cláusulas Contratuais
-                </label>
-                <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 max-h-48 overflow-y-auto space-y-2.5 text-xs text-slate-300 leading-relaxed custom-scrollbar">
-                  <p className="font-bold text-yellow-400/90">{contract?.title}</p>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                    <Lock size={13} className="text-yellow-400" />
+                    <span>Termos e Cláusulas Contratuais Homologadas</span>
+                    {template.pdfReferenceName && (
+                      <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                        Doc: {template.pdfReferenceName}
+                      </span>
+                    )}
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (contract?.clausesText) {
+                          navigator.clipboard.writeText(contract.clausesText);
+                          toast.success('Minuta completa do contrato copiada!');
+                        }
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 font-medium transition-colors"
+                    >
+                      <Copy size={12} /> Copiar Texto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsFullTextExpanded(!isFullTextExpanded)}
+                      className="text-[11px] text-yellow-400 hover:text-yellow-300 flex items-center gap-1 font-bold transition-colors"
+                    >
+                      {isFullTextExpanded ? (
+                        <>
+                          <Minimize2 size={12} /> Recolher
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 size={12} /> Expandir Minuta
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className={`p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3 text-xs text-slate-300 leading-relaxed custom-scrollbar transition-all ${
+                    isFullTextExpanded ? 'max-h-[360px] overflow-y-auto' : 'max-h-44 overflow-y-auto'
+                  }`}
+                >
+                  <p className="font-extrabold text-yellow-400/90 tracking-wide pb-1 border-b border-slate-800">
+                    {contract?.title}
+                  </p>
                   {contract?.clauses?.map((clause, idx) => (
-                    <p key={idx} className="text-slate-300">{clause}</p>
+                    <div key={idx} className="space-y-1">
+                      <p className="text-slate-200 font-sans whitespace-pre-line">{clause}</p>
+                    </div>
                   ))}
                 </div>
               </div>
