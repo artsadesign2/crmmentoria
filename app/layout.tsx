@@ -8,6 +8,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { SESSION_COOKIE, verifySession } from '@/lib/auth/jwt';
 import { ToastProvider } from '@/lib/toast-context';
 import { ToastContainer } from '@/components/ui/toast-container';
+import { PwaInstaller } from '@/components/pwa/pwa-installer';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -17,6 +18,12 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'Rocket Club — SaaS Multi-Tenant para Mentorias & Comunidades',
   description: 'Plataforma All-in-One para gestão de membros, vendas, cursos, wiki e eventos.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Rocket Club',
+  },
 };
 
 export default async function RootLayout({
@@ -80,6 +87,8 @@ export default async function RootLayout({
             `,
           }}
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f172a" />
       </head>
       <body className="antialiased selection:bg-[var(--primary-color)]/30 selection:text-[var(--primary-color)]">
         <ThemeProvider initialPaletteId={themeCookie}>
@@ -87,6 +96,7 @@ export default async function RootLayout({
             <ToastProvider>
               {children}
               <ToastContainer />
+              <PwaInstaller />
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>

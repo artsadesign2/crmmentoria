@@ -53,6 +53,8 @@ import {
 import { generateMenteeDiagnosis, MenteeDiagnosisReport } from '@/lib/ai/mentee-diagnosis';
 import { Copy, CheckCheck, Bot, Brain, TrendingUp, AlertOctagon, HelpCircle, FileCheck } from 'lucide-react';
 import { DealCheckoutModal } from '@/components/payments/deal-checkout-modal';
+import { ContractSignModal } from '@/components/contracts/contract-sign-modal';
+import { GamificationBadgeList } from '@/components/gamification/gamification-badge-list';
 
 interface MenteeSheetProps {
   member: (Member & { excludeFromBook?: boolean }) | null;
@@ -98,6 +100,7 @@ export function MenteeSheet({
   // AI Strategic Diagnosis States
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
   const [showRenewalCheckoutModal, setShowRenewalCheckoutModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
   const [copiedDossier, setCopiedDossier] = useState(false);
   const [copiedQuestions, setCopiedQuestions] = useState(false);
 
@@ -408,6 +411,16 @@ export function MenteeSheet({
             >
               <DollarSign size={15} />
               <span className="text-[11px] font-bold hidden sm:inline">Renovação</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowContractModal(true)}
+              className="p-2 sm:p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition-all hover:scale-105 flex items-center gap-1.5"
+              title="Gerar e Assinar Contrato Digital de Mentoria"
+            >
+              <FileCheck size={15} />
+              <span className="text-[11px] font-bold hidden sm:inline">Contrato</span>
             </button>
 
             <button
@@ -909,172 +922,12 @@ export function MenteeSheet({
           {/* TAB 4: METAS, DESAFIOS & MURAL DE CONQUISTAS */}
           {activeTab === 'achievements' && (
             <div className="space-y-6 animate-in fade-in duration-150">
-              {/* Gamification Level & Rank Header */}
-              <div
-                className="p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                style={{
-                  backgroundColor: activePalette.tokens.surface,
-                  borderColor: activePalette.tokens.surfaceBorder,
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-xl shrink-0"
-                    style={{
-                      backgroundColor: activePalette.tokens.badgeBg,
-                      color: activePalette.tokens.primary,
-                      border: `1px solid ${activePalette.tokens.badgeBorder}`,
-                      boxShadow: `0 8px 25px ${activePalette.tokens.glow}`,
-                    }}
-                  >
-                    🏆
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-black text-slate-100">
-                        Comandante Rocket (Nível 3)
-                      </h3>
-                      <span
-                        className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
-                        style={{
-                          backgroundColor: activePalette.tokens.badgeBg,
-                          color: activePalette.tokens.primary,
-                          border: `1px solid ${activePalette.tokens.badgeBorder}`,
-                        }}
-                      >
-                        1.850 XP
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Falta 650 XP para a patente <strong>Almirante de Frota</strong>.
-                    </p>
-                    <div className="w-48 sm:w-64 h-2 bg-[#0B0F17] rounded-full mt-2 overflow-hidden border border-[#1F293D]">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: '74%',
-                          backgroundColor: activePalette.tokens.primary,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rocket Academy Consumption Link */}
-                <div className="p-3 rounded-xl bg-[#0B0F17] border border-[#1F293D] flex items-center gap-3 self-stretch sm:self-auto">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 shrink-0">
-                    🎓
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-300">Rocket Academy</div>
-                    <div className="text-xs font-black text-purple-400">14 de 18 aulas concluídas (78%)</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mural de Conquistas (Badges Wall) */}
-              <div className="p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4
-                      className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
-                      style={{ color: activePalette.tokens.primary }}
-                    >
-                      <Award size={15} /> Mural de Conquistas & Insígnias do Mentorado
-                    </h4>
-                    <p className="text-[11px] text-slate-400">
-                      Conquistas desbloqueadas durante a trajetória no ecossistema Rocket Club.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono font-bold text-emerald-400">5 / 6 Conquistados</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {[
-                    {
-                      id: '100k',
-                      title: 'Primeiro 100k',
-                      desc: 'Faturamento mensal de 6 dígitos batido no ciclo',
-                      icon: '🥇',
-                      unlocked: true,
-                      date: '15/07/2026',
-                    },
-                    {
-                      id: 'offer',
-                      title: 'Oferta High Ticket Validada',
-                      desc: 'Funil comercial gerando vendas com previsibilidade',
-                      icon: '⚡',
-                      unlocked: true,
-                      date: '02/08/2026',
-                    },
-                    {
-                      id: 'closer',
-                      title: 'Closer de Elite',
-                      desc: 'Taxa de fechamento comercial acima de 30%',
-                      icon: '🎯',
-                      unlocked: true,
-                      date: '10/08/2026',
-                    },
-                    {
-                      id: 'academy',
-                      title: 'Academy Master',
-                      desc: 'Mais de 75% dos cursos e módulos consumidos',
-                      icon: '🎓',
-                      unlocked: true,
-                      date: '20/08/2026',
-                    },
-                    {
-                      id: 'community',
-                      title: 'Presença VIP Mastermind',
-                      desc: 'Participação ativa nas imersões presenciais',
-                      icon: '🌟',
-                      unlocked: true,
-                      date: '24/08/2026',
-                    },
-                    {
-                      id: '500k',
-                      title: 'Escala 500k+',
-                      desc: 'Operação faturando meio milhão com processos',
-                      icon: '🛸',
-                      unlocked: false,
-                      date: 'Em progresso',
-                    },
-                  ].map((badge) => (
-                    <div
-                      key={badge.id}
-                      className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
-                        badge.unlocked
-                          ? 'bg-[#0B0F17] border-yellow-500/30 hover:border-yellow-500/60 shadow-md'
-                          : 'bg-[#0B0F17]/40 border-[#1F293D] opacity-60'
-                      }`}
-                    >
-                      <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 border ${
-                          badge.unlocked
-                            ? 'bg-yellow-500/15 border-yellow-500/40'
-                            : 'bg-slate-800/40 border-slate-700'
-                        }`}
-                      >
-                        {badge.icon}
-                      </div>
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-xs text-slate-100 truncate">
-                            {badge.title}
-                          </span>
-                          {badge.unlocked && <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />}
-                        </div>
-                        <p className="text-[10px] text-slate-400 leading-tight">
-                          {badge.desc}
-                        </p>
-                        <span className="text-[9px] font-mono text-slate-500 block">
-                          {badge.unlocked ? `Conquistado em ${badge.date}` : '🔒 Bloqueado'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Gamification Engine & Badge Catalog */}
+              <GamificationBadgeList
+                memberId={member.id}
+                initialXp={1850}
+                isMentorView={true}
+              />
 
               {/* Metas do Ciclo & Desafios Semanais */}
               <div className="p-5 rounded-2xl bg-[#111728]/70 border border-[#1F293D] space-y-4">
@@ -1850,6 +1703,28 @@ export function MenteeSheet({
             defaultAmount={15000}
             description={`Renovação de Ciclo de Mentoria: ${formData.name || member.name}`}
             isRenewal={true}
+          />
+        )}
+
+        {/* Modal: Assinatura Digital de Contrato */}
+        {showContractModal && (
+          <ContractSignModal
+            isOpen={showContractModal}
+            onClose={() => setShowContractModal(false)}
+            clientData={{
+              memberId: member.id,
+              clientName: formData.name || member.name,
+              clientEmail: formData.email || member.email,
+              clientPhone: formData.phone || member.phone,
+              clientDoc: (formData as any).cpf || (formData as any).cnpj || '',
+              programName: 'Mentoria Rocket Scale High-Ticket',
+              durationMonths: 6,
+              value: 15000,
+              paymentMethod: 'Pix / Gateway Rocket Club',
+            }}
+            onContractSigned={(meta) => {
+              toast.success(`Contrato ${meta.contractId} assinado e registrado com sucesso!`);
+            }}
           />
         )}
       </div>
