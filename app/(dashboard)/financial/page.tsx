@@ -80,30 +80,8 @@ export default function FinancialPage() {
     else toast.warning(text);
   };
 
-  // Background DB fetch
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem('rocket_club_cached_financial');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setTransactions(parsed);
-        }
-      }
-    } catch (e) {}
-
-    // Load members for select dropdown
-    fetch('/api/members')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok && data.members) setMembersList(data.members);
-      })
-      .catch(() => {});
-
-    loadFinancialData();
-  }, []);
-
-  async function loadFinancialData() {
+  const loadFinancialData = async () => {
+    setLoading(true);
     try {
       const res = await fetch('/api/financial');
       const data = await res.json();
@@ -118,7 +96,48 @@ export default function FinancialPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  // Background DB fetch with AbortController cleanup
+  useEffect(() => {
+    const controller = new AbortController();
+
+    try {
+      const cached = localStorage.getItem('rocket_club_cached_financial');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTransactions(parsed);
+        }
+      }
+    } catch (e) {}
+
+    // Load members for select dropdown
+    fetch('/api/members', { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.members) setMembersList(data.members);
+      })
+      .catch(() => {});
+
+    // Load transactions
+    fetch('/api/financial', { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.transactions) {
+          setTransactions(data.transactions);
+          try {
+            localStorage.setItem('rocket_club_cached_financial', JSON.stringify(data.transactions));
+          } catch (e) {}
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const handleCreateTransaction = async (e: React.FormEvent) => {
     e.preventDefault();

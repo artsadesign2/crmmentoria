@@ -167,7 +167,7 @@ export function MobileNav({ aberto, onFechar }: { aberto: boolean; onFechar: () 
                   >
                     <Link
                       href={item.href}
-                      prefetch
+                      prefetch={false}
                       onClick={onFechar}
                       aria-current={ativo ? 'page' : undefined}
                       className={`flex min-h-[48px] items-center gap-3.5 rounded-xl px-3.5 text-sm font-bold transition-colors ${

@@ -111,11 +111,13 @@ export default function MentoradosPage() {
     else toast.warning(text);
   };
 
-  // Background Fetch members
+  // Background Fetch members with instant abort on page navigation
   useEffect(() => {
+    const controller = new AbortController();
+
     async function loadMembers() {
       try {
-        const res = await fetch('/api/members');
+        const res = await fetch('/api/members', { signal: controller.signal });
         const data = await res.json();
         if (data.ok && data.members) {
           const list = data.members.map((m: any) => ({
@@ -136,13 +138,19 @@ export default function MentoradosPage() {
             }
           }
         }
-      } catch (err) {
-        console.error('Erro ao carregar mentorados:', err);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Erro ao carregar mentorados:', err);
+        }
       } finally {
         setLoading(false);
       }
     }
     loadMembers();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   // Filtered members list

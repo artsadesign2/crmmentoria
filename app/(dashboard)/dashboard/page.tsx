@@ -99,17 +99,25 @@ export default function DashboardPage() {
       if (cachedF) setTransactions(JSON.parse(cachedF));
     } catch (e) {}
 
-    // Fetch fresh data in parallel in background
+    const controller = new AbortController();
+
+    // Fetch fresh data in parallel in background with instant navigation cancellation
     Promise.all([
-      fetch('/api/members').then((r) => r.json()).catch(() => ({})),
-      fetch('/api/financial').then((r) => r.json()).catch(() => ({})),
-      fetch('/api/events').then((r) => r.json()).catch(() => ({})),
+      fetch('/api/members', { signal: controller.signal }).then((r) => r.json()).catch(() => ({})),
+      fetch('/api/financial', { signal: controller.signal }).then((r) => r.json()).catch(() => ({})),
+      fetch('/api/events', { signal: controller.signal }).then((r) => r.json()).catch(() => ({})),
     ]).then(([membersData, financialData, eventsData]) => {
       if (membersData.ok && membersData.members) setMembers(membersData.members);
       if (financialData.ok && financialData.transactions) setTransactions(financialData.transactions);
       if (eventsData.ok && eventsData.events) setEvents(eventsData.events);
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const totalMembers = members.length;
