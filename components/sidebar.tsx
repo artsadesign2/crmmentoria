@@ -319,7 +319,7 @@ export function Sidebar({
                   <Link
                     key={item.href}
                     href={item.href}
-                    prefetch={false}
+                    prefetch={true}
                     className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative group shrink-0 ${
                       isActive
                         ? 'font-bold shadow-lg'
@@ -367,7 +367,7 @@ export function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={false}
+                  prefetch={true}
                   className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'shadow-md'

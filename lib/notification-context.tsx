@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { NotificationItem, INITIAL_NOTIFICATIONS, NotificationSector, NotificationType } from './notifications';
 import { toast } from './toast-context';
 
@@ -114,24 +114,45 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  const markAsRead = (id: string) => {
-    const updated = notifications.map((n) => (n.id === id ? { ...n, read: true } : n));
-    saveNotifications(updated);
-  };
+  const markAsRead = useCallback((id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      try {
+        const user = getSessionUser();
+        if (user) localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify(updated));
+        localStorage.setItem('rocket_club_notifications', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
 
-  const markAllAsRead = () => {
-    const updated = notifications.map((n) => ({ ...n, read: true }));
-    saveNotifications(updated);
-  };
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, read: true }));
+      try {
+        const user = getSessionUser();
+        if (user) localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify(updated));
+        localStorage.setItem('rocket_club_notifications', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
 
-  const removeNotification = (id: string) => {
-    const updated = notifications.filter((n) => n.id !== id);
-    saveNotifications(updated);
-  };
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      try {
+        const user = getSessionUser();
+        if (user) localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify(updated));
+        localStorage.setItem('rocket_club_notifications', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
 
-  const addNotification = (item: {
+  const addNotification = useCallback((item: {
     sector: NotificationSector;
     type: NotificationType;
     title: string;
@@ -145,25 +166,38 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       createdAt: 'Agora mesmo',
       read: false,
     };
-    saveNotifications([newNotif, ...notifications]);
-  };
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev];
+      try {
+        const user = getSessionUser();
+        if (user) localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify(updated));
+        localStorage.setItem('rocket_club_notifications', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
 
-  const clearAll = () => {
-    saveNotifications([]);
-  };
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+    try {
+      const user = getSessionUser();
+      if (user) localStorage.setItem(`rocket_club_notifications_${user}`, JSON.stringify([]));
+      localStorage.setItem('rocket_club_notifications', JSON.stringify([]));
+    } catch {}
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    addNotification,
+    clearAll,
+  }), [notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, addNotification, clearAll]);
 
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        markAsRead,
-        markAllAsRead,
-        removeNotification,
-        addNotification,
-        clearAll,
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

@@ -53,7 +53,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* Main Content Wrapper - Dynamic Margin on Desktop, 0 Margin on Mobile/Tablet */}
         <div
-          className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+          className={`flex-1 flex flex-col min-h-screen transition-[margin] duration-300 ${
             sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
           } ml-0 pb-16 lg:pb-0`}
         >
@@ -102,7 +102,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={nav.href}
                 href={nav.href}
-                prefetch={false}
+                prefetch={true}
                 // 44px de altura mínima: é o alvo do guia da Apple e o mínimo
                 // do WCAG 2.5.5. A barra tinha 30px, o que obriga a mirar.
                 className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 transition-all ${

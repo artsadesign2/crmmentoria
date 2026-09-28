@@ -64,9 +64,7 @@ export default function TasksWorkspacePage() {
 
       if (projData.ok && projData.projects) {
         setProjects(projData.projects);
-        if (!selectedProjectId && projData.projects.length > 0) {
-          setSelectedProjectId(projData.projects[0].id);
-        }
+        setSelectedProjectId((prev) => prev || (projData.projects[0]?.id ?? ''));
       }
 
       if (usersData.ok && usersData.users) {
@@ -75,7 +73,7 @@ export default function TasksWorkspacePage() {
     } catch (err) {
       console.error(err);
     }
-  }, [selectedProjectId]);
+  }, []);
 
   // Carregar Tarefas
   const loadTasks = useCallback(async () => {

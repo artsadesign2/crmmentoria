@@ -38,7 +38,6 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { EventItem, MOCK_EVENTS, INITIAL_MEMBERS, Member, Lead, MOCK_LEADS, LEAD_STAGES } from '@/lib/mock-data';
-import { fetchAllMembersFromDb } from '@/lib/neon-db';
 import { useNotifications } from '@/lib/notification-context';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
@@ -109,11 +108,14 @@ export default function EventsPage() {
       if (savedLeads) setLeadsList(JSON.parse(savedLeads));
     } catch (e) {}
 
-    fetchAllMembersFromDb().then((dbMembers) => {
-      if (dbMembers && dbMembers.length > 0) {
-        setMembersList(dbMembers);
-      }
-    });
+    fetch('/api/members')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.members && data.members.length > 0) {
+          setMembersList(data.members);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const saveEventsList = (updated: EventItem[]) => {
