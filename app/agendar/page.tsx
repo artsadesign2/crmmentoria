@@ -125,7 +125,7 @@ export default function AgendarPublicPage() {
   };
 
   if (confirmedBooking) {
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    const googleCalUrl = confirmedBooking.googleCalendarUrl || `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
       `Mentoria Rocket Club: ${confirmedBooking.sessionType}`
     )}&dates=${confirmedBooking.date.replace(/-/g, '')}T${confirmedBooking.time.replace(':', '')}00Z/${confirmedBooking.date.replace(
       /-/g,

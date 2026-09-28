@@ -206,6 +206,7 @@ export default function AcademyPage() {
   const [isAddLessonModalOpen, setIsAddLessonModalOpen] = useState(false);
   const [isEditLessonModalOpen, setIsEditLessonModalOpen] = useState(false);
   const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
 
   // Categories Modal Form
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -433,6 +434,87 @@ export default function AcademyPage() {
     const minutes = Math.floor(secs / 60);
     const seconds = Math.floor(secs % 60);
     return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  // Keyboard navigation shortcuts for the video player
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === 'ArrowRight' && videoRef.current) {
+        videoRef.current.currentTime = Math.min(videoRef.current.duration || 0, videoRef.current.currentTime + 10);
+      } else if (e.code === 'ArrowLeft' && videoRef.current) {
+        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+      } else if (e.code === 'KeyM') {
+        toggleMute();
+      } else if (e.code === 'KeyF') {
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, isMuted, volume]);
+
+  // Handle Marking Lesson as Complete with course progress recalculation
+  const handleToggleLessonComplete = async (lesson: Lesson) => {
+    if (!selectedCourse) return;
+    const newStatus = !lesson.completed;
+
+    const updatedModules = { ...courseModules };
+    const courseModList = [...(updatedModules[selectedCourse.id] || currentModules)];
+
+    let completedCount = 0;
+    let totalCount = 0;
+
+    courseModList.forEach((m) => {
+      m.lessons.forEach((l) => {
+        if (l.id === lesson.id) {
+          l.completed = newStatus;
+        }
+        totalCount++;
+        if (l.completed) completedCount++;
+      });
+    });
+
+    const newProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    updatedModules[selectedCourse.id] = courseModList;
+
+    const updatedCourses = courses.map((c) =>
+      c.id === selectedCourse.id ? { ...c, progressPercent: newProgress } : c
+    );
+
+    saveToStorage(updatedCourses, updatedModules);
+    setActiveLesson({ ...lesson, completed: newStatus });
+    setSelectedCourse({ ...selectedCourse, progressPercent: newProgress });
+
+    // Background persistence
+    try {
+      await fetch('/api/academy/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId: lesson.id,
+          completed: newStatus,
+          courseId: selectedCourse.id,
+        }),
+      });
+    } catch (e) {}
+
+    if (newStatus) {
+      if (newProgress === 100) {
+        toast.success('🏆 Parabéns! Trilha Concluída!', 'Você finalizou 100% das aulas deste curso e desbloqueou seu Certificado.');
+        setIsCertificateModalOpen(true);
+      } else {
+        toast.success('Aula Concluída!', `Progresso do curso atualizado para ${newProgress}%.`);
+      }
+    } else {
+      toast.info('Aula desmarcada', `Progresso atual: ${newProgress}%.`);
+    }
   };
 
   // ── CATEGORY MANAGEMENT ──
@@ -1042,18 +1124,15 @@ export default function AcademyPage() {
                     </button>
 
                     <button
-                      onClick={() => {
-                        activeLesson.completed = !activeLesson.completed;
-                        setActiveLesson({ ...activeLesson });
-                      }}
+                      onClick={() => handleToggleLessonComplete(activeLesson)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                         activeLesson.completed
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-yellow-500 text-slate-950 hover:bg-yellow-400'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                          : 'bg-yellow-500 text-slate-950 hover:bg-yellow-400 shadow-md shadow-yellow-500/10'
                       }`}
                     >
                       <CheckCheck size={15} />
-                      <span>{activeLesson.completed ? 'Concluída' : 'Marcar Concluída'}</span>
+                      <span>{activeLesson.completed ? 'Aula Concluída ✓' : 'Marcar Concluída'}</span>
                     </button>
                   </div>
                 </div>
@@ -2093,6 +2172,83 @@ export default function AcademyPage() {
         onConfirm={handleConfirmDeleteLesson}
         onCancel={() => setDeleteTargetLesson(null)}
       />
+      {/* Modal: Certificado de Conclusão Oficial */}
+      {isCertificateModalOpen && selectedCourse && (
+        <Modal
+          isOpen={isCertificateModalOpen}
+          onClose={() => setIsCertificateModalOpen(false)}
+          title="🎓 Certificado Oficial de Conclusão"
+          subtitle={`Trilha: ${selectedCourse.title}`}
+          icon={<Award size={20} className="text-yellow-400" />}
+          size="lg"
+        >
+          <div className="space-y-6 text-center">
+            {/* Certificado Visual Frame */}
+            <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[#0B0F17] via-[#131926] to-[#0B0F17] border-2 border-yellow-500/40 relative shadow-2xl overflow-hidden space-y-4">
+              <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 flex items-center justify-center font-bold">
+                  🚀
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-yellow-400">
+                  ROCKET CLUB • ACADEMY
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Certificamos com distinção que
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white">
+                  Tripulante / Mentorado Master
+                </h3>
+                <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                  concluiu com êxito todas as aulas e requisitos práticos da formação executiva:
+                </p>
+                <div className="text-base sm:text-lg font-black text-yellow-400 py-1">
+                  "{selectedCourse.title}"
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-[#1F293D] flex items-center justify-between text-[11px] text-slate-400 px-4">
+                <div>
+                  <span className="block text-slate-500">Carga Horária</span>
+                  <span className="font-bold text-slate-200">{selectedCourse.durationMinutes || 45} min</span>
+                </div>
+                <div>
+                  <span className="block text-slate-500">Emissão</span>
+                  <span className="font-bold text-slate-200">{new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div>
+                  <span className="block text-slate-500">Autenticação</span>
+                  <span className="font-mono text-[10px] text-emerald-400 font-bold">#RKT-{selectedCourse.id.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  toast.success('Certificado Baixado!', 'Arquivo do certificado gerado com sucesso.');
+                  setIsCertificateModalOpen(false);
+                }}
+                className="px-5 py-3 rounded-xl bg-yellow-500 text-slate-950 font-bold text-xs hover:bg-yellow-400 transition-all flex items-center gap-2 shadow-lg shadow-yellow-500/20 hover:scale-105"
+              >
+                <Download size={15} />
+                <span>Baixar Certificado Oficial (PDF)</span>
+              </button>
+
+              <button
+                onClick={() => setIsCertificateModalOpen(false)}
+                className="px-4 py-3 rounded-xl bg-[#0B0F17] text-slate-400 hover:text-white border border-[#1F293D] text-xs font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

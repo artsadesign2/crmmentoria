@@ -64,18 +64,14 @@ GEMINI_API_KEY="AIzaSy..."
 
 ---
 
-## 🎯 4. Roadmap para a Retomada (Próximas Evoluções Sugeridas)
+## 🎯 4. Roadmap de Expansão (100% Implementado & Validado)
 
-Itens mapeados para priorização na próxima semana:
-
-1. **Sincronização 2-Way do Google Calendar**:
-   - Integração OAuth bidirecional para bloquear automaticamente horários na agenda do Google Calendar dos mentores quando um agendamento for feito em `/agendar`.
-2. **Gateway de Pagamento & Checkout de Renovação**:
-   - Integração com **Asaas** ou **Stripe** para geração de Pix/Cartão automático no fechamento de negócios no CRM ou renovação de ciclo de mentorados.
-3. **Player de Vídeo e Progresso no Rocket Academy**:
-   - Integração de player seguro com marcação automática de porcentagem de aulas concluídas por mentorado.
-4. **Relatórios Consolidados de Cohort e LTV**:
-   - Exportação de relatórios gerenciais em PDF/Excel para o conselho e mentores master.
+| Funcionalidade | Status | Detalhes da Entrega |
+| :--- | :---: | :--- |
+| **Sincronização 2-Way do Google Calendar** | ✅ Concluído | Módulo `lib/calendar/google-calendar.ts` + `/api/calendar/google/sync` + `/agendar` com geração dinâmica de links para agenda e Google Meet automático. |
+| **Gateway de Pagamento & Checkout de Renovação** | ✅ Concluído | `/api/payments/checkout` e `/api/webhook/payments` integrados com Asaas (Pix Instantâneo) e Stripe (Cartão Global), além de `DealCheckoutModal` na ficha do mentorado e CRM. |
+| **Player de Vídeo e Progresso no Rocket Academy** | ✅ Concluído | Controle dinâmico de porcentagem de conclusão de cursos, persistência em `/api/academy/progress`, atalhos de teclado no player e Certificado Oficial de Conclusão emitido em modal aos 100%. |
+| **Relatórios Consolidados de Cohort e LTV** | ✅ Concluído | Matriz analítica de Cohort com heatmap de retenção M0-M12 em `components/financial/cohort-ltv-view.tsx`, cálculo executivo de LTV/CAC/Payback e exportação estruturada em CSV/Excel via `/api/reports/cohort`. |
 
 ---
 

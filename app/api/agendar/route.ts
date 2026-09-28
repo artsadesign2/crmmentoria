@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEvolutionWhatsAppMessage, formatWhatsAppNumber } from '@/lib/evolution-api';
 import { broadcastNotificationToOrg } from '@/lib/notifications-stream';
+import { createGoogleCalendarBooking } from '@/lib/calendar/google-calendar';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -22,7 +23,23 @@ export async function POST(request: Request) {
     );
   }
 
-  // 1. Busca a primeira organização disponível para associar o agendamento
+  // 1. Gera sincronização com Google Calendar e Link do Meet
+  const combinedDateTime = new Date(`${date}T${time}:00`);
+  const validDateTime = isNaN(combinedDateTime.getTime()) ? new Date() : combinedDateTime;
+
+  const gcalResult = await createGoogleCalendarBooking({
+    title: `Mentoria 1-on-1: ${name} (${company || 'Rocket Club'}) - ${sessionType}`,
+    description: `Sessão individual de acompanhamento estratégico.\n\n👤 Mentorado: ${name}\n💼 Empresa: ${company || 'N/A'}\n📧 E-mail: ${email}\n📱 WhatsApp: ${phone}\n🎯 Foco: ${topic || 'Alinhamento geral'}`,
+    startDate: validDateTime,
+    durationMinutes: 45,
+    guestEmail: email,
+    guestName: name,
+  });
+
+  const meetUrl = gcalResult.meetUrl;
+  const googleCalendarUrl = gcalResult.googleCalendarUrl;
+
+  // 2. Busca organização para associar o agendamento
   let orgId = '';
   try {
     const org = await prisma.organization.findFirst({ select: { id: true } });
@@ -31,11 +48,11 @@ export async function POST(request: Request) {
     console.warn('[Agendamento] Falha ao obter org:', err);
   }
 
-  // 2. Dispara mensagem de confirmação via WhatsApp (Evolution API)
+  // 3. Dispara mensagem de confirmação via WhatsApp (Evolution API)
   if (phone) {
     const cleanPhone = formatWhatsAppNumber(phone);
     const firstName = name.split(' ')[0];
-    const msg = `Olá, *${firstName}*! 🚀\n\nSua sessão de *${sessionType}* no *Rocket Club* está confirmada!\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n💼 *Empresa:* ${company || 'Negócio'}\n\n📍 *Link da Sala:* https://meet.google.com/rocket-club-1on1\n\nNos vemos ao vivo! 🛸`;
+    const msg = `Olá, *${firstName}*! 🚀\n\nSua sessão de *${sessionType}* no *Rocket Club* está confirmada!\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n💼 *Empresa:* ${company || 'Negócio'}\n\n📍 *Link da Sala:* ${meetUrl}\n🗓️ *Adicionar à Agenda Google:* ${googleCalendarUrl}\n\nNos vemos ao vivo! 🛸`;
 
     try {
       await sendEvolutionWhatsAppMessage(cleanPhone, msg);
@@ -44,7 +61,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // 3. Notificação In-App em tempo real via SSE
+  // 4. Notificação In-App em tempo real via SSE
   if (orgId) {
     try {
       broadcastNotificationToOrg(orgId, {
@@ -73,8 +90,9 @@ export async function POST(request: Request) {
       sessionType,
       date,
       time,
-      meetUrl: 'https://meet.google.com/rocket-club-1on1',
+      meetUrl,
+      googleCalendarUrl,
     },
-    message: 'Agendamento confirmado com sucesso!',
+    message: 'Agendamento confirmado com sucesso e sincronizado no Google Calendar!',
   });
 }

@@ -52,6 +52,7 @@ import {
 } from '@/lib/whatsapp-automations';
 import { generateMenteeDiagnosis, MenteeDiagnosisReport } from '@/lib/ai/mentee-diagnosis';
 import { Copy, CheckCheck, Bot, Brain, TrendingUp, AlertOctagon, HelpCircle, FileCheck } from 'lucide-react';
+import { DealCheckoutModal } from '@/components/payments/deal-checkout-modal';
 
 interface MenteeSheetProps {
   member: (Member & { excludeFromBook?: boolean }) | null;
@@ -96,6 +97,7 @@ export function MenteeSheet({
 
   // AI Strategic Diagnosis States
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [showRenewalCheckoutModal, setShowRenewalCheckoutModal] = useState(false);
   const [copiedDossier, setCopiedDossier] = useState(false);
   const [copiedQuestions, setCopiedQuestions] = useState(false);
 
@@ -397,6 +399,16 @@ export function MenteeSheet({
                 <span className="text-[11px] font-bold hidden sm:inline">WhatsApp</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setShowRenewalCheckoutModal(true)}
+              className="p-2 sm:p-2.5 rounded-xl bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-400 border border-yellow-500/40 transition-all hover:scale-105 flex items-center gap-1.5"
+              title="Gerar Cobrança de Renovação / Pix"
+            >
+              <DollarSign size={15} />
+              <span className="text-[11px] font-bold hidden sm:inline">Renovação</span>
+            </button>
 
             <button
               type="button"
@@ -1825,6 +1837,21 @@ export function MenteeSheet({
             </div>
           );
         })()}
+
+        {/* Modal: Checkout de Renovação do Mentorado */}
+        {showRenewalCheckoutModal && (
+          <DealCheckoutModal
+            isOpen={showRenewalCheckoutModal}
+            onClose={() => setShowRenewalCheckoutModal(false)}
+            memberId={member.id}
+            clientName={formData.name || member.name}
+            clientEmail={formData.email || member.email}
+            clientPhone={formData.phone || member.phone}
+            defaultAmount={15000}
+            description={`Renovação de Ciclo de Mentoria: ${formData.name || member.name}`}
+            isRenewal={true}
+          />
+        )}
       </div>
     </div>
   );

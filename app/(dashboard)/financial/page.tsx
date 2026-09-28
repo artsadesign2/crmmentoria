@@ -38,9 +38,11 @@ import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast-context';
 import { sendEvolutionWhatsAppMessage } from '@/lib/evolution-api';
+import { CohortLtvView } from '@/components/financial/cohort-ltv-view';
 
 export default function FinancialPage() {
   const { isLightMode, activePalette } = useTheme();
+  const [activeTab, setActiveTab] = useState<'TRANSACTIONS' | 'COHORT_LTV'>('TRANSACTIONS');
   const [transactions, setTransactions] = useState<DbTransaction[]>([]);
   const [membersList, setMembersList] = useState<Member[]>(INITIAL_MEMBERS);
   const [loading, setLoading] = useState(false);
@@ -352,12 +354,43 @@ export default function FinancialPage() {
         </div>
       </div>
 
-      {/* Gateways Status Banner */}
-      <div
-        className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-          isLightMode ? 'bg-white border-slate-200' : 'bg-[#131926]/90 border-[#1F293D]'
-        }`}
-      >
+      {/* Navigation Tabs (Transações vs Cohort & LTV) */}
+      <div className="flex items-center gap-2 border-b border-[#1F293D] pb-3">
+        <button
+          onClick={() => setActiveTab('TRANSACTIONS')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'TRANSACTIONS'
+              ? 'bg-yellow-500 text-slate-950 shadow-md shadow-yellow-500/10'
+              : 'bg-[#131926] text-slate-400 hover:text-white border border-[#1F293D]'
+          }`}
+        >
+          <DollarSign size={14} />
+          <span>Controle de Mensalidades & Gateways</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('COHORT_LTV')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'COHORT_LTV'
+              ? 'bg-yellow-500 text-slate-950 shadow-md shadow-yellow-500/10'
+              : 'bg-[#131926] text-slate-400 hover:text-white border border-[#1F293D]'
+          }`}
+        >
+          <TrendingUp size={14} />
+          <span>Matriz de Cohort & LTV Executivo</span>
+        </button>
+      </div>
+
+      {activeTab === 'COHORT_LTV' ? (
+        <CohortLtvView />
+      ) : (
+        <>
+          {/* Gateways Status Banner */}
+          <div
+            className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+              isLightMode ? 'bg-white border-slate-200' : 'bg-[#131926]/90 border-[#1F293D]'
+            }`}
+          >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 shrink-0">
             <Zap size={20} />
@@ -704,6 +737,8 @@ export default function FinancialPage() {
           </table>
         </div>
       </Card>
+      </>
+      )}
 
       {/* Modal: Nova Cobrança / Mensalidade com Gateways */}
       <Modal
