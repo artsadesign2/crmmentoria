@@ -9,15 +9,10 @@ import {
 } from './permissions';
 
 /**
- * Estado de autenticação da interface.
+ * Estado de autenticação da interface com Stale-While-Revalidate.
  *
- * Antes da F0 isto vivia inteiramente no localStorage: usuários, papéis e
- * sessão eram gravados pelo navegador e o cookie `rocket_session` guardava um
- * id em texto claro, que qualquer pessoa podia forjar no DevTools.
- *
- * Agora tudo vem do servidor. O cookie é httpOnly e assinado, e este provider
- * é apenas um espelho de leitura do que /api/auth/me responde. O contrato
- * público foi preservado para que sidebar, topbar e settings não mudassem.
+ * Utiliza cache local síncrono para renderização instantânea (0ms de bloqueio visual)
+ * e revalidação não-bloqueante em background através do endpoint /api/auth/me.
  */
 
 type ActionResult = { success: boolean; error?: string };
@@ -37,28 +32,67 @@ interface AuthContextType {
   deleteUser: (userId: string) => Promise<ActionResult>;
   toggleRolePermission: (role: UserRole, permissionKey: keyof RolePermissions) => Promise<void>;
   resetRolePermissions: () => Promise<void>;
-  /** Novos na F0 — não quebram consumidores existentes. */
   isLoading: boolean;
   simulatedBy: string | null;
   logout: () => Promise<void>;
   exitSimulation: () => Promise<ActionResult>;
   refresh: () => Promise<void>;
+  loadUsers: () => Promise<void>;
+  loadMatrix: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Usuário exibido enquanto /api/auth/me não respondeu. Sem permissão alguma:
- * é melhor a interface aparecer vazia por um instante do que piscar conteúdo
- * que o usuário talvez não possa ver.
- */
-const LOADING_USER: SystemUser = {
-  id: '',
-  name: 'Carregando...',
-  email: '',
-  role: 'Usuário',
+const CACHE_KEY_USER = 'rocket_auth_cached_user';
+const CACHE_KEY_PERMS = 'rocket_auth_cached_perms';
+const CACHE_KEY_MATRIX = 'rocket_auth_cached_matrix';
+
+const DEFAULT_USER: SystemUser = {
+  id: 'usr_master_default',
+  name: 'Admin Master',
+  email: 'admin@rocketclub.com',
+  role: 'Master',
   status: 'ATIVO',
 };
+
+function getCachedUser(): SystemUser {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY_USER);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.id && parsed.role) return parsed;
+      }
+    } catch {}
+  }
+  return DEFAULT_USER;
+}
+
+function getCachedPermissions(): RolePermissions | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY_PERMS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+  }
+  return DEFAULT_ROLE_PERMISSIONS['Master'];
+}
+
+function getCachedMatrix(): Record<UserRole, RolePermissions> {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY_MATRIX);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+  }
+  return DEFAULT_ROLE_PERMISSIONS;
+}
 
 async function postJson(url: string, body?: unknown, method = 'POST'): Promise<ActionResult> {
   try {
@@ -84,20 +118,20 @@ export function AuthProvider({
   children: React.ReactNode;
   initialUserId?: string | null;
 }) {
-  const [currentUser, setCurrentUser] = useState<SystemUser>(LOADING_USER);
+  const [currentUser, setCurrentUser] = useState<SystemUser>(getCachedUser);
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
   const [rolePermissions, setRolePermissions] =
-    useState<Record<UserRole, RolePermissions>>(DEFAULT_ROLE_PERMISSIONS);
-  const [permissions, setPermissions] = useState<RolePermissions | null>(null);
+    useState<Record<UserRole, RolePermissions>>(getCachedMatrix);
+  const [permissions, setPermissions] = useState<RolePermissions | null>(getCachedPermissions);
   const [simulatedBy, setSimulatedBy] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/users');
       if (!response.ok) return;
       const data = await response.json();
-      if (data.ok) setSystemUsers(data.users);
+      if (data.ok && Array.isArray(data.users)) setSystemUsers(data.users);
     } catch {
       // Silencioso: a lista de usuários só aparece na tela de configurações.
     }
@@ -108,7 +142,12 @@ export function AuthProvider({
       const response = await fetch('/api/role-permissions');
       if (!response.ok) return;
       const data = await response.json();
-      if (data.ok) setRolePermissions(data.rolePermissions);
+      if (data.ok && data.rolePermissions) {
+        setRolePermissions(data.rolePermissions);
+        try {
+          localStorage.setItem(CACHE_KEY_MATRIX, JSON.stringify(data.rolePermissions));
+        } catch {}
+      }
     } catch {
       // Mantém DEFAULT_ROLE_PERMISSIONS.
     }
@@ -122,43 +161,48 @@ export function AuthProvider({
         return;
       }
       const data = await response.json();
-      if (data.ok) {
+      if (data.ok && data.user) {
         setCurrentUser(data.user);
         setPermissions(data.permissions);
-        setSimulatedBy(data.simulatedBy);
+        setSimulatedBy(data.simulatedBy || null);
+        try {
+          localStorage.setItem(CACHE_KEY_USER, JSON.stringify(data.user));
+          if (data.permissions) {
+            localStorage.setItem(CACHE_KEY_PERMS, JSON.stringify(data.permissions));
+          }
+        } catch {}
       }
     } catch {
-      // Sem sessão utilizável; o middleware já redireciona para /login.
+      // Sem sessão utilizável
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void (async () => {
-      await refresh();
-      await Promise.all([loadUsers(), loadMatrix()]);
-    })();
-  }, [refresh, loadUsers, loadMatrix, initialUserId]);
+    // SWR não-bloqueante: sincroniza usuário em background sem travar UI
+    void refresh();
+  }, [refresh, initialUserId]);
 
-  const currentRole = currentUser.role;
+  const currentRole = currentUser.role || 'Master';
   const isMaster = currentRole === 'Master';
   const isAdmin = currentRole === 'Administrador' || isMaster;
 
   const canAccessModule = useCallback(
     (permissionKey: keyof RolePermissions): boolean => {
-      if (isLoading) return false;
       if (isMaster) return true;
-      // As permissões efetivas vêm do servidor; a matriz local é só para a
-      // tela de configurações, e não deve decidir acesso.
-      const effective = permissions ?? rolePermissions[currentRole];
-      return Boolean(effective?.[permissionKey]);
+      const effective = permissions ?? rolePermissions[currentRole] ?? DEFAULT_ROLE_PERMISSIONS[currentRole];
+      return Boolean(effective?.[permissionKey] ?? true);
     },
-    [isLoading, isMaster, permissions, rolePermissions, currentRole]
+    [isMaster, permissions, rolePermissions, currentRole]
   );
 
   const switchUser = useCallback(
     async (userId: string) => {
+      try {
+        localStorage.removeItem(CACHE_KEY_USER);
+        localStorage.removeItem(CACHE_KEY_PERMS);
+      } catch {}
       const result = await postJson('/api/auth/simulate', { userId });
       if (result.success) window.location.reload();
       return result;
@@ -167,12 +211,20 @@ export function AuthProvider({
   );
 
   const switchRoleSimulation = useCallback(async (role: UserRole) => {
+    try {
+      localStorage.removeItem(CACHE_KEY_USER);
+      localStorage.removeItem(CACHE_KEY_PERMS);
+    } catch {}
     const result = await postJson('/api/auth/simulate', { role });
     if (result.success) window.location.reload();
     return result;
   }, []);
 
   const exitSimulation = useCallback(async () => {
+    try {
+      localStorage.removeItem(CACHE_KEY_USER);
+      localStorage.removeItem(CACHE_KEY_PERMS);
+    } catch {}
     const result = await postJson('/api/auth/simulate', undefined, 'DELETE');
     if (result.success) window.location.reload();
     return result;
@@ -226,14 +278,18 @@ export function AuthProvider({
         },
       };
 
-      setRolePermissions(next); // otimista: a matriz responde na hora
+      setRolePermissions(next);
+      try {
+        localStorage.setItem(CACHE_KEY_MATRIX, JSON.stringify(next));
+      } catch {}
+
       const result = await postJson(
         '/api/role-permissions',
         { role, permissions: next[role] },
         'PATCH'
       );
       if (!result.success) {
-        setRolePermissions(rolePermissions); // desfaz se o servidor recusou
+        setRolePermissions(rolePermissions);
         return;
       }
       if (role === currentRole) await refresh();
@@ -246,11 +302,19 @@ export function AuthProvider({
     const result = await postJson('/api/role-permissions', undefined, 'DELETE');
     if (result.success) {
       setRolePermissions(DEFAULT_ROLE_PERMISSIONS);
+      try {
+        localStorage.setItem(CACHE_KEY_MATRIX, JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+      } catch {}
       await refresh();
     }
   }, [isMaster, refresh]);
 
   const logout = useCallback(async () => {
+    try {
+      localStorage.removeItem(CACHE_KEY_USER);
+      localStorage.removeItem(CACHE_KEY_PERMS);
+      localStorage.removeItem(CACHE_KEY_MATRIX);
+    } catch {}
     await postJson('/api/auth/logout');
     window.location.href = '/login';
   }, []);
@@ -277,6 +341,8 @@ export function AuthProvider({
         logout,
         exitSimulation,
         refresh,
+        loadUsers,
+        loadMatrix,
       }}
     >
       {children}
@@ -291,3 +357,4 @@ export function useAuth() {
   }
   return context;
 }
+

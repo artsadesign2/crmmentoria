@@ -102,7 +102,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={nav.href}
                 href={nav.href}
-                prefetch={true}
+                prefetch={false}
                 // 44px de altura mínima: é o alvo do guia da Apple e o mínimo
                 // do WCAG 2.5.5. A barra tinha 30px, o que obriga a mirar.
                 className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 transition-all ${

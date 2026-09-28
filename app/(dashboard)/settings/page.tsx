@@ -116,6 +116,8 @@ export default function SettingsPage() {
     deleteUser,
     toggleRolePermission,
     resetRolePermissions,
+    loadUsers,
+    loadMatrix,
   } = useAuth();
 
   const [activeTab, setActiveTab] = useState<
@@ -125,7 +127,9 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (loadUsers) void loadUsers();
+    if (loadMatrix) void loadMatrix();
+  }, [loadUsers, loadMatrix]);
 
   // Company / Whitelabel State
   const [company, setCompany] = useState<CompanyData>(DEFAULT_TENANT.company);
