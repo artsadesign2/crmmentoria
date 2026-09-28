@@ -7,9 +7,9 @@ const NEON_CONN_STRING = NEON_HOST && NEON_USER
   ? `postgresql://${NEON_USER}:${encodeURIComponent(NEON_PASS)}@${NEON_HOST}/${NEON_DB}?sslmode=require`
   : '';
 
-// High-speed In-Memory Server-Side Caching
+// High-speed In-Memory Server-Side Caching (5 minutes with instant cache)
 let cachedMembers: { data: any[]; timestamp: number } | null = null;
-const CACHE_TTL_MS = 30000; // 30 seconds TTL
+const CACHE_TTL_MS = 300000; // 5 minutes TTL
 
 export function invalidateMembersCache() {
   cachedMembers = null;
@@ -22,7 +22,7 @@ export async function queryNeon<T = any>(sql: string, params: any[] = []): Promi
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s fast timeout
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s fast timeout
 
     const response = await fetch(`https://${NEON_HOST}/sql`, {
       method: 'POST',

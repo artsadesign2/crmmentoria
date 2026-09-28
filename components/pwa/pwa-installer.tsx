@@ -10,15 +10,23 @@ export function PwaInstaller() {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   useEffect(() => {
-    // Registrar Service Worker
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocalhost) {
+      // No localhost, desregistra Service Workers antigos para garantir carregamento instantâneo
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    } else if (process.env.NODE_ENV === 'production') {
+      // Em produção, registra o Service Worker leve
       navigator.serviceWorker
         .register('/sw.js')
-        .then((reg) => {
-          console.log('[PWA] Service Worker registrado com escopo:', reg.scope);
-        })
         .catch((err) => {
-          console.warn('[PWA] Falha ao registrar Service Worker:', err);
+          console.warn('[PWA] Service Worker registration failed:', err);
         });
     }
 

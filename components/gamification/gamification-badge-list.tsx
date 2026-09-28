@@ -28,6 +28,10 @@ interface GamificationBadgeListProps {
   isMentorView?: boolean;
 }
 
+// Cache em memória client-side para evitar refetches ao alternar abas
+const gamificationClientCache = new Map<string, { xp: number; unlockedBadges: string[]; timestamp: number }>();
+const CLIENT_CACHE_TTL = 120000; // 2 minutos
+
 export function GamificationBadgeList({
   memberId = '1',
   initialXp = 1850,
@@ -35,24 +39,41 @@ export function GamificationBadgeList({
   isMentorView = true,
 }: GamificationBadgeListProps) {
   const { activePalette } = useTheme();
-  const [xp, setXp] = useState(initialXp);
-  const [unlockedBadges, setUnlockedBadges] = useState<string[]>(initialUnlockedBadges);
-  const [badges, setBadges] = useState<BadgeDefinition[]>(getAllBadges());
+  
+  // Inicializa com cache se disponível
+  const cached = gamificationClientCache.get(memberId);
+  const [xp, setXp] = useState(cached?.xp ?? initialXp);
+  const [unlockedBadges, setUnlockedBadges] = useState<string[]>(cached?.unlockedBadges ?? initialUnlockedBadges);
+  const [badges] = useState<BadgeDefinition[]>(() => getAllBadges());
   const [isLoading, setIsLoading] = useState(false);
   const [showAddXpModal, setShowAddXpModal] = useState(false);
   const [bonusXpInput, setBonusXpInput] = useState('100');
   const [selectedBadgeToUnlock, setSelectedBadgeToUnlock] = useState('');
 
-  // Sincronizar dados com o backend se houver memberId
+  // Sincronizar dados com o backend apenas se cache expirado
   useEffect(() => {
+    const existing = gamificationClientCache.get(memberId);
+    if (existing && Date.now() - existing.timestamp < CLIENT_CACHE_TTL) {
+      setXp(existing.xp);
+      setUnlockedBadges(existing.unlockedBadges);
+      return;
+    }
+
     async function loadGamification() {
       try {
         const res = await fetch(`/api/gamification?memberId=${memberId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.ok) {
-            setXp(data.xp || initialXp);
-            setUnlockedBadges(data.unlockedBadges || initialUnlockedBadges);
+            const newXp = data.xp || initialXp;
+            const newBadges = data.unlockedBadges || initialUnlockedBadges;
+            setXp(newXp);
+            setUnlockedBadges(newBadges);
+            gamificationClientCache.set(memberId, {
+              xp: newXp,
+              unlockedBadges: newBadges,
+              timestamp: Date.now(),
+            });
           }
         }
       } catch (err) {
