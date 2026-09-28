@@ -1,21 +1,24 @@
-# 📋 ROCKET CLUB — MAPA DE PENDÊNCIAS & GUIA DE RETOMADA
+# 📋 ROCKET CLUB — MAPA DE PENDÊNCIAS & STATUS DO SISTEMA
 > **Data de Atualização:** 28/09/2026  
-> **Branch Atual:** `feat/f9-superpoderes-produto`  
-> **Status Geral do Sistema:** ✅ 100% dos Módulos, Automações e Superpoderes Integrados com Sucesso! (406 Testes Unitários Passando)
+> **Branch Principal:** `main`  
+> **Status Geral do Sistema:** ✅ 100% dos Módulos, Automações e Contratos Homologados Operacionais! (408 Testes Unitários Passando)
 
 ---
 
-## 🚀 1. Superpoderes de Produto Integrados (Fase Avançada)
+## 🚀 1. Entregas Recentes & Superpoderes de Produto
 
 | Funcionalidade | Status | Detalhes Técnicos |
 | :--- | :---: | :--- |
-| **1. Assinatura Digital de Contratos** | ✅ Concluído | Minuta automática em `lib/contracts/contract-generator.ts`, endpoints `/api/contracts/generate` e `/api/contracts/sign`, Canvas HTML5 de assinatura manuscrita, selo de integridade criptográfica SHA-256 e envio do comprovante por WhatsApp via `components/contracts/contract-sign-modal.tsx`. |
-| **2. Gamificação, Badges & Ranking** | ✅ Concluído | Motor de XP e 5 níveis em `lib/gamification/badges.ts`, catálogo com 7 insígnias exclusivas, integração com conclusão de aulas na Rocket Academy (`/api/academy/progress`), atribuição de XP/missões especiais e Leaderboard completo em `/leaderboard` e `components/mentee-sheet.tsx`. |
-| **3. PWA Mobile-First & Portal do Mentorado** | ✅ Concluído | Suporte PWA com `public/manifest.json`, Service Worker em `public/sw.js` com cache offline e botão inteligente de instalação em `components/pwa/pwa-installer.tsx`. |
+| **Central de Contratos Homologados Oficiais** | ✅ Concluído | Nova aba *Contrato Oficial* em `/settings` (`ContractSettingsSection`). Permite upload de minutas (`.docx`, `.txt`, `.pdf`), configuração dos dados corporativos da CONTRATADA, barra de tags dinâmicas (`{{NOME_MENTORADO}}`, `{{CPF_CNPJ}}`, `{{VALOR_TOTAL}}`, etc.), persistência multi-tenant no Prisma (`/api/contracts/template`) e interpolação em tempo real no `ContractSignModal`. |
+| **Assinatura Digital & Carimbo SHA-256** | ✅ Concluído | Minuta automática com preenchimento em tempo real em `lib/contracts/contract-generator.ts`, endpoints `/api/contracts/generate` e `/api/contracts/sign`, Canvas HTML5 de assinatura manuscrita, visualização/expansão de minuta completa, selo de integridade criptográfica SHA-256 e cópia de comprovante. |
+| **Otimização de Navegação & Performance** | ✅ Concluído | Transições instantâneas entre abas com `prefetch={true}` nos menus (`components/sidebar.tsx`, `components/mobile-nav.tsx`, `components/dashboard-shell.tsx`), `loading.tsx` atômico, memoização de contexto de notificações/SSE e `optimizePackageImports` para bundles mais leves no `next.config.js`. |
+| **Hierarquia de Z-Index & Animações de Sheets** | ✅ Concluído | Ajuste de camadas (`z-[9990]` para gavetas laterais de Mentorados/Leads, `z-[10000]` para Modais de Assinatura/Checkout e `z-[10050]` para Toasts), com animações aceleradas por hardware via double-`requestAnimationFrame` e curvas cúbicas suaves. |
+| **Gamificação, Badges & Ranking** | ✅ Concluído | Motor de XP e 5 níveis em `lib/gamification/badges.ts`, catálogo com 7 insígnias exclusivas, integração com conclusão de aulas na Rocket Academy (`/api/academy/progress`), atribuição de XP/missões especiais e Leaderboard completo em `/leaderboard` e `components/mentee-sheet.tsx`. |
+| **PWA Mobile-First & Portal do Mentorado** | ✅ Concluído | Suporte PWA com `public/manifest.json`, Service Worker em `public/sw.js` com cache offline e botão inteligente de instalação em `components/pwa/pwa-installer.tsx`. |
 
 ---
 
-## 🏆 2. Módulos & Recursos Anteriores Concluídos
+## 🏆 2. Módulos Estruturais & Automações Homologadas
 
 | Módulo / Recurso | Status | Detalhes da Entrega |
 | :--- | :---: | :--- |
@@ -32,7 +35,7 @@
 
 ## ⚙️ 3. Checklist de Variáveis de Ambiente para Produção
 
-Para publicar em produção na **Vercel** ou na **Hostinger Cloud Starter**, preencha as variáveis de ambiente necessárias:
+Para publicar em produção na **Vercel** ou na **Hostinger Cloud**, preencha as variáveis de ambiente necessárias:
 
 ```env
 # ==============================================================================
@@ -75,9 +78,10 @@ STRIPE_SECRET_KEY="sk_live_..."
 ## 💻 4. Verificação de Qualidade & Testes Automatizados
 
 ```bash
-# Rodar todos os testes unitários (34 suites, 406 testes)
+# Rodar todos os testes unitários (34 suites, 408 testes)
 npm test
 
 # Verificação estática de tipos TypeScript
 npx tsc --noEmit
 ```
+
