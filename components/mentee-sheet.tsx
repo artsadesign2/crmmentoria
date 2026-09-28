@@ -108,26 +108,37 @@ export function MenteeSheet({
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Sync state with open member and trigger entrance animation
+  // Sync state with open member and trigger guaranteed entrance animation
   useEffect(() => {
-    let animTimer: NodeJS.Timeout;
+    let raf1: number;
+    let raf2: number;
+    let exitTimer: NodeJS.Timeout;
+
     if (isOpen && member) {
       setIsMounted(true);
       setFormData({ ...member });
       setAvatarUrlInput(member.coverImage || member.avatar || '');
       setIsDirty(false);
       setSaveSuccess(false);
-      animTimer = setTimeout(() => {
-        setIsVisible(true);
-      }, 20);
+      // Double rAF guarantees the browser lays out and paints the initial translate-x-full state before transitioning
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
     } else {
       setIsVisible(false);
-      animTimer = setTimeout(() => {
+      exitTimer = setTimeout(() => {
         setIsMounted(false);
-      }, 300);
+      }, 320);
     }
-    return () => clearTimeout(animTimer);
-  }, [isOpen, member]);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(exitTimer);
+    };
+  }, [isOpen, member?.id]);
 
   // Smooth Exit Animation Handler
   const handleClose = () => {
@@ -135,7 +146,7 @@ export function MenteeSheet({
     setTimeout(() => {
       setIsMounted(false);
       onClose();
-    }, 280);
+    }, 300);
   };
 
   // Handle ESC key
@@ -290,7 +301,7 @@ export function MenteeSheet({
   const sheetNode = (
     <div
       onClick={handleClose}
-      className={`fixed inset-0 z-[9999] overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
+      className={`fixed inset-0 z-[9990] overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
@@ -298,6 +309,10 @@ export function MenteeSheet({
         className={`w-full max-w-4xl bg-[#0D121F] border-l border-[#1F293D] shadow-2xl flex flex-col h-full max-h-screen text-slate-100 transform transition-transform duration-300 ease-out ${
           isVisible ? 'translate-x-0' : 'translate-x-full'
         } relative`}
+        style={{
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          willChange: 'transform, opacity',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Luxury Header */}

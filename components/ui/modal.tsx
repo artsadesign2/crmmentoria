@@ -88,7 +88,7 @@ export function Modal({
 
   const modalNode = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-black/80 backdrop-blur-md modal-backdrop-animate"
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-black/80 backdrop-blur-md modal-backdrop-animate"
       onClick={(e) => {
         if (closeOnBackdrop && e.target === e.currentTarget) {
           onClose();

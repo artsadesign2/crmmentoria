@@ -121,24 +121,35 @@ export function LeadSheet({
 
   // Mount and Entrance Animation
   useEffect(() => {
-    let animTimer: NodeJS.Timeout;
+    let raf1: number;
+    let raf2: number;
+    let exitTimer: NodeJS.Timeout;
+
     if (isOpen && lead) {
       setIsMounted(true);
       setFormData({ ...lead });
       setIsDirty(false);
       setSaveSuccess(false);
       setCustomWhatsAppMsg(WHATSAPP_TEMPLATES[0].text(lead.name, lead.company));
-      animTimer = setTimeout(() => {
-        setIsVisible(true);
-      }, 20);
+      // Double rAF guarantees the browser lays out and paints the initial translate-x-full state before transitioning
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
     } else {
       setIsVisible(false);
-      animTimer = setTimeout(() => {
+      exitTimer = setTimeout(() => {
         setIsMounted(false);
-      }, 300);
+      }, 320);
     }
-    return () => clearTimeout(animTimer);
-  }, [isOpen, lead]);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(exitTimer);
+    };
+  }, [isOpen, lead?.id]);
 
   // Smooth Exit Animation Handler
   const handleClose = () => {
@@ -246,7 +257,7 @@ export function LeadSheet({
   const sheetNode = (
     <div
       onClick={handleClose}
-      className={`fixed inset-0 z-[9999] overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
+      className={`fixed inset-0 z-[9990] overflow-hidden bg-black/80 backdrop-blur-md flex justify-end transition-opacity duration-300 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
@@ -254,6 +265,10 @@ export function LeadSheet({
         className={`w-full max-w-4xl bg-[#0D121F] border-l border-[#1F293D] shadow-2xl flex flex-col h-full max-h-screen text-slate-100 transform transition-transform duration-300 ease-out ${
           isVisible ? 'translate-x-0' : 'translate-x-full'
         } relative`}
+        style={{
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          willChange: 'transform, opacity',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Luxury Header */}
