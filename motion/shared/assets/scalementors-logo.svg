@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#00F0FF"/>
+    </linearGradient>
+    <linearGradient id="neonEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Emblema de Escala / Gráfico -->
+  <g transform="translate(70, 70)">
+    <!-- Círculo Base com Glow -->
+    <circle cx="0" cy="0" r="54" fill="#090D1A" stroke="#38BDF8" stroke-width="3.5" filter="url(#glow)"/>
+    
+    <!-- Barras de Escala -->
+    <rect x="-26" y="8" width="11" height="26" rx="4" fill="#38BDF8"/>
+    <rect x="-8" y="-8" width="11" height="42" rx="4" fill="#06B6D4"/>
+    <rect x="10" y="-24" width="11" height="58" rx="4" fill="url(#neonEmerald)"/>
+    
+    <!-- Seta Ascendente de Escala -->
+    <path d="M-18 26 L-2 2 L20 -22" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 -22 L20 -22 L20 -14" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Tipografia ScaleMentors -->
+  <g transform="translate(145, 75)">
+    <text x="0" y="0" font-family="'Plus Jakarta Sans', Inter, sans-serif" font-weight="800" font-size="52" fill="#FFFFFF">Scale<tspan fill="url(#neonCyan)">Mentors</tspan></text>
+    <text x="4" y="28" font-family="'Inter', sans-serif" font-weight="600" font-size="14" letter-spacing="4" fill="#94A3B8">CRM · VENDAS &amp; MENTORIA COM IA</text>
+  </g>
+</svg>

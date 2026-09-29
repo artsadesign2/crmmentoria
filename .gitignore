@@ -47,3 +47,8 @@ __pycache__/
 
 .vercel
 .env*
+
+# Motion build frames & chrome profiles
+motion/**/build/frames/
+motion/**/build/chrome-profile*/
+

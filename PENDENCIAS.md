@@ -1,5 +1,5 @@
-# 📋 ROCKET CLUB — MAPA DE PENDÊNCIAS & STATUS DO SISTEMA
-> **Data de Atualização:** 28/09/2026  
+# 📋 SCALEMENTORS — MAPA DE PENDÊNCIAS & STATUS DO SISTEMA
+> **Data de Atualização:** 29/09/2026  
 > **Branch Principal:** `main`  
 > **Status Geral do Sistema:** ✅ 100% dos Módulos, Automações e Contratos Homologados Operacionais! (408 Testes Unitários Passando)
 
@@ -13,7 +13,7 @@
 | **Assinatura Digital & Carimbo SHA-256** | ✅ Concluído | Minuta automática com preenchimento em tempo real em `lib/contracts/contract-generator.ts`, endpoints `/api/contracts/generate` e `/api/contracts/sign`, Canvas HTML5 de assinatura manuscrita, visualização/expansão de minuta completa, selo de integridade criptográfica SHA-256 e cópia de comprovante. |
 | **Otimização de Navegação & Performance** | ✅ Concluído | Transições instantâneas entre abas com `prefetch={true}` nos menus (`components/sidebar.tsx`, `components/mobile-nav.tsx`, `components/dashboard-shell.tsx`), `loading.tsx` atômico, memoização de contexto de notificações/SSE e `optimizePackageImports` para bundles mais leves no `next.config.js`. |
 | **Hierarquia de Z-Index & Animações de Sheets** | ✅ Concluído | Ajuste de camadas (`z-[9990]` para gavetas laterais de Mentorados/Leads, `z-[10000]` para Modais de Assinatura/Checkout e `z-[10050]` para Toasts), com animações aceleradas por hardware via double-`requestAnimationFrame` e curvas cúbicas suaves. |
-| **Gamificação, Badges & Ranking** | ✅ Concluído | Motor de XP e 5 níveis em `lib/gamification/badges.ts`, catálogo com 7 insígnias exclusivas, integração com conclusão de aulas na Rocket Academy (`/api/academy/progress`), atribuição de XP/missões especiais e Leaderboard completo em `/leaderboard` e `components/mentee-sheet.tsx`. |
+| **Gamificação, Badges & Ranking** | ✅ Concluído | Motor de XP e 5 níveis em `lib/gamification/badges.ts`, catálogo com 7 insígnias exclusivas, integração com conclusão de aulas na Scale Academy (`/api/academy/progress`), atribuição de XP/missões especiais e Leaderboard completo em `/leaderboard` e `components/mentee-sheet.tsx`. |
 | **PWA Mobile-First & Portal do Mentorado** | ✅ Concluído | Suporte PWA com `public/manifest.json`, Service Worker em `public/sw.js` com cache offline e botão inteligente de instalação em `components/pwa/pwa-installer.tsx`. |
 
 ---
@@ -24,7 +24,7 @@
 | :--- | :---: | :--- |
 | **Sincronização 2-Way do Google Calendar** | ✅ Concluído | `lib/calendar/google-calendar.ts` + `/api/calendar/google/sync` + `/agendar` com geração dinâmica de links de agenda e Google Meet automático. |
 | **Gateway de Pagamento & Checkout de Renovação** | ✅ Concluído | `/api/payments/checkout` e `/api/webhook/payments` integrados com Asaas (Pix Instantâneo) e Stripe (Cartão Global), além de `DealCheckoutModal` na ficha do mentorado e CRM. |
-| **Player de Vídeo e Progresso no Rocket Academy** | ✅ Concluído | Controle dinâmico de porcentagem de conclusão de cursos, persistência em `/api/academy/progress`, atalhos de teclado no player e Certificado Oficial de Conclusão emitido em modal aos 100%. |
+| **Player de Vídeo e Progresso na Scale Academy** | ✅ Concluído | Controle dinâmico de porcentagem de conclusão de cursos, persistência em `/api/academy/progress`, atalhos de teclado no player e Certificado Oficial de Conclusão emitido em modal aos 100%. |
 | **Relatórios Consolidados de Cohort e LTV** | ✅ Concluído | Matriz analítica de Cohort com heatmap de retenção M0-M12 em `components/financial/cohort-ltv-view.tsx`, cálculo executivo de LTV/CAC/Payback e exportação estruturada em CSV/Excel via `/api/reports/cohort`. |
 | **Automações CRM WhatsApp & Hostinger** | ✅ Concluído | Disparo em `lib/crm/crm-automations.ts` ao mover deals: aciona Evolution API, Webhook Hostinger/n8n (`HOSTINGER_WEBHOOK_URL`) e SSE. |
 | **Notificações em Tempo Real (SSE Nativo)** | ✅ Concluído | Streaming nativo de eventos (`/api/notifications/stream`) sem custos com Pusher/Ably em `lib/notifications-stream.ts` e `lib/notification-context.tsx`. |
@@ -53,13 +53,13 @@ HOSTINGER_WEBHOOK_URL="https://seu-dominio-hostinger.com.br/webhook/crm-deals"
 # ==============================================================================
 EVOLUTION_API_URL="https://sua-instancia-evolution.com"
 EVOLUTION_API_KEY="sua_chave_evolution_aqui"
-EVOLUTION_INSTANCE_NAME="rocket-club-crm"
+EVOLUTION_INSTANCE_NAME="scalementors-crm"
 
 # ==============================================================================
 # 4. E-MAILS TRANSACIONAIS (Resend - Plano Gratuito 3.000 envios/mês)
 # ==============================================================================
 RESEND_API_KEY="re_..."
-EMAIL_FROM="Rocket Club <notificacoes@rocketclub.com.br>"
+EMAIL_FROM="ScaleMentors <notificacoes@scalementors.com.br>"
 
 # ==============================================================================
 # 5. INTELIGÊNCIA ARTIFICIAL (Copiloto & Diagnóstico 360°)

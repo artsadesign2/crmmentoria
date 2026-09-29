@@ -1,0 +1,28 @@
+{
+  "titulo": "ScaleMentors - Tour do Academy & Certificação VIP",
+  "arquivo": "scalementors-academy-certificacao",
+  "w": 1080,
+  "h": 1920,
+  "dur": 66.84,
+  "fps": 30,
+  "fontes": [
+    {
+      "familia": "Plus Jakarta Sans",
+      "peso": 700,
+      "italico": true
+    },
+    {
+      "familia": "Inter",
+      "peso": 400,
+      "italico": true
+    }
+  ],
+  "narracao_inicio": 0,
+  "capas": [
+    {
+      "nome": "capa-academy",
+      "w": 1080,
+      "h": 1920
+    }
+  ]
+}

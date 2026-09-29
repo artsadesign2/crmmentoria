@@ -1,0 +1,42 @@
+{
+  "titulo": "ScaleMentors SaaS - Apresentacao Executiva WhatsApp",
+  "dica_voz": "pt-BR",
+  "falas": [
+    {
+      "cena": 1,
+      "inicio": 0.3,
+      "fim": 10.74,
+      "texto": "Se você ainda gerencia seus mentorados com planilhas soltas e ferramentas improvisadas, gravei este vídeo rápido para te mostrar como resolver isso na prática."
+    },
+    {
+      "cena": 2,
+      "inicio": 11.6,
+      "fim": 22.88,
+      "texto": "Conheça o ScaleMentors: a plataforma completa criada para centralizar toda a sua operação de mentoria, vendas e alunos em um único painel de alta performance."
+    },
+    {
+      "cena": 3,
+      "inicio": 23.8,
+      "fim": 36.94,
+      "texto": "Aqui você tem controle total de vendas com CRM integrado ao WhatsApp, automação de contratos oficiais com assinatura digital e acompanhamento individual de cada mentorado sem perder nenhum dado."
+    },
+    {
+      "cena": 4,
+      "inicio": 37.9,
+      "fim": 49.12,
+      "texto": "Além de organizar o seu negócio, você entrega uma experiência exclusiva aos seus alunos, com portal de aulas moderno, certificados automáticos e gamificação com ranking de resultados."
+    },
+    {
+      "cena": 5,
+      "inicio": 50.1,
+      "fim": 60.52,
+      "texto": "Chega de perder tempo com processos manuais e softwares caros em dólar. O ScaleMentors foi desenhado sob medida para quem precisa escalar sem dor de cabeça."
+    },
+    {
+      "cena": 6,
+      "inicio": 61.5,
+      "fim": 70.8,
+      "texto": "Se você quer implementar essa estrutura na sua mentoria e ver uma demonstração ao vivo, me responde aqui nesta mensagem com a palavra QUERO que eu te mostro como funciona!"
+    }
+  ]
+}

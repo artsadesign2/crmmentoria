@@ -38,7 +38,7 @@ export const INITIAL_DEFAULT_TEMPLATES: WhatsAppCustomTemplate[] = [
     icon: '🚀',
     category: 'onboarding',
     isDefault: true,
-    content: `Fala, {nome}! 🚀 Seja muito bem-vindo ao *Rocket Club*!
+    content: `Fala, {nome}! 🚀 Seja muito bem-vindo ao *ScaleMentors*!
 
 É uma honra ter você e a *{empresa}* a bordo da nossa mentoria de aceleração e escala. Seu acesso ao portal exclusivo já está liberado.
 
@@ -68,7 +68,7 @@ Prepare seus principais indicadores, métricas e gargalos da semana para acelera
     isDefault: true,
     content: `Olá, {nome}! 🎯
 
-Passando para avisar que o ciclo atual da sua mentoria no *Rocket Club* encerra em *{dataRenovacao}* ({diasRestantes} dias restantes).
+Passando para avisar que o ciclo atual da sua mentoria no *ScaleMentors* encerra em *{dataRenovacao}* ({diasRestantes} dias restantes).
 
 Vamos agendar nossa sessão de consolidação de resultados e estruturar o plano de escala para o próximo ciclo? 🚀`,
   },
@@ -81,7 +81,7 @@ Vamos agendar nossa sessão de consolidação de resultados e estruturar o plano
     isDefault: true,
     content: `Olá, {nome}! 📋
 
-Atualização no seu plano de ação do *Rocket Club*:
+Atualização no seu plano de ação do *ScaleMentors*:
 A meta/tarefa *"{tarefa}"* foi atualizada para o status: *{status}*.
 
 Acesse seu painel para conferir o progresso e os próximos entregáveis! 🛸`,
@@ -95,7 +95,7 @@ Acesse seu painel para conferir o progresso e os próximos entregáveis! 🛸`,
     isDefault: true,
     content: `Fala {nome}! 🎟️🚀
 
-Temos um novo evento confirmado na agenda oficial do *Rocket Club*!
+Temos um novo evento confirmado na agenda oficial do *ScaleMentors*!
 
 🏆 *Evento:* {eventoTitulo}
 📅 *Data:* {eventoData}
@@ -112,7 +112,7 @@ Acesse o portal para confirmar sua presença e garantir sua vaga. Te vejo lá! �
     isDefault: false,
     content: `Olá {nome}! ⭐
 
-Como está sendo sua experiência na mentoria do *Rocket Club* até agora?
+Como está sendo sua experiência na mentoria do *ScaleMentors* até agora?
 
 Sua evolução é nossa prioridade número um. Em uma escala de 0 a 10, qual nota você daria para o impacto que estamos gerando na *{empresa}*? Conta pra gente! 🚀`,
   },
@@ -125,7 +125,7 @@ Sua evolução é nossa prioridade número um. Em uma escala de 0 a 10, qual not
     isDefault: false,
     content: `Fala {nome}! 🎟️
 
-Temos um encontro especial de Mastermind do *Rocket Club* marcado para *{data} às {horario}*.
+Temos um encontro especial de Mastermind do *ScaleMentors* marcado para *{data} às {horario}*.
 
 Tema central: *Estratégias de Alto Crescimento & IA para Escala*.
 Confirme sua presença e garanta sua vaga VIP! 🚀`,

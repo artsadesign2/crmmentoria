@@ -34,8 +34,8 @@ export async function POST(request: Request) {
     }
 
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-    const finalName = clientName || 'Cliente Rocket Club';
-    const finalDesc = description || (isRenewal ? 'Renovação de Ciclo de Mentoria Rocket Club' : 'Fechamento de Negócio Rocket Club');
+    const finalName = clientName || 'Cliente ScaleMentors';
+    const finalDesc = description || (isRenewal ? 'Renovação de Ciclo de Mentoria ScaleMentors' : 'Fechamento de Negócio ScaleMentors');
 
     let paymentLink: string | undefined;
     let pixCopiaECola: string | undefined;

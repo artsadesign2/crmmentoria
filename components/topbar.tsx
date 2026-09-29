@@ -3,39 +3,40 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Search,
-  Bell,
-  UserCheck,
-  LogOut,
-  Building2,
-  CheckCheck,
-  Trash2,
-  Target,
-  Users,
-  TrendingUp,
-  GraduationCap,
-  Calendar,
-  BookOpen,
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  Clock,
-  ExternalLink,
-  X,
-  Shield,
-  Key,
-  Mail,
-  Phone,
-  Save,
-  Check,
-  Sparkles,
-  Settings as SettingsIcon,
-  Menu,
-  Zap,
-  Lock,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+  MdSearch,
+  MdNotifications,
+  MdPerson,
+  MdLogout,
+  MdBusiness,
+  MdDoneAll,
+  MdDeleteOutline,
+  MdTrackChanges,
+  MdPeopleAlt,
+  MdTrendingUp,
+  MdSchool,
+  MdCalendarMonth,
+  MdMenuBook,
+  MdErrorOutline,
+  MdCheckCircle,
+  MdInfoOutline,
+  MdAccessTime,
+  MdOpenInNew,
+  MdClose,
+  MdShield,
+  MdVpnKey,
+  MdMailOutline,
+  MdPhone,
+  MdSave,
+  MdCheck,
+  MdAutoAwesome,
+  MdSettings as SettingsIcon,
+  MdMenu,
+  MdBolt,
+  MdLock,
+  MdVisibility,
+  MdVisibilityOff,
+  MdHowToReg,
+} from 'react-icons/md';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useNotifications } from '@/lib/notification-context';
 import { NotificationSector } from '@/lib/notifications';
@@ -137,17 +138,17 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   const getSectorIcon = (sector: NotificationSector) => {
     switch (sector) {
       case 'crm':
-        return <Target size={14} className="text-blue-400" />;
+        return <MdTrackChanges size={15} className="text-blue-400" />;
       case 'mentorados':
-        return <Users size={14} className="text-yellow-400" />;
+        return <MdPeopleAlt size={15} className="text-yellow-400" />;
       case 'financial':
-        return <TrendingUp size={14} className="text-emerald-400" />;
+        return <MdTrendingUp size={15} className="text-emerald-400" />;
       case 'academy':
-        return <GraduationCap size={14} className="text-purple-400" />;
+        return <MdSchool size={15} className="text-purple-400" />;
       case 'events':
-        return <Calendar size={14} className="text-indigo-400" />;
+        return <MdCalendarMonth size={15} className="text-indigo-400" />;
       case 'wiki':
-        return <BookOpen size={14} className="text-amber-400" />;
+        return <MdMenuBook size={15} className="text-amber-400" />;
     }
   };
 
@@ -203,7 +204,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
               : 'bg-[#111728] text-slate-300 border-[#1F293D]'
           }`}
         >
-          <Building2 size={14} style={{ color: activePalette.tokens.primary }} className="shrink-0" />
+          <MdBusiness size={15} style={{ color: activePalette.tokens.primary }} className="shrink-0" />
           <span className="truncate hidden xs:inline">{tenantName}</span>
           <span
             className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0"
@@ -228,7 +229,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
               : 'bg-[#111728] hover:bg-[#1A2234] text-slate-400 border-[#1F293D] hover:text-slate-200'
           }`}
         >
-          <Search size={14} style={{ color: activePalette.tokens.primary }} />
+          <MdSearch size={16} style={{ color: activePalette.tokens.primary }} />
           <span className="hidden sm:inline">Buscar no sistema...</span>
           <kbd className={`hidden md:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${isLightMode ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-[#0B0F17] border-[#1F293D] text-slate-400'}`}>
             Ctrl+K
@@ -257,7 +258,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
             }
             title="Central de Notificações"
           >
-            <Bell size={17} />
+            <MdNotifications size={18} />
             {unreadCount > 0 && (
               <span
                 className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full text-slate-950 text-[9px] sm:text-[10px] font-black flex items-center justify-center shadow-md animate-pulse"
@@ -290,7 +291,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                       border: `1px solid ${activePalette.tokens.badgeBorder}`,
                     }}
                   >
-                    <Bell size={16} />
+                    <MdNotifications size={18} />
                   </div>
                   <div>
                     <h3 className={`text-sm font-bold flex items-center gap-2 ${isLightMode ? 'text-slate-900' : 'text-slate-100'}`}>
@@ -322,7 +323,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                       }`}
                       title="Marcar todas como lidas"
                     >
-                      <CheckCheck size={16} />
+                      <MdDoneAll size={18} />
                     </button>
                   )}
                   <button
@@ -332,7 +333,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                     }`}
                     title="Limpar todas as notificações"
                   >
-                    <Trash2 size={15} />
+                    <MdDeleteOutline size={17} />
                   </button>
                 </div>
               </div>
@@ -409,7 +410,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                       </div>
 
                       <div className="flex items-center gap-1.5 text-slate-500 text-[10px]">
-                        <Clock size={11} />
+                        <MdAccessTime size={12} />
                         <span>{notif.createdAt}</span>
                         <button
                           onClick={(e) => {
@@ -419,7 +420,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-opacity"
                           title="Remover notificação"
                         >
-                          <X size={12} />
+                          <MdClose size={14} />
                         </button>
                       </div>
                     </div>
@@ -444,7 +445,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                         style={{ color: activePalette.tokens.primary }}
                       >
                         <span>{notif.actionText || 'Acessar módulo'}</span>
-                        <ExternalLink size={11} />
+                        <MdOpenInNew size={12} />
                       </Link>
 
                       {!notif.read && (
@@ -456,7 +457,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
 
                 {filteredNotifications.length === 0 && (
                   <div className="p-8 text-center space-y-2 text-slate-500">
-                    <CheckCircle2 size={32} className="mx-auto text-emerald-400 opacity-60" />
+                    <MdCheckCircle size={32} className="mx-auto text-emerald-400 opacity-60" />
                     <p className={`text-xs font-semibold ${isLightMode ? 'text-slate-700' : 'text-slate-300'}`}>
                       Tudo em dia!
                     </p>
@@ -471,7 +472,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                   isLightMode ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#0B0F17] border-[#1F293D] text-slate-400'
                 }`}
               >
-                <span>Rocket Club Smart Notifications</span>
+                <span>ScaleMentors Smart Notifications</span>
                 <button
                   onClick={() => setIsNotifOpen(false)}
                   className={`font-semibold hover:underline ${isLightMode ? 'text-slate-800' : 'text-slate-200'}`}
@@ -494,7 +495,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
               borderColor: activePalette.tokens.badgeBorder,
             }}
           >
-            <UserCheck size={14} />
+            <MdPerson size={16} />
             <span className="hidden sm:inline">{mounted ? currentUser.name.split(' ')[0] : 'Usuário'}</span>
             <span className="px-1 py-0.2 rounded text-[9px] font-black uppercase" style={{ backgroundColor: roleInfo.color + '30', color: roleInfo.color }}>
               {mounted ? currentRole : ''}
@@ -507,7 +508,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
             className="w-11 h-11 sm:w-9 sm:h-9 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
             title="Sair da Conta"
           >
-            <LogOut size={15} />
+            <MdLogout size={16} />
           </button>
         </div>
       </div>
@@ -520,7 +521,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         onClose={() => setIsProfileOpen(false)}
         title={currentUser.name}
         subtitle={`${currentRole} • Plano Enterprise • ${tenant.name}`}
-        icon={<UserCheck size={20} />}
+        icon={<MdPerson size={22} />}
         badge={
           <Badge variant="outline" className={roleInfo.badge}>
             Nível {roleInfo.rank} de 5
@@ -532,7 +533,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
           {/* Profile Saved Alert */}
           {profileSaved && (
             <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 size={16} />
+              <MdCheckCircle size={18} />
               <span>Perfil atualizado com sucesso!</span>
             </div>
           )}
@@ -603,7 +604,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1">E-mail Principal</label>
                   <div className="relative">
-                    <Mail size={14} className="absolute left-3 top-3 text-slate-500" />
+                    <MdMailOutline size={16} className="absolute left-3 top-3 text-slate-500" />
                     <input
                       type="email"
                       required
@@ -621,7 +622,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                 <div>
                   <label className="block text-slate-400 font-semibold mb-1">WhatsApp de Contato</label>
                   <div className="relative">
-                    <Phone size={14} className="absolute left-3 top-3 text-slate-500" />
+                    <MdPhone size={16} className="absolute left-3 top-3 text-slate-500" />
                     <input
                       type="text"
                       value={profilePhone}
@@ -640,7 +641,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
               <div className={`pt-3 border-t space-y-2.5 ${isLightMode ? 'border-slate-200' : 'border-[#1F293D]'}`}>
                 <div className="flex items-center justify-between">
                   <label className="block font-bold flex items-center gap-1.5" style={{ color: isLightMode ? '#334155' : '#E2E8F0' }}>
-                    <Lock size={14} style={{ color: activePalette.tokens.primary }} />
+                    <MdLock size={16} style={{ color: activePalette.tokens.primary }} />
                     <span>Nova Senha de Acesso</span>
                   </label>
                   <span className="text-[10px] text-slate-500 font-medium">
@@ -666,7 +667,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                     className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 transition-colors"
                     title={showProfilePassword ? 'Ocultar senha' : 'Ver senha'}
                   >
-                    {showProfilePassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showProfilePassword ? <MdVisibilityOff size={16} /> : <MdVisibility size={16} />}
                   </button>
                 </div>
 
@@ -692,7 +693,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                     : 'bg-[#0B0F17] hover:bg-[#1F293D] text-slate-300 border-[#1F293D]'
                 }`}
               >
-                <SettingsIcon size={14} style={{ color: activePalette.tokens.primary }} />
+                <SettingsIcon size={16} style={{ color: activePalette.tokens.primary }} />
                 <span>Central de Configurações</span>
               </Link>
 
@@ -716,7 +717,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
                     color: isLightMode ? '#FFFFFF' : '#0B0F17',
                   }}
                 >
-                  <Save size={14} />
+                  <MdSave size={16} />
                   <span>Salvar Perfil</span>
                 </button>
               </div>

@@ -378,7 +378,7 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     role: 'Cliente',
     status: 'ATIVO',
     lastActive: 'Há 2 dias',
-    department: 'Membros Rocket Club',
+    department: 'Membros ScaleMentors',
   },
   {
     id: 'usr-user-1',

@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Target,
-  Users,
-  GraduationCap,
-  Menu,
-} from 'lucide-react';
+  MdDashboard,
+  MdTrackChanges,
+  MdPeopleAlt,
+  MdSchool,
+  MdMenu,
+} from 'react-icons/md';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/sidebar';
 import { MobileNav } from '@/components/mobile-nav';
@@ -90,10 +90,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
         >
           {[
-            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-            { name: 'CRM', href: '/crm', icon: Target },
-            { name: 'Mentorados', href: '/mentorados', icon: Users },
-            { name: 'Academy', href: '/academy', icon: GraduationCap },
+            { name: 'Dashboard', href: '/dashboard', icon: MdDashboard },
+            { name: 'CRM', href: '/crm', icon: MdTrackChanges },
+            { name: 'Mentorados', href: '/mentorados', icon: MdPeopleAlt },
+            { name: 'Academy', href: '/academy', icon: MdSchool },
           ].map((nav) => {
             const isActive = pathname === nav.href || pathname.startsWith(nav.href + '/');
             const Icon = nav.icon;

@@ -131,9 +131,9 @@ export const DEFAULT_ACCESS_LEVELS: AccessLevel[] = [
 ];
 
 export const DEFAULT_TENANT: OrganizationContext = {
-  id: 'org-mentoria-master',
-  name: 'Mentoria & CRM Hub',
-  slug: 'mentoria-hub',
+  id: 'org-scalementors-master',
+  name: 'ScaleMentors',
+  slug: 'scalementors',
   plan: 'ENTERPRISE',
   primaryColor: '#EAB308',
   logoUrl: '',
@@ -150,13 +150,13 @@ export const DEFAULT_TENANT: OrganizationContext = {
     ai_copilot: true,
   },
   company: {
-    companyName: 'Plataforma de Gestão de Mentorias & CRM LTDA',
-    tradeName: 'Mentoria & CRM Hub',
+    companyName: 'ScaleMentors Plataforma de Gestão de Mentorias & CRM LTDA',
+    tradeName: 'ScaleMentors',
     cnpj: '45.123.890/0001-99',
     stateRegistration: '112.334.556.789',
-    email: 'contato@mentorias.com.br',
+    email: 'contato@scalementors.com.br',
     phone: '(11) 99530-2672',
-    website: 'https://mentorias.com.br',
+    website: 'https://scalementors.com.br',
     segment: 'Aceleração de Negócios, Gestão & Mentoria Executiva',
     address: {
       street: 'Av. Paulista',

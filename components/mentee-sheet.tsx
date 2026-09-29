@@ -91,7 +91,7 @@ export function MenteeSheet({
   const [customMsg, setCustomMsg] = useState('');
   const [sessionDate, setSessionDate] = useState('amanhã');
   const [sessionTime, setSessionTime] = useState('15:00');
-  const [sessionMeetUrl, setSessionMeetUrl] = useState('https://meet.google.com/rocket-club');
+  const [sessionMeetUrl, setSessionMeetUrl] = useState('https://meet.google.com/scalementors');
   const [renewalPlanDate, setRenewalPlanDate] = useState('no fim deste ciclo');
   const [renewalPlanDays, setRenewalPlanDays] = useState('15');
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
@@ -292,7 +292,7 @@ export function MenteeSheet({
   const openWhatsApp = (phoneStr?: string, nameStr?: string) => {
     const cleanNumber = (phoneStr || '').replace(/\D/g, '');
     if (!cleanNumber) return;
-    const text = encodeURIComponent(`Olá ${nameStr || 'Mentorado'}, tudo bem? Sou da equipe executiva do Rocket Club.`);
+    const text = encodeURIComponent(`Olá ${nameStr || 'Mentorado'}, tudo bem? Sou da equipe executiva do ScaleMentors.`);
     window.open(`https://wa.me/55${cleanNumber}?text=${text}`, '_blank');
   };
 
@@ -815,7 +815,7 @@ export function MenteeSheet({
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="text-sm sm:text-base font-extrabold text-slate-100">
-                          Matriz de Maturidade Rocket Club
+                          Matriz de Maturidade ScaleMentors
                         </h4>
                         <span
                           className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
@@ -1506,7 +1506,7 @@ export function MenteeSheet({
         {showDiagnosisModal && (() => {
           const report = generateMenteeDiagnosis(formData);
           const handleCopyFullDossier = () => {
-            const text = `# DIAGNÓSTICO ESTRATÉGICO 1-ON-1 - ROCKET CLUB\n\n` +
+            const text = `# DIAGNÓSTICO ESTRATÉGICO 1-ON-1 - SCALEMENTORS\n\n` +
               `**Mentorado:** ${formData.name || 'Mentorado'}\n` +
               `**Empresa:** ${formData.companyName || formData.tradeName || 'N/A'}\n` +
               `**Nicho:** ${formData.specialty || 'N/A'}\n` +
@@ -1731,10 +1731,10 @@ export function MenteeSheet({
               clientEmail: formData.email || member.email,
               clientPhone: formData.phone || member.phone,
               clientDoc: (formData as any).cpf || (formData as any).cnpj || '',
-              programName: 'Mentoria Rocket Scale High-Ticket',
+              programName: 'Mentoria ScaleMentors High-Ticket',
               durationMonths: 6,
               value: 15000,
-              paymentMethod: 'Pix / Gateway Rocket Club',
+              paymentMethod: 'Pix / Gateway ScaleMentors',
             }}
             onContractSigned={(meta) => {
               toast.success(`Contrato ${meta.contractId} assinado e registrado com sucesso!`);

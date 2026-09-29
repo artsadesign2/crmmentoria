@@ -97,7 +97,7 @@ export function ContractSettingsSection({ canEdit }: { canEdit: boolean }) {
   };
 
   const handleResetDefault = () => {
-    if (confirm('Deseja restaurar as cláusulas para o modelo padrão homologado do Rocket Club?')) {
+    if (confirm('Deseja restaurar as cláusulas para o modelo padrão homologado do ScaleMentors?')) {
       setTemplate(DEFAULT_CONTRACT_TEMPLATE);
       saveStoredContractTemplate(DEFAULT_CONTRACT_TEMPLATE);
       toast.info('Modelo restaurado', 'As cláusulas padrão foram recarregadas.');
@@ -219,7 +219,7 @@ export function ContractSettingsSection({ canEdit }: { canEdit: boolean }) {
     endereco: 'Alameda Santos, 1470 - Cerqueira César, São Paulo/SP',
     empresaCliente: 'Medeiros Estética Avançada',
     especialidade: 'Clínica & Gestão em Saúde',
-    programaMentoria: 'Mentoria Rocket Scale High-Ticket',
+    programaMentoria: 'Mentoria ScaleMentors High-Ticket',
     valorTotal: 18000,
     duracaoMeses: 6,
     formaPagamento: 'Pix Instantâneo (Entrada + 5x)',

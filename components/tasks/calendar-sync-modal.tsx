@@ -94,7 +94,7 @@ export function CalendarSyncModal({ isOpen, onClose }: CalendarSyncModalProps) {
                   <span>Sincronização Automática em Tempo Real (100% Gratuita)</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Ao assinar este link, todas as tarefas com data limite criadas no Rocket Club aparecerão instantaneamente na sua agenda e da sua equipe (Google Calendar, celular, iPhone, Outlook).
+                  Ao assinar este link, todas as tarefas com data limite criadas no ScaleMentors aparecerão instantaneamente na sua agenda e da sua equipe (Google Calendar, celular, iPhone, Outlook).
                 </p>
               </div>
 
@@ -140,7 +140,7 @@ export function CalendarSyncModal({ isOpen, onClose }: CalendarSyncModalProps) {
                     Cole o link copiado acima no campo e clique em <strong>"Adicionar agenda"</strong>.
                   </li>
                   <li>
-                    Pronto! Todas as tarefas e prazos do Rocket Club estarão sincronizados na sua agenda.
+                    Pronto! Todas as tarefas e prazos do ScaleMentors estarão sincronizados na sua agenda.
                   </li>
                 </ol>
               </div>

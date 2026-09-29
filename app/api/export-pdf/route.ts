@@ -649,7 +649,7 @@ export async function GET(request: Request) {
   <header class="top-toolbar no-print">
     <div class="toolbar-container">
       <div class="toolbar-brand">
-        <div class="toolbar-badge">Rocket Club</div>
+        <div class="toolbar-badge">ScaleMentors</div>
         <div class="toolbar-title">${memberId ? `Ficha: ${members[0]?.name || 'Mentorado'}` : `Members Book (${members.length} Mentorados)`}</div>
       </div>
 
@@ -692,12 +692,12 @@ export async function GET(request: Request) {
       <div class="cover-header">
         <div class="cover-logo-badge">🚀</div>
         <h1 class="cover-title">${DEFAULT_TENANT.name || 'MEMBERS BOOK'}</h1>
-        <div class="cover-subtitle">Catálogo Oficial da Tripulação Rocket Club</div>
+        <div class="cover-subtitle">Catálogo Oficial de Membros ScaleMentors</div>
         <div class="cover-divider"></div>
         <div class="cover-edition">EDIÇÃO EXECUTIVA • ${members.length} MENTORADOS ATIVOS</div>
       </div>
       <div class="cover-footer">
-        <div class="cover-footer-text">${(DEFAULT_TENANT.name || 'ROCKET CLUB').toUpperCase()} ECOSYSTEM</div>
+        <div class="cover-footer-text">${(DEFAULT_TENANT.name || 'SCALEMENTORS').toUpperCase()} ECOSYSTEM</div>
         <div class="cover-footer-text">${currentDate.toUpperCase()}</div>
       </div>
     </section>
@@ -739,7 +739,7 @@ export async function GET(request: Request) {
         </div>
       </div>
       <div class="card-footer" style="border:none; padding-top:0;">
-        <span>Rocket Club Ecosystem • Sumário Executivo</span>
+        <span>ScaleMentors Ecosystem • Sumário Executivo</span>
         <span>Página 2</span>
       </div>
     </section>
@@ -854,7 +854,7 @@ export async function GET(request: Request) {
             </div>
 
             <div class="info-box" style="border-color: rgba(223, 178, 108, 0.4); background: rgba(223, 178, 108, 0.08);">
-              <div class="info-label" style="color:#DFB26C;">🎯 Objetivo Principal no Rocket Club</div>
+              <div class="info-label" style="color:#DFB26C;">🎯 Objetivo Principal no ScaleMentors</div>
               <div class="info-value" style="color:#F1F5F9; font-weight:700;">
                 ${m.mainGoal || 'Escala de faturamento, novos canais de tração e governança.'}
               </div>
@@ -880,7 +880,7 @@ export async function GET(request: Request) {
             <div class="info-box" style="margin-bottom:0;">
               <div class="info-label">Anotações & Diagnóstico Estratégico</div>
               <div class="info-value" style="font-weight: 400; font-size: 8pt; color: #CBD5E1; line-height: 1.35;">
-                ${m.notes || 'Tripulante ativo no ecossistema Rocket Club.'}
+                ${m.notes || 'Membro ativo no ecossistema ScaleMentors.'}
               </div>
             </div>
           </div>
@@ -896,7 +896,7 @@ export async function GET(request: Request) {
         >
           ↑ Voltar ao Índice
         </a>
-        <span>Rocket Club Ecosystem • Catálogo Oficial de Mentorados</span>
+        <span>ScaleMentors Ecosystem • Catálogo Oficial de Mentorados</span>
         <span>Página ${pageNum} de ${totalPagesCount}</span>
       </div>
     </section>

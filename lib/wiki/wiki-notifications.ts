@@ -43,7 +43,7 @@ export async function sendWikiShareEmail(payload: WikiShareEmailPayload): Promis
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recomendação de Treinamento - Rocket Club</title>
+  <title>Recomendação de Treinamento - ScaleMentors</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0B0F19; color: #F8FAFC; margin: 0; padding: 24px; }
     .card { max-width: 580px; margin: 0 auto; background-color: #111827; border-radius: 16px; border: 1px solid #1F2937; padding: 36px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
@@ -70,7 +70,7 @@ export async function sendWikiShareEmail(payload: WikiShareEmailPayload): Promis
     
     <div class="header-title">Olá, ${recipientName}!</div>
     <div class="subhead">
-      <strong>${senderName}</strong> indicou um novo documento na base de conhecimento oficial do Rocket Club para você estudar.
+      <strong>${senderName}</strong> indicou um novo documento na base de conhecimento oficial do ScaleMentors para você estudar.
     </div>
 
     ${
@@ -99,7 +99,7 @@ export async function sendWikiShareEmail(payload: WikiShareEmailPayload): Promis
     </div>
 
     <div class="footer">
-      Rocket Club SaaS • Central de Conhecimento & Procedimentos Operacionais<br>
+      ScaleMentors SaaS • Central de Conhecimento & Procedimentos Operacionais<br>
       Este é um e-mail de notificação interna automática.
     </div>
   </div>
@@ -117,7 +117,7 @@ export async function sendWikiShareEmail(payload: WikiShareEmailPayload): Promis
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || 'Rocket Club <notificacoes@rocketclub.com>',
+          from: process.env.EMAIL_FROM || 'ScaleMentors <notificacoes@scalementors.com.br>',
           to: [to],
           subject,
           html: htmlContent,

@@ -4,26 +4,26 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  GraduationCap,
-  BookOpen,
-  TrendingUp,
-  Calendar,
-  Settings,
-  Rocket,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  Target,
-  MessagesSquare,
-  Megaphone,
-  Bot,
-  Users,
-  Trophy,
-  Award,
-  LogOut,
-  CheckSquare,
-} from 'lucide-react';
+  MdDashboard,
+  MdSchool,
+  MdMenuBook,
+  MdTrendingUp,
+  MdCalendarMonth,
+  MdSettings,
+  MdRocketLaunch,
+  MdChevronLeft,
+  MdChevronRight,
+  MdVerifiedUser,
+  MdTrackChanges,
+  MdForum,
+  MdCampaign,
+  MdSmartToy,
+  MdPeopleAlt,
+  MdEmojiEvents,
+  MdWorkspacePremium,
+  MdLogout,
+  MdChecklist,
+} from 'react-icons/md';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
@@ -41,92 +41,92 @@ export const NAVIGATION_ITEMS: {
   {
     name: 'Dashboard',
     href: '/dashboard',
-    icon: LayoutDashboard,
+    icon: MdDashboard,
     permissionKey: 'viewDashboard',
   },
   {
     name: 'Projetos & Tarefas',
     href: '/kanban',
-    icon: CheckSquare,
+    icon: MdChecklist,
     permissionKey: 'viewKanban',
   },
   {
     name: 'Portal do Mentorado',
     href: '/portal',
-    icon: Rocket,
+    icon: MdRocketLaunch,
     permissionKey: 'viewMembers',
   },
   {
     name: 'CRM (Novos Leads)',
     href: '/crm',
-    icon: Target,
+    icon: MdTrackChanges,
     permissionKey: 'viewCRM',
   },
   {
     name: 'Inbox (Atendimento)',
     href: '/inbox',
-    icon: MessagesSquare,
+    icon: MdForum,
     permissionKey: 'viewCRM',
   },
   {
     name: 'Disparos',
     href: '/disparos',
-    icon: Megaphone,
+    icon: MdCampaign,
     permissionKey: 'viewCRM',
   },
   {
     name: 'Atendimento automático',
     href: '/atendimento-automatico',
-    icon: Bot,
+    icon: MdSmartToy,
     somenteMaster: true,
     permissionKey: 'viewCRM',
   },
   {
     name: 'Mentorados',
     href: '/mentorados',
-    icon: Users,
+    icon: MdPeopleAlt,
     permissionKey: 'viewMembers',
   },
   {
     name: 'Leaderboard & Ranking',
     href: '/leaderboard',
-    icon: Trophy,
+    icon: MdEmojiEvents,
     permissionKey: 'viewMembers',
   },
   {
     name: 'Certificados Digitais',
     href: '/certificates',
-    icon: Award,
+    icon: MdWorkspacePremium,
     permissionKey: 'viewMembers',
   },
   {
-    name: 'Rocket Academy',
+    name: 'Scale Academy',
     href: '/academy',
-    icon: GraduationCap,
+    icon: MdSchool,
     permissionKey: 'viewAcademy',
   },
   {
     name: 'Wiki & Conhecimento',
     href: '/wiki',
-    icon: BookOpen,
+    icon: MdMenuBook,
     permissionKey: 'viewWiki',
   },
   {
     name: 'Financeiro',
     href: '/financial',
-    icon: TrendingUp,
+    icon: MdTrendingUp,
     permissionKey: 'viewFinancial',
   },
   {
     name: 'Eventos & Imersões',
     href: '/events',
-    icon: Calendar,
+    icon: MdCalendarMonth,
     permissionKey: 'viewEvents',
   },
   {
     name: 'Configurações',
     href: '/settings',
-    icon: Settings,
+    icon: MdSettings,
     permissionKey: 'viewSettings',
   },
 ];
@@ -272,7 +272,7 @@ export function Sidebar({
                 }`}
                 title="Expandir Menu Lateral"
               >
-                <ChevronRight size={14} />
+                <MdChevronRight size={16} />
               </button>
             ) : (
               // In-header toggle button when expanded
@@ -285,7 +285,7 @@ export function Sidebar({
                 }`}
                 title="Recolher Menu Lateral"
               >
-                <ChevronLeft size={16} />
+                <MdChevronLeft size={18} />
               </button>
             )}
 
@@ -339,7 +339,7 @@ export function Sidebar({
                     }
                   >
                     <Icon
-                      size={18}
+                      size={20}
                       className="transition-transform group-hover:scale-110 shrink-0"
                       style={isActive ? { color: activePalette.tokens.primary } : {}}
                     />
@@ -387,7 +387,7 @@ export function Sidebar({
                   }
                 >
                   <Icon
-                    size={18}
+                    size={20}
                     className="shrink-0"
                     style={isActive ? { color: activePalette.tokens.primary } : {}}
                   />
@@ -427,7 +427,7 @@ export function Sidebar({
                   className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1 mt-0.5"
                   style={{ color: roleInfo.color }}
                 >
-                  <ShieldCheck size={11} /> {currentRole}
+                  <MdVerifiedUser size={12} /> {currentRole}
                 </div>
               </div>
             </div>
@@ -457,7 +457,7 @@ export function Sidebar({
                     className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
                     style={{ color: roleInfo.color }}
                   >
-                    <ShieldCheck size={10} /> {mounted ? currentRole : ''}
+                    <MdVerifiedUser size={11} /> {mounted ? currentRole : ''}
                   </span>
                 </div>
               </div>
@@ -471,7 +471,7 @@ export function Sidebar({
                 className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors shrink-0"
                 title="Sair da Conta"
               >
-                <LogOut size={14} />
+                <MdLogout size={16} />
               </button>
             </div>
           )}

@@ -1,0 +1,42 @@
+NARRAÇÃO COM MINUTAGEM: Rocket Club SaaS, Reels 9:16, 65s, Dashboard Executivo
+Tom: calmo, seguro, institucional, ritmo de conversa (cerca de 2,6 palavras por segundo).
+
+1) ROTEIRO SINCRONIZADO (cada fala deve caber na janela)
+01  00.50s a 05.80s  (5.3s, 19 palavras)  Se vocÃª ainda gerencia sua mentoria com planilhas soltas e ferramentas improvisadas, vocÃª estÃ¡ deixando muito dinheiro na mesa.
+02  07.00s a 16.50s  (9.5s, 26 palavras)  ConheÃ§a o Rocket Club: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em uma Ãºnica tela de alta performance.
+03  18.50s a 30.50s  (12.0s, 26 palavras)  VocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais e acompanhamento individual de cada mentorado sem depender de ferramentas fragmentadas.
+04  32.50s a 44.50s  (12.0s, 25 palavras)  AlÃ©m de gerenciar o negÃ³cio, vocÃª entrega uma experiÃªncia ultra premium aos seus mentorados, com portal exclusivo, aulas organizadas e gamificaÃ§Ã£o com ranking de resultados.
+05  46.50s a 53.50s  (7.0s, 24 palavras)  Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O Rocket Club foi projetado para elevar o padrÃ£o da sua operaÃ§Ã£o.
+06  55.50s a 63.50s  (8.0s, 28 palavras)  Quer implementar essa mÃ¡quina de gestÃ£o e vendas na sua mentoria hoje mesmo? Comente SISTEMA aqui embaixo e nossa equipe vai liberar uma condiÃ§Ã£o especial para vocÃª agora!
+
+2) GOOGLE AI STUDIO (Generate speech, uma voz)
+Abra o AI Studio, escolha Generate speech, modo de uma voz. Cole o bloco A em Style instructions e o bloco B no campo do texto.
+Voz: pt-BR (Voz masculina madura, firme e envolvente, ou feminina confiante e executiva)
+
+--- BLOCO A: instruções de estilo (copiar) ---
+Fale como um empresÃ¡rio e mentor experiente apresentando uma soluÃ§Ã£o tecnolÃ³gica de ponta. Ritmo seguro, dinÃ¢mico, envolvente e focado em autoridade e vendas, com Ãªnfase nas palavras-chave sem parecer robÃ³tico.
+--- fim do bloco A ---
+
+--- BLOCO B: texto da narração (copiar) ---
+Se vocÃª ainda gerencia sua mentoria com planilhas soltas e ferramentas improvisadas, vocÃª estÃ¡ deixando muito dinheiro na mesa.
+
+ConheÃ§a o Rocket Club: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em uma Ãºnica tela de alta performance.
+
+VocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais e acompanhamento individual de cada mentorado sem depender de ferramentas fragmentadas.
+
+AlÃ©m de gerenciar o negÃ³cio, vocÃª entrega uma experiÃªncia ultra premium aos seus mentorados, com portal exclusivo, aulas organizadas e gamificaÃ§Ã£o com ranking de resultados.
+
+Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O Rocket Club foi projetado para elevar o padrÃ£o da sua operaÃ§Ã£o.
+
+Quer implementar essa mÃ¡quina de gestÃ£o e vendas na sua mentoria hoje mesmo? Comente SISTEMA aqui embaixo e nossa equipe vai liberar uma condiÃ§Ã£o especial para vocÃª agora!
+--- fim do bloco B ---
+
+Pode gerar tudo em um arquivo só (recomendado) ou uma fala por arquivo. Se gerar separado, numere os arquivos na ordem (01, 02, 03...).
+
+3) ALTERNATIVA: ELEVENLABS (Multilingual v2, texto com pausas marcadas)
+Configuração sugerida: Stability 55%, Similarity 75%, Style 10%, Speed 1.0.
+
+Se vocÃª ainda gerencia sua mentoria com planilhas soltas e ferramentas improvisadas, vocÃª estÃ¡ deixando muito dinheiro na mesa. <break time="1.0s" /> ConheÃ§a o Rocket Club: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em uma Ãºnica tela de alta performance. <break time="1.0s" /> VocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais e acompanhamento individual de cada mentorado sem depender de ferramentas fragmentadas. <break time="1.0s" /> AlÃ©m de gerenciar o negÃ³cio, vocÃª entrega uma experiÃªncia ultra premium aos seus mentorados, com portal exclusivo, aulas organizadas e gamificaÃ§Ã£o com ranking de resultados. <break time="1.0s" /> Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O Rocket Club foi projetado para elevar o padrÃ£o da sua operaÃ§Ã£o. <break time="1.0s" /> Quer implementar essa mÃ¡quina de gestÃ£o e vendas na sua mentoria hoje mesmo? Comente SISTEMA aqui embaixo e nossa equipe vai liberar uma condiÃ§Ã£o especial para vocÃª agora!
+
+4) DEPOIS DE GERAR
+Baixe o áudio em WAV ou MP3 (um arquivo ou um por fala) e envie aqui no chat. Eu encaixo cada fala no segundo certo da animação, ajusto a trilha para ficar por baixo da voz e devolvo o MP4 final com a legenda .srt.

@@ -7,14 +7,14 @@ export async function GET(request: Request) {
   if (auth.response) return auth.response;
 
   const currentDate = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-  const fileName = `Guia_Executivo_Rocket_Club_${new Date().getFullYear()}.pdf`;
+  const fileName = `Guia_Executivo_ScaleMentors_${new Date().getFullYear()}.pdf`;
 
   const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guia Executivo da Plataforma — Rocket Club</title>
+  <title>Guia Executivo da Plataforma — ScaleMentors</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -530,7 +530,7 @@ export async function GET(request: Request) {
     <div class="toolbar-container">
       <div class="toolbar-brand">
         <span style="font-size: 20px;">🚀</span>
-        <span class="toolbar-brand-title">ROCKET CLUB</span>
+        <span class="toolbar-brand-title">SCALEMENTORS</span>
         <span class="toolbar-badge">Guia Oficial da Plataforma</span>
       </div>
       <div class="btn-group">
@@ -555,7 +555,7 @@ export async function GET(request: Request) {
           <span>✨</span> MANUAL EXECUTIVO & ARQUITETURA FUNCIONAL
         </div>
         <h1 class="cover-title">
-          ROCKET CLUB
+          SCALEMENTORS
           <span>COCKPIT & ECOSSISTEMA</span>
         </h1>
         <p class="cover-subtitle">
@@ -583,7 +583,7 @@ export async function GET(request: Request) {
 
       <div class="cover-meta">
         <div>
-          <strong>Plataforma:</strong> Rocket Club Executive v2.4 Pro<br>
+          <strong>Plataforma:</strong> ScaleMentors Executive v2.4 Pro<br>
           <strong>Emitido em:</strong> ${currentDate}
         </div>
         <div style="text-align: right;">
@@ -598,7 +598,7 @@ export async function GET(request: Request) {
     <!-- ══════════════════════════════════════════════════════════════ -->
     <div class="a4-page" id="page-index">
       <div class="doc-header">
-        <span class="header-logo-text">ROCKET CLUB // GUIA DO SISTEMA</span>
+        <span class="header-logo-text">SCALEMENTORS // GUIA DO SISTEMA</span>
         <span class="header-tag">ÍNDICE & ARQUITETURA</span>
       </div>
 
@@ -647,7 +647,7 @@ export async function GET(request: Request) {
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(11,25,44,0.6); border: 1px solid #1E2D4A; border-radius: 8px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="color: #DFB26C; font-weight: 800; font-family: 'Outfit'; font-size: 13px;">05</span>
-            <span style="font-size: 11.5px; font-weight: 700; color: #F1F5F9;">Rocket Academy (Sala de Aulas & Múltiplos Materiais)</span>
+            <span style="font-size: 11.5px; font-weight: 700; color: #F1F5F9;">Scale Academy (Sala de Aulas & Múltiplos Materiais)</span>
           </div>
           <span style="font-size: 10px; color: #64748B; font-family: monospace;">/academy • Pág. 7</span>
         </div>
@@ -686,7 +686,7 @@ export async function GET(request: Request) {
       </div>
 
       <div class="doc-footer">
-        <div class="footer-left">Rocket Club Platform Guide</div>
+        <div class="footer-left">ScaleMentors Platform Guide</div>
         <div class="footer-page-badge">Página 2 de 11</div>
       </div>
     </div>
@@ -696,7 +696,7 @@ export async function GET(request: Request) {
     <!-- ══════════════════════════════════════════════════════════════ -->
     <div class="a4-page" id="page-dashboard">
       <div class="doc-header">
-        <span class="header-logo-text">ROCKET CLUB // MÓDULO 01</span>
+        <span class="header-logo-text">SCALEMENTORS // MÓDULO 01</span>
         <span class="header-tag">VISÃO GERAL DO COMANDO</span>
       </div>
 
@@ -1050,7 +1050,7 @@ export async function GET(request: Request) {
         <div class="info-card">
           <div class="info-card-title">Propósito do CRM</div>
           <p class="info-card-text">
-            Gerenciar o fluxo comercial de admissão de novos empresários no Rocket Club, desde o primeiro contato no Instagram ou indicação até o fechamento do contrato de mentoria.
+            Gerenciar o fluxo comercial de admissão de novos empresários no ScaleMentors, desde o primeiro contato no Instagram ou indicação até o fechamento do contrato de mentoria.
           </p>
           <div class="info-card-title" style="margin-top: 8px;">Destaques Operacionais</div>
           <ul class="feature-list">
@@ -1082,14 +1082,14 @@ export async function GET(request: Request) {
     <!-- ══════════════════════════════════════════════════════════════ -->
     <div class="a4-page" id="page-academy">
       <div class="doc-header">
-        <span class="header-logo-text">ROCKET CLUB // MÓDULO 05</span>
+        <span class="header-logo-text">SCALEMENTORS // MÓDULO 05</span>
         <span class="header-tag">FORMAÇÃO & CONTEÚDO ESTRATÉGICO</span>
       </div>
 
       <div class="module-hero">
         <div class="module-title-box">
           <span class="module-tag">Educação Continuada</span>
-          <h2 class="module-heading">Rocket Academy & Aulas</h2>
+          <h2 class="module-heading">Scale Academy & Aulas</h2>
           <span class="module-route-badge">Rota: /academy</span>
         </div>
         <div style="text-align: right;">
@@ -1104,7 +1104,7 @@ export async function GET(request: Request) {
           <span class="dot dot-red"></span>
           <span class="dot dot-yellow"></span>
           <span class="dot dot-green"></span>
-          <span class="ui-mockup-title">rocket-club.app/academy — Sala de Aulas & Playlists</span>
+          <span class="ui-mockup-title">scalementors.app/academy — Sala de Aulas & Playlists</span>
         </div>
 
         <div style="display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 6px;">

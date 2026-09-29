@@ -4,19 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
-  Search,
-  GraduationCap,
-  BookOpen,
-  TrendingUp,
-  Calendar,
-  X,
-  Target,
-  Users,
-  FileText,
-  ChevronRight,
-  Flame,
-  Sparkles,
-} from 'lucide-react';
+  MdSearch,
+  MdSchool,
+  MdMenuBook,
+  MdTrendingUp,
+  MdCalendarMonth,
+  MdClose,
+  MdTrackChanges,
+  MdPeopleAlt,
+  MdDescription,
+  MdChevronRight,
+  MdLocalFireDepartment,
+  MdAutoAwesome,
+} from 'react-icons/md';
 import { INITIAL_MEMBERS, MOCK_COURSES, MOCK_ARTICLES, MOCK_LEADS, Member, Lead } from '@/lib/mock-data';
 
 interface CommandPaletteProps {
@@ -111,7 +111,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       <div className="w-full max-w-2xl bg-[#131926] border border-[#1F293D] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] modal-card-animate">
         {/* Search Input Header */}
         <div className="flex items-center px-5 py-4 border-b border-[#1F293D] gap-3 bg-[#0B0F17]/80">
-          <Search size={20} className="text-yellow-400 shrink-0" />
+          <MdSearch size={22} className="text-yellow-400 shrink-0" />
           <input
             type="text"
             autoFocus
@@ -126,7 +126,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             </button>
           )}
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200 p-1">
-            <X size={18} />
+            <MdClose size={20} />
           </button>
         </div>
 
@@ -142,42 +142,42 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 onClick={() => navigateTo('/crm')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Target size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <MdTrackChanges size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>CRM Novos Leads</span>
               </button>
               <button
                 onClick={() => navigateTo('/mentorados')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Users size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <MdPeopleAlt size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Mentorados da Base</span>
               </button>
               <button
                 onClick={() => navigateTo('/academy')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <GraduationCap size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
-                <span>Rocket Academy</span>
+                <MdSchool size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <span>Scale Academy</span>
               </button>
               <button
                 onClick={() => navigateTo('/wiki')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <BookOpen size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <MdMenuBook size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Wiki de Processos</span>
               </button>
               <button
                 onClick={() => navigateTo('/financial')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <TrendingUp size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <MdTrendingUp size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Gestão Financeira</span>
               </button>
               <button
                 onClick={() => navigateTo('/events')}
                 className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#0B0F17]/50 hover:bg-theme-primary/10 hover:border-theme-primary/40 border border-[#1F293D] text-xs font-semibold text-slate-300 transition-all text-left group"
               >
-                <Calendar size={16} className="text-theme-primary group-hover:scale-110 transition-transform" />
+                <MdCalendarMonth size={18} className="text-theme-primary group-hover:scale-110 transition-transform" />
                 <span>Agenda de Eventos</span>
               </button>
             </div>
@@ -187,7 +187,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           {filteredMembers.length > 0 && (
             <div className="pt-4 space-y-2">
               <span className="text-[10px] font-bold text-theme-primary uppercase tracking-wider px-1 flex items-center gap-1.5">
-                <Users size={12} /> Fichas de Mentorados da Base ({filteredMembers.length})
+                <MdPeopleAlt size={14} /> Fichas de Mentorados da Base ({filteredMembers.length})
               </span>
               <div className="space-y-1.5">
                 {filteredMembers.map((m) => (
@@ -215,7 +215,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         {m.status}
                       </span>
                       <span className="text-[11px] font-bold text-yellow-400 flex items-center gap-1 group-hover:underline">
-                        Abrir Ficha <ChevronRight size={14} />
+                        Abrir Ficha <MdChevronRight size={16} />
                       </span>
                     </div>
                   </button>
@@ -228,7 +228,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           {filteredLeads.length > 0 && (
             <div className="pt-4 space-y-2">
               <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
-                <Target size={12} /> Oportunidades & Leads no CRM ({filteredLeads.length})
+                <MdTrackChanges size={14} /> Oportunidades & Leads no CRM ({filteredLeads.length})
               </span>
               <div className="space-y-1.5">
                 {filteredLeads.map((l) => (
@@ -254,7 +254,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                         {l.stage.toUpperCase()}
                       </span>
                       <span className="text-[11px] font-bold text-blue-400 flex items-center gap-1 group-hover:underline">
-                        Ver Diagnóstico <ChevronRight size={14} />
+                        Ver Diagnóstico <MdChevronRight size={16} />
                       </span>
                     </div>
                   </button>
@@ -267,7 +267,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           {filteredCourses.length > 0 && (
             <div className="pt-4 space-y-2">
               <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
-                <GraduationCap size={12} /> Cursos na Academy ({filteredCourses.length})
+                <MdSchool size={14} /> Cursos na Academy ({filteredCourses.length})
               </span>
               <div className="space-y-1.5">
                 {filteredCourses.map((c) => (
@@ -281,7 +281,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       <span className="text-[11px] text-slate-400">{c.category} • {c.lessonsCount} aulas</span>
                     </div>
                     <span className="text-[11px] font-bold text-purple-400 flex items-center gap-1">
-                      Acessar <ChevronRight size={14} />
+                      Acessar <MdChevronRight size={16} />
                     </span>
                   </button>
                 ))}
@@ -293,7 +293,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           {filteredArticles.length > 0 && (
             <div className="pt-4 space-y-2">
               <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider px-1 flex items-center gap-1.5">
-                <BookOpen size={12} /> Artigos & SOPs na Wiki ({filteredArticles.length})
+                <MdMenuBook size={14} /> Artigos & SOPs na Wiki ({filteredArticles.length})
               </span>
               <div className="space-y-1.5">
                 {filteredArticles.map((a) => (
@@ -307,7 +307,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       <span className="text-[11px] text-slate-400">{a.department} • {a.category}</span>
                     </div>
                     <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-                      Ler <ChevronRight size={14} />
+                      Ler <MdChevronRight size={16} />
                     </span>
                   </button>
                 ))}
@@ -319,7 +319,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Footer */}
         <div className="p-3.5 border-t border-[#1F293D] bg-[#0B0F17]/70 flex items-center justify-between text-[11px] text-slate-500">
           <span>Pressione <kbd className="text-slate-300 font-mono px-1.5 py-0.5 rounded bg-[#1F293D]">ESC</kbd> para fechar</span>
-          <span>Pesquisa instantânea em todo o ecossistema Rocket</span>
+          <span>Pesquisa instantânea em todo o ecossistema ScaleMentors</span>
         </div>
       </div>
     </div>

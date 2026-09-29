@@ -52,7 +52,7 @@ export function BirthdayCardModal({
   member,
   isOpen,
   onClose,
-  brandName = DEFAULT_TENANT.company.tradeName || 'ROCKET CLUB',
+  brandName = DEFAULT_TENANT.company.tradeName || 'ScaleMentors',
 }: BirthdayCardModalProps) {
   const { isLightMode, activePalette } = useTheme();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -68,7 +68,7 @@ export function BirthdayCardModal({
   const [customSubtitle, setCustomSubtitle] = useState('Desejamos mais um ciclo de conquistas extraordinárias!');
   const [customMessage, setCustomMessage] = useState(
     member
-      ? `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você na tripulação do Rocket Club! 🚀✨`
+      ? `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você no ScaleMentors! 🚀✨`
       : ''
   );
 
@@ -76,7 +76,7 @@ export function BirthdayCardModal({
   React.useEffect(() => {
     if (member) {
       setCustomMessage(
-        `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você na tripulação do Rocket Club! 🚀✨`
+        `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você no ScaleMentors! 🚀✨`
       );
     }
   }, [member]);
@@ -489,7 +489,7 @@ export function BirthdayCardModal({
                     setCustomTitle('FELIZ ANIVERSÁRIO! 🎉');
                     setCustomSubtitle('Desejamos mais um ciclo de conquistas extraordinárias!');
                     setCustomMessage(
-                      `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você na tripulação do Rocket Club! 🚀✨`
+                      `Parabéns ${member.name}! 🎉 Desejamos a você um novo ciclo de muito sucesso, grandes conquistas e voos ainda mais altos à frente da ${member.companyName}. É um grande orgulho ter você no ScaleMentors! 🚀✨`
                     );
                     toast.info('Textos restaurados para o padrão.');
                   }}

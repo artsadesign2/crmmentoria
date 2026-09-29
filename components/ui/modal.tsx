@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { MdClose } from 'react-icons/md';
 import { useTheme } from '@/lib/theme-context';
 
 export interface ModalProps {
@@ -175,7 +175,7 @@ export function Modal({
                 }`}
                 title="Fechar janela (ESC)"
               >
-                <X size={18} />
+                <MdClose size={20} />
               </button>
             )}
           </div>

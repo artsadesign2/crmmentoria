@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="relatorio-cohort-ltv-rocket-club-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="relatorio-cohort-ltv-scalementors-${new Date().toISOString().split('T')[0]}.csv"`,
       },
     });
   }

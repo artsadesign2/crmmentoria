@@ -45,7 +45,7 @@ export interface SignedContractMetadata {
 
 export const DEFAULT_CONTRACT_CLAUSES = [
   'CLÁUSULA 1ª - DO OBJETO: O presente instrumento tem por objeto a prestação de serviços de mentoria executiva, consultoria estratégica e capacitação empresarial pelo programa especificado.',
-  'CLÁUSULA 2ª - DOS ENTREGÁVEIS: A CONTRATADA fornecerá acesso à plataforma Rocket Club, encontros de alinhamento 1-on-1, acesso à Rocket Academy, modelos operacionais (SOPs) e suporte do mentor master.',
+  'CLÁUSULA 2ª - DOS ENTREGÁVEIS: A CONTRATADA fornecerá acesso à plataforma ScaleMentors, encontros de alinhamento 1-on-1, acesso à Scale Academy, modelos operacionais (SOPs) e suporte do mentor master.',
   'CLÁUSULA 3ª - DO INVESTIMENTO & PAGAMENTO: Pela prestação dos serviços, a CONTRATANTE pagará à CONTRATADA o valor ajustado neste termo, mediante a forma de pagamento selecionada.',
   'CLÁUSULA 4ª - DA CONFIDENCIALIDADE: As partes comprometem-se a manter total sigilo sobre quaisquer dados operacionais, financeiros, listas de clientes e estratégias compartilhadas durante os encontros.',
   'CLÁUSULA 5ª - DA VIGÊNCIA & RESCISÃO: O presente contrato vige pelo prazo estipulado a contar da assinatura digital, podendo ser renovado mediante termo aditivo.',
@@ -84,7 +84,7 @@ export function generateContractModel(
   },
   customTemplate?: ContractTemplateConfig
 ): ContractDetails {
-  const contractNumber = `RKT-CTR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const contractNumber = `SCM-CTR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   const template = customTemplate || getStoredContractTemplate() || DEFAULT_CONTRACT_TEMPLATE;
 
   const startDateStr = params.startDate || new Date().toLocaleDateString('pt-BR');
@@ -97,7 +97,7 @@ export function generateContractModel(
     endereco: params.clientAddress || 'Endereço Comercial / Residencial',
     empresaCliente: params.companyName || 'Empresa do Mentorado',
     especialidade: params.specialty || 'Negócios & Estratégia',
-    programaMentoria: params.programName || 'Mentoria Rocket Scale High-Ticket',
+    programaMentoria: params.programName || 'Mentoria ScaleMentors High-Ticket',
     valorTotal: params.value,
     duracaoMeses: params.durationMonths || 6,
     formaPagamento: params.paymentMethod || 'Pix / Cartão de Crédito via Gateway Seguro',
@@ -112,7 +112,7 @@ export function generateContractModel(
   return {
     contractNumber,
     title: template.title || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MENTORIA EXECUTIVA & ACELERAÇÃO',
-    mentorProgram: params.programName || 'Mentoria Rocket Scale High-Ticket',
+    mentorProgram: params.programName || 'Mentoria ScaleMentors High-Ticket',
     durationMonths: params.durationMonths || 6,
     totalValue: params.value,
     paymentMethod: params.paymentMethod || 'Pix / Cartão de Crédito via Gateway Seguro',

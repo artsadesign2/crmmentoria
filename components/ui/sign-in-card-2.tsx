@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { MdMailOutline, MdLock, MdVisibility, MdVisibilityOff, MdArrowForward } from 'react-icons/md';
 import { cn } from '@/lib/utils';
 
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
@@ -165,7 +165,7 @@ export function SignInCard2() {
                   🚀
                 </div>
                 <h1 className="text-xl font-black text-slate-100 uppercase tracking-tight">
-                  Rocket Club
+                  ScaleMentors
                 </h1>
                 <p className="text-slate-400 text-xs">
                   Acesse sua plataforma de mentoria & CRM
@@ -175,7 +175,7 @@ export function SignInCard2() {
               <form className="space-y-4">
                 <div className="space-y-3">
                   <div className="relative flex items-center overflow-hidden rounded-xl border border-[#1F293D] bg-[#0B0F17]">
-                    <Mail className="absolute left-3 w-4 h-4 text-slate-400" />
+                    <MdMailOutline className="absolute left-3 w-4 h-4 text-slate-400" />
                     <Input
                       type="email"
                       placeholder="E-mail corporativo"
@@ -188,7 +188,7 @@ export function SignInCard2() {
                   </div>
 
                   <div className="relative flex items-center overflow-hidden rounded-xl border border-[#1F293D] bg-[#0B0F17]">
-                    <Lock className="absolute left-3 w-4 h-4 text-slate-400" />
+                    <MdLock className="absolute left-3 w-4 h-4 text-slate-400" />
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Senha de acesso"
@@ -203,7 +203,7 @@ export function SignInCard2() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 text-slate-400 hover:text-slate-200"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <MdVisibilityOff className="w-4 h-4" /> : <MdVisibility className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export function SignInCard2() {
                   className="w-full py-2.5 rounded-xl font-bold text-xs bg-yellow-500 hover:bg-yellow-400 text-slate-950 transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <span>Entrar no Painel</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <MdArrowForward className="w-4 h-4" />
                 </button>
               </form>
             </div>

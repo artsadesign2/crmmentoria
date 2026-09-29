@@ -1,7 +1,7 @@
 {
-  "name": "Rocket Club — Plataforma de Mentoria & Comunidades",
-  "short_name": "Rocket Club",
-  "description": "SaaS Multi-Tenant para Mentorias, Comunidades e Aceleração de Alto Padrão",
+  "name": "ScaleMentors — Sistema de Gestão de Mentorias",
+  "short_name": "ScaleMentors",
+  "description": "SaaS Multi-Tenant para Gestão de Mentorias, Comunidades e Aceleração de Alto Padrão",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#020617",

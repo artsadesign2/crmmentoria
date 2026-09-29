@@ -16,13 +16,13 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Rocket Club — SaaS Multi-Tenant para Mentorias & Comunidades',
+  title: 'ScaleMentors — Sistema de Gestão 360° para Mentorias & Comunidades',
   description: 'Plataforma All-in-One para gestão de membros, vendas, cursos, wiki e eventos.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Rocket Club',
+    title: 'ScaleMentors',
   },
 };
 

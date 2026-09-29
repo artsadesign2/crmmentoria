@@ -1,0 +1,52 @@
+# ==============================================================================
+# ROTEIRO DE NARRAÇÃO — VÍDEO 03: SCALE ACADEMY, CERTIFICAÇÃO & CLUBE VIP
+# Marca Oficial: ScaleMentors
+# Formato: Vertical 9:16 (1080x1920) | Duração estimada: ~60 a 70 segundos
+# Tom de Voz: Executivo, inspirador, seguro e orientado a autoridade comercial
+# Instrução Google AI Studio: Gere 5 arquivos de áudio separados (01.wav a 05.wav)
+# ==============================================================================
+
+---
+
+[ARQUIVO: 01.wav | CENA 01 | SCALE ACADEMY & FORMAÇÃO PRÁTICA]
+Texto para colar no Google AI Studio:
+No ScaleMentors, o seu crescimento é acelerado por uma metodologia validada de ponta a ponta. Dentro do Scale Academy, você acessa trilhas executivas completas sobre vendas high-ticket, estruturação de ofertas e liderança comercial.
+
+---
+
+[ARQUIVO: 02.wav | CENA 02 | AULAS DINÂMICAS & PLAYBOOKS PRÁTICOS]
+Texto para colar no Google AI Studio:
+Cada módulo traz aulas direto ao ponto com materiais complementares, playbooks acionáveis e ferramentas prontas para aplicar no seu negócio no mesmo dia.
+
+---
+
+[ARQUIVO: 03.wav | CENA 03 | EMISSÃO DE CERTIFICADO VIP & QR CODE]
+Texto para colar no Google AI Studio:
+Ao concluir a sua formação, você emite o seu Certificado Oficial de Especialista com autenticidade digital e validação por QR Code, consolidando o seu posicionamento no mercado.
+
+---
+
+[ARQUIVO: 04.wav | CENA 04 | CLUBE DE VANTAGENS & MATCHMAKING EXECUTIVO]
+Texto para colar no Google AI Studio:
+Além disso, você tem acesso ao Clube de Vantagens exclusivo com parcerias estratégicas, créditos nas principais ferramentas do mundo e conexões de alto valor com outros empresários.
+
+---
+
+[ARQUIVO: 05.wav | CENA 05 | CALL TO ACTION & ENCERRAMENTO]
+Texto para colar no Google AI Studio:
+Eleve o nível da sua operação e faça parte de um ecossistema construído para grandes resultados. Acesse o ScaleMentors e solicite sua demonstração executiva.
+
+---
+
+# ==============================================================================
+# GUIA RÁPIDO PARA GRAVAÇÃO / EXPORTAÇÃO NO GOOGLE AI STUDIO:
+# 1. Copie o texto de cada bloco individualmente.
+# 2. Gere o áudio e salve na pasta `audio/` com os nomes:
+#    - 01.wav
+#    - 02.wav
+#    - 03.wav
+#    - 04.wav
+#    - 05.wav
+# 3. Assim que salvar os arquivos na pasta `audio/`, me avise para rodar a
+#    sincronização, montagem da interface e renderização do vídeo final!
+# ==============================================================================

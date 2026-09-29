@@ -40,7 +40,7 @@ export function DealCheckoutModal({
   clientEmail = '',
   clientPhone = '',
   defaultAmount = 5000,
-  description = 'Fechamento de Mentoria Rocket Club',
+  description = 'Fechamento de Mentoria ScaleMentors',
   isRenewal = false,
 }: DealCheckoutModalProps) {
   const [amount, setAmount] = useState(defaultAmount.toString());
@@ -101,7 +101,7 @@ export function DealCheckoutModal({
     const phone = clientPhone || '11995302672';
     const val = parseFloat(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-    const msg = `Fala, *${clientName}*! 🚀💼\n\nSegue o link oficial para efetivação da sua vaga no *Rocket Club*:\n\n📋 *Descrição:* ${description}\n💰 *Valor:* R$ ${val}\n\n${
+    const msg = `Fala, *${clientName}*! 🚀💼\n\nSegue o link oficial para efetivação da sua vaga no *ScaleMentors*:\n\n📋 *Descrição:* ${description}\n💰 *Valor:* R$ ${val}\n\n${
       checkoutData.pixCopiaECola ? `🔑 *Pix Copia e Cola:*\n\`\`\`${checkoutData.pixCopiaECola}\`\`\`\n\n` : ''
     }${checkoutData.paymentLink ? `💳 *Link Seguro de Pagamento:* ${checkoutData.paymentLink}\n\n` : ''}Assim que confirmado, seu acesso é liberado imediatamente! 🛸`;
 

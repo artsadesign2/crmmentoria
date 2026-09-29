@@ -286,7 +286,7 @@ function buildDeepStructuredManual(
 
 Este documento consolida as diretrizes operacionais, conceitos essenciais e métodos práticos apresentados no treinamento ministrado por **${author}**.
 
-* **Propósito Central:** Capacitar os colaboradores e líderes do departamento **${department}** a dominar as técnicas demonstradas, eliminando retrabalho e elevando o padrão de entrega aos mentorados e clientes do Rocket Club.
+* **Propósito Central:** Capacitar os colaboradores e líderes do departamento **${department}** a dominar as técnicas demonstradas, eliminando retrabalho e elevando o padrão de entrega aos mentorados e clientes do ScaleMentors.
 * **Impacto Operacional Esperado:** Padronização dos fluxos de trabalho, maior previsibilidade de resultados, aumento na taxa de conversão e redução no tempo de resolução de demandas.
 * **Público-Alvo:** Equipe de **${department}**, gestores de operação, atendentes e mentores técnicos.
 
@@ -352,7 +352,7 @@ Utilize a lista abaixo como guia de checagem obrigatório:
 * [ ] Pré-requisitos e acessos às ferramentas validados.
 * [ ] Execução da rotina seguindo o passo a passo das Fases 1 a 4.
 * [ ] Validação de qualidade realizada com rigor técnico.
-* [ ] Histórico e status devidamente atualizados no sistema Rocket Club.
+* [ ] Histórico e status devidamente atualizados no sistema ScaleMentors.
 * [ ] Notificação de conclusão enviada aos envolvidos.
 
 ---
@@ -374,7 +374,7 @@ Utilize a lista abaixo como guia de checagem obrigatório:
   *R:* Documente a particularidade no card do CRM/Tarefa e solicite orientação da Diretoria Executiva antes de tomar decisões fora do SOP.
 
 * **P: Este documento será atualizado quando houver novas versões do treinamento?**  
-  *R:* Sim. A base de conhecimento do Rocket Club é viva e recebe revisões contínuas conforme novas práticas são validadas.
+  *R:* Sim. A base de conhecimento do ScaleMentors é viva e recebe revisões contínuas conforme novas práticas são validadas.
   `.trim();
 }
 

@@ -66,12 +66,12 @@ export async function createStripeCheckoutSession(
       formBody.append('line_items[0][price_data][currency]', 'brl');
       formBody.append('line_items[0][price_data][unit_amount]', String(amountInCents));
       formBody.append('line_items[0][price_data][recurring][interval]', params.interval || 'month');
-      formBody.append('line_items[0][price_data][product_data][name]', params.description || 'Mensalidade Rocket Club');
+      formBody.append('line_items[0][price_data][product_data][name]', params.description || 'Mensalidade ScaleMentors');
       formBody.append('line_items[0][quantity]', '1');
     } else {
       formBody.append('line_items[0][price_data][currency]', 'brl');
       formBody.append('line_items[0][price_data][unit_amount]', String(amountInCents));
-      formBody.append('line_items[0][price_data][product_data][name]', params.description || 'Aceleração Rocket Club');
+      formBody.append('line_items[0][price_data][product_data][name]', params.description || 'Aceleração ScaleMentors');
       formBody.append('line_items[0][quantity]', '1');
     }
 

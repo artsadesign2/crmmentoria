@@ -87,14 +87,14 @@ export function ContractSignModal({
 
       const generated = generateContractModel(
         {
-          clientName: clientData.clientName || 'Cliente Rocket Club',
+          clientName: clientData.clientName || 'Cliente ScaleMentors',
           clientDoc: clientData.clientDoc || '',
           clientEmail: clientData.clientEmail || '',
           clientPhone: clientData.clientPhone || '',
           clientAddress: clientData.clientAddress || '',
           companyName: clientData.companyName || '',
           specialty: clientData.specialty || '',
-          programName: clientData.programName || 'Mentoria Rocket Scale High-Ticket',
+          programName: clientData.programName || 'Mentoria ScaleMentors High-Ticket',
           durationMonths: clientData.durationMonths || 6,
           value: clientData.value || 12000,
           paymentMethod: clientData.paymentMethod || 'Pix / Cartão de Crédito',
@@ -119,14 +119,14 @@ export function ContractSignModal({
             setTemplate(data.template);
             const freshContract = generateContractModel(
               {
-                clientName: clientData.clientName || 'Cliente Rocket Club',
+                clientName: clientData.clientName || 'Cliente ScaleMentors',
                 clientDoc: clientData.clientDoc || '',
                 clientEmail: clientData.clientEmail || '',
                 clientPhone: clientData.clientPhone || '',
                 clientAddress: clientData.clientAddress || '',
                 companyName: clientData.companyName || '',
                 specialty: clientData.specialty || '',
-                programName: clientData.programName || 'Mentoria Rocket Scale High-Ticket',
+                programName: clientData.programName || 'Mentoria ScaleMentors High-Ticket',
                 durationMonths: clientData.durationMonths || 6,
                 value: clientData.value || 12000,
                 paymentMethod: clientData.paymentMethod || 'Pix / Cartão de Crédito',

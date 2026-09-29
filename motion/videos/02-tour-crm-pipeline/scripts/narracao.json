@@ -1,0 +1,40 @@
+{
+  "totalDuration": 72.12,
+  "scenes": [
+    {
+      "cena": 1,
+      "arquivo": "01.wav",
+      "start": 0,
+      "end": 14.92,
+      "dur": 14.92
+    },
+    {
+      "cena": 2,
+      "arquivo": "02.wav",
+      "start": 14.92,
+      "end": 29.12,
+      "dur": 14.2
+    },
+    {
+      "cena": 3,
+      "arquivo": "03.wav",
+      "start": 29.12,
+      "end": 43.32,
+      "dur": 14.2
+    },
+    {
+      "cena": 4,
+      "arquivo": "04.wav",
+      "start": 43.32,
+      "end": 58.56,
+      "dur": 15.24
+    },
+    {
+      "cena": 5,
+      "arquivo": "05.wav",
+      "start": 58.56,
+      "end": 72.12,
+      "dur": 13.56
+    }
+  ]
+}

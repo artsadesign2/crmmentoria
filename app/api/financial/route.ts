@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     if (generatePix || gateway === 'ASAAS' || gateway === 'PIX') {
       finalGateway = 'ASAAS';
       const asaasResult = await createAsaasPayment({
-        customerName: memberName || 'Mentorado Rocket Club',
+        customerName: memberName || 'Mentorado ScaleMentors',
         customerCpfCnpj: memberCpfCnpj,
         customerEmail: memberEmail,
         customerPhone: memberPhone,

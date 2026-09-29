@@ -45,7 +45,7 @@ export function getArticleCover(article: Partial<WikiArticleItem>): string {
 export const INITIAL_WIKI_ARTICLES: WikiArticleItem[] = [
   {
     id: 'a1',
-    title: 'Manual de Boas-Vindas & Cultura do Rocket Club',
+    title: 'Manual de Boas-Vindas & Cultura do ScaleMentors',
     summary: 'Guia completo sobre os princípios, rituais semanais, código de conduta e métricas da mentoria.',
     category: 'Processos',
     department: 'Operacional',
@@ -56,15 +56,15 @@ export const INITIAL_WIKI_ARTICLES: WikiArticleItem[] = [
     coverImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop',
     tags: ['Cultura', 'Onboarding', 'Princípios'],
     content: `
-# Manual de Boas-Vindas & Cultura do Rocket Club
+# Manual de Boas-Vindas & Cultura do ScaleMentors
 
-Bem-vindo à documentação oficial do ecossistema Rocket Club. Este manual consolida nossos valores, diretrizes de conduta e padrões de excelência operacional para todos os membros e colaboradores.
+Bem-vindo à documentação oficial do ecossistema ScaleMentors. Este manual consolida nossos valores, diretrizes de conduta e padrões de excelência operacional para todos os membros e colaboradores.
 
 ---
 
 ### 1. Nossos Pilares Inegociáveis
 
-A excelência do Rocket Club é sustentada por três pilares fundamentais:
+A excelência do ScaleMentors é sustentada por três pilares fundamentais:
 
 * **Foco Obsessivo no Resultado do Mentorado:** Cada iniciativa, resposta ou direcionamento deve gerar tração e clareza para o negócio do mentorado.
 * **Velocidade com Precisão:** Respondemos dúvidas operacionais em tempo recorde sem abrir mão do rigor técnico e da qualidade.

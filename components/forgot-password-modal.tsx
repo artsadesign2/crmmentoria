@@ -3,18 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Mail,
-  Lock,
-  KeyRound,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  ArrowLeft,
-  RotateCcw,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+  MdMailOutline,
+  MdLock,
+  MdVpnKey,
+  MdVerifiedUser,
+  MdCheckCircle,
+  MdErrorOutline,
+  MdArrowForward,
+  MdArrowBack,
+  MdRotateLeft,
+  MdVisibility,
+  MdVisibilityOff,
+} from 'react-icons/md';
 import { Modal } from '@/components/ui/modal';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
 import { useTheme } from '@/lib/theme-context';
@@ -186,13 +186,12 @@ export function ForgotPasswordModal({
   const badgeBg = activePalette.rawTokens.badgeBg;
   const badgeBorder = activePalette.rawTokens.badgeBorder;
 
-  return (
-    <Modal
+  return (    <Modal
       isOpen={isOpen}
       onClose={handleResetModal}
       title="Recuperação de Senha Segura"
       subtitle="Confirme seu e-mail corporativo para redefinir sua credencial"
-      icon={<KeyRound size={20} />}
+      icon={<MdVpnKey size={22} />}
     >
       <div className="space-y-5 text-left">
         {/* Step Indicator */}
@@ -256,7 +255,7 @@ export function ForgotPasswordModal({
               exit={{ opacity: 0, y: -6 }}
               className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center gap-2"
             >
-              <AlertCircle size={15} className="shrink-0" />
+              <MdErrorOutline size={16} className="shrink-0" />
               <span>{errorMsg}</span>
             </motion.div>
           )}
@@ -279,7 +278,7 @@ export function ForgotPasswordModal({
                 E-mail Corporativo:
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                <MdMailOutline className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="email"
                   required
@@ -310,7 +309,7 @@ export function ForgotPasswordModal({
                 }}
               >
                 <span>{isLoading ? 'Localizando conta...' : 'Enviar Código de Confirmação'}</span>
-                <ArrowRight size={14} />
+                <MdArrowForward size={16} />
               </button>
             </div>
           </form>
@@ -329,7 +328,6 @@ export function ForgotPasswordModal({
               <p className="text-[11px] text-slate-400 leading-relaxed">
                 Insira o código de 6 dígitos que você recebeu por e-mail para autorizar a troca de senha.
               </p>
-
             </div>
 
             <div className="space-y-1.5 text-center">
@@ -354,7 +352,7 @@ export function ForgotPasswordModal({
                 onClick={() => setStep('EMAIL')}
                 className="text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center gap-1"
               >
-                <ArrowLeft size={13} />
+                <MdArrowBack size={15} />
                 <span>Trocar E-mail</span>
               </button>
 
@@ -376,7 +374,7 @@ export function ForgotPasswordModal({
                   }}
                   className="px-3 py-2 rounded-xl bg-[#131926] text-xs font-bold text-slate-300 hover:text-slate-100 disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  <RotateCcw size={12} />
+                  <MdRotateLeft size={14} />
                   <span>{canResend ? 'Reenviar Código' : `Reenviar (${resendTimer}s)`}</span>
                 </button>
 
@@ -390,7 +388,7 @@ export function ForgotPasswordModal({
                   }}
                 >
                   <span>{isLoading ? 'Validando...' : 'Confirmar Código'}</span>
-                  <ArrowRight size={14} />
+                  <MdArrowForward size={16} />
                 </button>
               </div>
             </div>
@@ -402,7 +400,7 @@ export function ForgotPasswordModal({
           <form onSubmit={handleSaveNewPassword} className="space-y-4">
             <div className="p-3.5 rounded-2xl bg-[#0B0F17] border border-[#1F293D] text-xs text-slate-300 space-y-1">
               <p className="font-semibold text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck size={15} className="text-emerald-400" />
+                <MdVerifiedUser size={16} className="text-emerald-400" />
                 <span>Identidade confirmada para {email}!</span>
               </p>
               <p className="text-slate-400 text-[11px]">
@@ -417,7 +415,7 @@ export function ForgotPasswordModal({
                   Nova Senha:
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                  <MdLock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                   <input
                     type={showNewPassword ? 'text' : 'password'}
                     required
@@ -431,7 +429,7 @@ export function ForgotPasswordModal({
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
                   >
-                    {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showNewPassword ? <MdVisibilityOff size={16} /> : <MdVisibility size={16} />}
                   </button>
                 </div>
               </div>
@@ -445,7 +443,7 @@ export function ForgotPasswordModal({
                   Confirmar Nova Senha:
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                  <MdLock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
@@ -459,7 +457,7 @@ export function ForgotPasswordModal({
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
                   >
-                    {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showConfirmPassword ? <MdVisibilityOff size={16} /> : <MdVisibility size={16} />}
                   </button>
                 </div>
               </div>
@@ -476,7 +474,7 @@ export function ForgotPasswordModal({
                 }}
               >
                 <span>{isLoading ? 'Salvando nova senha...' : 'Salvar Nova Senha & Concluir'}</span>
-                <CheckCircle2 size={15} />
+                <MdCheckCircle size={16} />
               </button>
             </div>
           </form>
@@ -508,7 +506,7 @@ export function ForgotPasswordModal({
               }}
             >
               <span>Acessar o Painel com a Nova Senha</span>
-              <ArrowRight size={15} />
+              <MdArrowForward size={16} />
             </button>
           </div>
         )}

@@ -24,11 +24,11 @@ describe('Contract Generator & Audit Hash', () => {
       paymentMethod: 'Pix Parcelado',
     });
 
-    expect(contract.contractNumber).toMatch(/^RKT-CTR-\d{4}-\d{4}$/);
+    expect(contract.contractNumber).toMatch(/^SCM-CTR-\d{4}-\d{4}$/);
     expect(contract.title).toBe('CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MENTORIA EXECUTIVA & ACELERAÇÃO');
     expect(contract.mentorProgram).toBe('Mentoria Scale High-Ticket');
     expect(contract.totalValue).toBe(15000);
-    expect(contract.contractor.name).toBe('ROCKET CLUB GESTÃO & CONSULTORIA LTDA');
+    expect(contract.contractor.name).toBe('SCALEMENTORS GESTÃO & CONSULTORIA LTDA');
     expect(contract.contractee.name).toBe('Carlos Silva');
     expect(contract.contractee.document).toBe('123.456.789-00');
     expect(contract.contractee.email).toBe('carlos@empresa.com');

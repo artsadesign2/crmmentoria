@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, ShieldAlert, Check, X, Sparkles, KeyRound } from 'lucide-react';
+import { MdVerifiedUser, MdGppMaybe, MdCheck, MdClose, MdAutoAwesome } from 'react-icons/md';
 
 export interface PasswordCriteria {
   label: string;
@@ -129,9 +129,9 @@ export function PasswordStrengthMeter({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-xs font-bold">
           {level.score >= 3 ? (
-            <ShieldCheck size={16} className={level.textColor} />
+            <MdVerifiedUser size={16} className={level.textColor} />
           ) : (
-            <ShieldAlert size={16} className={level.textColor} />
+            <MdGppMaybe size={16} className={level.textColor} />
           )}
           <span className={isLightMode ? 'text-slate-700' : 'text-slate-300'}>
             Força da Senha:
@@ -177,7 +177,7 @@ export function PasswordStrengthMeter({
       {showSuggestions && (
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-1.5">
           <div className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1 text-slate-400">
-            <Sparkles size={11} className="text-amber-400" />
+            <MdAutoAwesome size={12} className="text-amber-400" />
             <span>Sugestões de Segurança (Opcional):</span>
           </div>
 
@@ -196,9 +196,9 @@ export function PasswordStrengthMeter({
                 }`}
               >
                 {c.met ? (
-                  <Check size={12} className="text-emerald-400 shrink-0 font-black" />
+                  <MdCheck size={14} className="text-emerald-400 shrink-0 font-black" />
                 ) : (
-                  <X size={12} className="text-slate-500 shrink-0" />
+                  <MdClose size={14} className="text-slate-500 shrink-0" />
                 )}
                 <span className={c.met ? 'font-medium' : ''}>{c.label}</span>
               </div>

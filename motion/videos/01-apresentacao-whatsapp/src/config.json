@@ -1,0 +1,32 @@
+{
+  "titulo": "ScaleMentors - Apresentação Comercial WhatsApp",
+  "arquivo": "scalementors-apresentacao-reels",
+  "w": 1080,
+  "h": 1920,
+  "dur": 74.0,
+  "fps": 30,
+  "fontes": [
+    {
+      "familia": "Plus Jakarta Sans",
+      "peso": 700,
+      "italico": true
+    },
+    {
+      "familia": "Inter",
+      "peso": 400,
+      "italico": true
+    }
+  ],
+  "logo": "d:/PROJETOS/DG/ROCKET CLUB/APPs/rocket-club/motion/shared/assets/scalementors-logo.svg",
+  "logo_alt": null,
+  "bg_video": null,
+  "narracao": "d:/PROJETOS/DG/ROCKET CLUB/APPs/rocket-club/motion/videos/01-apresentacao-whatsapp/audio/voz_alinhada.wav",
+  "narracao_inicio": 0,
+  "capas": [
+    {
+      "nome": "capa-reels",
+      "w": 1080,
+      "h": 1920
+    }
+  ]
+}

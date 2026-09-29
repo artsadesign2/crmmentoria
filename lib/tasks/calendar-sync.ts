@@ -24,7 +24,7 @@ function formatDateToICS(date: Date): string {
  */
 export function generateICSFeed(
   tasks: CalendarTask[],
-  orgName: string = 'Rocket Club'
+  orgName: string = 'ScaleMentors'
 ): string {
   const now = new Date();
   const dtstamp = formatDateToICS(now);
@@ -55,14 +55,14 @@ export function generateICSFeed(
 
       return [
         'BEGIN:VEVENT',
-        `UID:rocket-task-${task.id}@rocketclub.com`,
+        `UID:scalementors-task-${task.id}@scalementors.com.br`,
         `DTSTAMP:${dtstamp}`,
         `DTSTART:${formatDateToICS(start)}`,
         `DTEND:${formatDateToICS(due)}`,
         `SUMMARY:${summary}`,
         `DESCRIPTION:${description}`,
         task.completedAt ? 'STATUS:COMPLETED' : 'STATUS:CONFIRMED',
-        'CATEGORIES:Rocket Club,Tarefas,Equipe',
+        'CATEGORIES:ScaleMentors,Tarefas,Equipe',
         'END:VEVENT',
       ].join('\r\n');
     });
@@ -70,7 +70,7 @@ export function generateICSFeed(
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Rocket Club//Rocket Tasks//PT-BR',
+    'PRODID:-//ScaleMentors//Scale Tasks//PT-BR',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${orgName} - Tarefas & Prazos`,

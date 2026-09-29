@@ -199,7 +199,7 @@ async function adotarPushName(
 export async function GET() {
   return NextResponse.json({
     status: 'online',
-    service: 'Rocket Club — receptor de webhook da Evolution API',
+    service: 'ScaleMentors — receptor de webhook da Evolution API',
     version: '3.0.0',
     configured: readEvolutionEnv() !== null,
     supportedEvents: ['messages.upsert', 'connection.update', 'qrcode.updated'],

@@ -2,19 +2,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Award,
-  Download,
-  Share2,
-  Printer,
-  Sparkles,
-  QrCode,
-  ShieldCheck,
-  CheckCircle2,
-  UserCheck,
-  FileText,
-  Copy,
-  Check,
-} from 'lucide-react';
+  MdWorkspacePremium,
+  MdDownload,
+  MdShare,
+  MdPrint,
+  MdAutoAwesome,
+  MdQrCode2,
+  MdVerifiedUser,
+  MdCheckCircle,
+  MdPerson,
+  MdDescription,
+  MdContentCopy,
+  MdCheck,
+} from 'react-icons/md';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
@@ -87,7 +87,7 @@ export default function CertificatesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <Badge variant="default" className="py-1">
-              <Award size={14} className="mr-1.5" /> Chancelas & Reconhecimento Oficial
+              <MdWorkspacePremium size={14} className="mr-1.5" /> Chancelas & Reconhecimento Oficial
             </Badge>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-100 tracking-tight">
               Emissor de <span className="theme-gradient-text">Certificados Digitais</span> 📜
@@ -102,7 +102,7 @@ export default function CertificatesPage() {
               onClick={handlePrint}
               className="px-4 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#1F293D] text-xs font-bold text-slate-200 flex items-center gap-2 transition-all shadow"
             >
-              <Printer size={15} />
+              <MdPrint size={15} />
               <span>Imprimir / Salvar PDF</span>
             </button>
 
@@ -115,7 +115,7 @@ export default function CertificatesPage() {
                 boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
               }}
             >
-              {copiedLink ? <Check size={15} /> : <Share2 size={15} />}
+              {copiedLink ? <MdCheck size={15} /> : <MdShare size={15} />}
               <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link Validador'}</span>
             </button>
           </div>
@@ -255,13 +255,13 @@ export default function CertificatesPage() {
             {/* Authenticity QR Code */}
             <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
               <div className="p-2 rounded-xl bg-white text-slate-950 inline-block shadow">
-                <QrCode size={36} />
+                <MdQrCode2 size={36} />
               </div>
               <span className="text-[9px] font-mono text-slate-400">
                 Código: CERT-{(currentMember?.id || 'M1').toUpperCase()}-2026
               </span>
               <span className="text-[8px] text-emerald-400 font-bold flex items-center gap-1">
-                <ShieldCheck size={10} /> Autenticidade Registrada
+                <MdVerifiedUser size={12} /> Autenticidade Registrada
               </span>
             </div>
 

@@ -37,9 +37,9 @@ export interface ContractVariablesData {
 
 export const DEFAULT_CONTRACT_TEMPLATE: ContractTemplateConfig = {
   title: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MENTORIA EXECUTIVA & ACELERAÇÃO',
-  contractorName: 'ROCKET CLUB GESTÃO & CONSULTORIA LTDA',
+  contractorName: 'SCALEMENTORS GESTÃO & CONSULTORIA LTDA',
   contractorDocument: '48.912.345/0001-89',
-  contractorEmail: 'contratos@rocketclub.com.br',
+  contractorEmail: 'contratos@scalementors.com.br',
   contractorPhone: '(11) 99530-2672',
   contractorAddress: 'Av. Paulista, 1000 - São Paulo/SP',
   contractorRepresentative: 'Marcio Santos - Diretor Executivo',
@@ -47,13 +47,13 @@ export const DEFAULT_CONTRACT_TEMPLATE: ContractTemplateConfig = {
 O presente instrumento tem por objeto a prestação de serviços de mentoria executiva, consultoria estratégica e capacitação empresarial pelo programa {{PROGRAMA_MENTORIA}}, promovido pela CONTRATADA em favor da CONTRATANTE {{NOME_MENTORADO}}, inscrita no documento sob nº {{CPF_CNPJ}}, com sede/domicílio em {{ENDERECO}}.
 
 CLÁUSULA 2ª - DOS ENTREGÁVEIS & METODOLOGIA
-A CONTRATADA fornecerá acesso integral à plataforma Rocket Club, acompanhamento estratégico individual, encontros de alinhamento com mentor master, acesso à Rocket Academy, modelos operacionais (SOPs) e ferramentas proprietárias de aceleração e escala de negócios para a empresa {{EMPRESA_CLIENTE}}.
+A CONTRATADA fornecerá acesso integral à plataforma ScaleMentors, acompanhamento estratégico individual, encontros de alinhamento com mentor master, acesso à Scale Academy, modelos operacionais (SOPs) e ferramentas proprietárias de aceleração e escala de negócios para a empresa {{EMPRESA_CLIENTE}}.
 
 CLÁUSULA 3ª - DO INVESTIMENTO & FORMA DE PAGAMENTO
 Pela prestação dos serviços contratados, a CONTRATANTE pagará à CONTRATADA o valor total de {{VALOR_TOTAL}}, mediante {{FORMA_PAGAMENTO}}, conforme cronograma ajustado no ato da adesão.
 
 CLÁUSULA 4ª - DA CONFIDENCIALIDADE & NÃO DIVULGAÇÃO
-As partes comprometem-se reciprocamente a manter o mais absoluto sigilo e confidencialidade sobre todas as informações estratégicas, financeiras, comerciais, métodos, clientes e dados operacionais compartilhados durante as sessões e no ecossistema Rocket Club.
+As partes comprometem-se reciprocamente a manter o mais absoluto sigilo e confidencialidade sobre todas as informações estratégicas, financeiras, comerciais, métodos, clientes e dados operacionais compartilhados durante as sessões e no ecossistema ScaleMentors.
 
 CLÁUSULA 5ª - DA VIGÊNCIA & RENOVAÇÃO
 O presente contrato vige pelo prazo determinado de {{DURACAO_MESES}} meses, com início em {{DATA_INICIO}}, podendo ser renovado mediante termo aditivo ou adesão a novos ciclos de aceleração.
@@ -70,12 +70,12 @@ export const CONTRACT_VARIABLE_TAGS = [
   { tag: '{{EMPRESA_CLIENTE}}', label: 'Empresa do Cliente', example: 'Silva Soluções Digitais' },
   { tag: '{{ESPECIALIDADE}}', label: 'Nicho / Especialidade', example: 'Consultoria B2B' },
   { tag: '{{ENDERECO}}', label: 'Endereço do Cliente', example: 'São Paulo/SP' },
-  { tag: '{{PROGRAMA_MENTORIA}}', label: 'Nome do Programa', example: 'Mentoria Rocket Scale High-Ticket' },
+  { tag: '{{PROGRAMA_MENTORIA}}', label: 'Nome do Programa', example: 'Mentoria ScaleMentors High-Ticket' },
   { tag: '{{VALOR_TOTAL}}', label: 'Valor Formatado', example: 'R$ 15.000,00' },
   { tag: '{{DURACAO_MESES}}', label: 'Duração em Meses', example: '6' },
   { tag: '{{FORMA_PAGAMENTO}}', label: 'Forma de Pagamento', example: 'Pix / Cartão de Crédito' },
   { tag: '{{DATA_INICIO}}', label: 'Data de Início / Assinatura', example: '28/09/2026' },
-  { tag: '{{RAZAO_SOCIAL_CONTRATADA}}', label: 'Razão Social Contratada', example: 'ROCKET CLUB GESTÃO LTDA' },
+  { tag: '{{RAZAO_SOCIAL_CONTRATADA}}', label: 'Razão Social Contratada', example: 'SCALEMENTORS GESTÃO LTDA' },
   { tag: '{{CNPJ_CONTRATADA}}', label: 'CNPJ Contratada', example: '48.912.345/0001-89' },
   { tag: '{{ENDERECO_CONTRATADA}}', label: 'Endereço Contratada', example: 'Av. Paulista, 1000 - SP' },
 ];

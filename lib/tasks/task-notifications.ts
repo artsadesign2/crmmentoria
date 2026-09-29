@@ -81,10 +81,10 @@ export async function sendTaskNotificationEmail(payload: EmailNotificationPayloa
       ${dueDateFormatted ? `<p>📅 <strong>Data Limite:</strong> ${dueDateFormatted}</p>` : ''}
     </div>
     <div style="text-align: center; margin: 28px 0;">
-      <a href="${url}" class="btn">Abrir Tarefa no Rocket Club</a>
+      <a href="${url}" class="btn">Abrir Tarefa no ScaleMentors</a>
     </div>
     <div class="footer">
-      Rocket Club SaaS • Sistema de Gestão de Tarefas & Equipe
+      ScaleMentors SaaS • Sistema de Gestão de Tarefas & Equipe
     </div>
   </div>
 </body>
@@ -101,7 +101,7 @@ export async function sendTaskNotificationEmail(payload: EmailNotificationPayloa
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || 'Rocket Club <notificacoes@rocketclub.com>',
+          from: process.env.EMAIL_FROM || 'ScaleMentors <notificacoes@scalementors.com.br>',
           to: [to],
           subject,
           html: htmlContent,

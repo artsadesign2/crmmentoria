@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { MdCheckCircle, MdError, MdWarning, MdInfo, MdClose } from 'react-icons/md';
 import { useToast, ToastItem } from '@/lib/toast-context';
 import { useTheme } from '@/lib/theme-context';
 
@@ -28,7 +28,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
 
   const config = {
     success: {
-      icon: <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />,
+      icon: <MdCheckCircle size={20} className="text-emerald-400 shrink-0" />,
       badgeBg: isLightMode ? 'bg-emerald-500/15 text-emerald-800 border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       border: isLightMode ? 'border-emerald-300/70' : 'border-emerald-500/30',
       glow: 'rgba(16, 185, 129, 0.2)',
@@ -36,7 +36,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
       tag: 'Sucesso',
     },
     error: {
-      icon: <AlertCircle size={18} className="text-red-400 shrink-0" />,
+      icon: <MdError size={20} className="text-red-400 shrink-0" />,
       badgeBg: isLightMode ? 'bg-red-500/15 text-red-800 border-red-500/30' : 'bg-red-500/20 text-red-300 border-red-500/40',
       border: isLightMode ? 'border-red-300/70' : 'border-red-500/30',
       glow: 'rgba(239, 68, 68, 0.2)',
@@ -44,7 +44,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
       tag: 'Erro',
     },
     warning: {
-      icon: <AlertTriangle size={18} className="text-amber-400 shrink-0" />,
+      icon: <MdWarning size={20} className="text-amber-400 shrink-0" />,
       badgeBg: isLightMode ? 'bg-amber-500/15 text-amber-800 border-amber-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       border: isLightMode ? 'border-amber-300/70' : 'border-amber-500/30',
       glow: 'rgba(245, 158, 11, 0.2)',
@@ -52,7 +52,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
       tag: 'Atenção',
     },
     info: {
-      icon: <Info size={18} className="text-blue-400 shrink-0" />,
+      icon: <MdInfo size={20} className="text-blue-400 shrink-0" />,
       badgeBg: isLightMode ? 'bg-blue-500/15 text-blue-800 border-blue-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/40',
       border: isLightMode ? 'border-blue-300/70' : 'border-blue-500/30',
       glow: 'rgba(59, 130, 246, 0.2)',
@@ -132,7 +132,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
           }`}
           title="Fechar mensagem (ou aguarde 8s)"
         >
-          <X size={14} />
+          <MdClose size={16} />
         </button>
       </div>
 

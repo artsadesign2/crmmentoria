@@ -1,0 +1,42 @@
+NARRAÇÃO COM MINUTAGEM: ScaleMentors, WhatsApp 9:16, 68s, Apresentacao Comercial
+Tom: calmo, seguro, institucional, ritmo de conversa (cerca de 2,6 palavras por segundo).
+
+1) ROTEIRO SINCRONIZADO (cada fala deve caber na janela)
+01  00.50s a 06.20s  (5.7s, 24 palavras)  Se vocÃª ainda gerencia seus mentorados com planilhas soltas e ferramentas improvisadas, gravei este vÃ­deo rÃ¡pido para te mostrar como resolver isso na prÃ¡tica.
+02  07.50s a 17.50s  (10.0s, 25 palavras)  ConheÃ§a o ScaleMentors: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em um Ãºnico painel de alta performance.
+03  19.50s a 32.00s  (12.5s, 29 palavras)  Aqui vocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais com assinatura digital e acompanhamento individual de cada mentorado sem perder nenhum dado.
+04  34.00s a 46.50s  (12.5s, 27 palavras)  AlÃ©m de organizar o seu negÃ³cio, vocÃª entrega uma experiÃªncia exclusiva aos seus alunos, com portal de aulas moderno, certificados automÃ¡ticos e gamificaÃ§Ã£o com ranking de resultados.
+05  48.50s a 56.50s  (8.0s, 26 palavras)  Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O ScaleMentors foi desenhado sob medida para quem precisa escalar sem dor de cabeÃ§a.
+06  58.50s a 66.50s  (8.0s, 30 palavras)  Se vocÃª quer implementar essa estrutura na sua mentoria e ver uma demonstraÃ§Ã£o ao vivo, me responde aqui nesta mensagem com a palavra QUERO que eu te mostro como funciona!
+
+2) GOOGLE AI STUDIO (Generate speech, uma voz)
+Abra o AI Studio, escolha Generate speech, modo de uma voz. Cole o bloco A em Style instructions e o bloco B no campo do texto.
+Voz: pt-BR (Voz masculina executiva firme e envolvente ou feminina corporativa e segura)
+
+--- BLOCO A: instruções de estilo (copiar) ---
+Fale em primeira pessoa, como um especialista e parceiro de negÃ³cios enviando um vÃ­deo exclusivo no WhatsApp para um mentor. Tom seguro, entusiasmado, consultivo e profissional, com pausas naturais e Ãªnfase nas soluÃ§Ãµes que o software entrega.
+--- fim do bloco A ---
+
+--- BLOCO B: texto da narração (copiar) ---
+Se vocÃª ainda gerencia seus mentorados com planilhas soltas e ferramentas improvisadas, gravei este vÃ­deo rÃ¡pido para te mostrar como resolver isso na prÃ¡tica.
+
+ConheÃ§a o ScaleMentors: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em um Ãºnico painel de alta performance.
+
+Aqui vocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais com assinatura digital e acompanhamento individual de cada mentorado sem perder nenhum dado.
+
+AlÃ©m de organizar o seu negÃ³cio, vocÃª entrega uma experiÃªncia exclusiva aos seus alunos, com portal de aulas moderno, certificados automÃ¡ticos e gamificaÃ§Ã£o com ranking de resultados.
+
+Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O ScaleMentors foi desenhado sob medida para quem precisa escalar sem dor de cabeÃ§a.
+
+Se vocÃª quer implementar essa estrutura na sua mentoria e ver uma demonstraÃ§Ã£o ao vivo, me responde aqui nesta mensagem com a palavra QUERO que eu te mostro como funciona!
+--- fim do bloco B ---
+
+Pode gerar tudo em um arquivo só (recomendado) ou uma fala por arquivo. Se gerar separado, numere os arquivos na ordem (01, 02, 03...).
+
+3) ALTERNATIVA: ELEVENLABS (Multilingual v2, texto com pausas marcadas)
+Configuração sugerida: Stability 55%, Similarity 75%, Style 10%, Speed 1.0.
+
+Se vocÃª ainda gerencia seus mentorados com planilhas soltas e ferramentas improvisadas, gravei este vÃ­deo rÃ¡pido para te mostrar como resolver isso na prÃ¡tica. <break time="1.0s" /> ConheÃ§a o ScaleMentors: a plataforma completa criada para centralizar toda a sua operaÃ§Ã£o de mentoria, vendas e alunos em um Ãºnico painel de alta performance. <break time="1.0s" /> Aqui vocÃª tem controle total de vendas com CRM integrado ao WhatsApp, automaÃ§Ã£o de contratos oficiais com assinatura digital e acompanhamento individual de cada mentorado sem perder nenhum dado. <break time="1.0s" /> AlÃ©m de organizar o seu negÃ³cio, vocÃª entrega uma experiÃªncia exclusiva aos seus alunos, com portal de aulas moderno, certificados automÃ¡ticos e gamificaÃ§Ã£o com ranking de resultados. <break time="1.0s" /> Chega de perder tempo com processos manuais e softwares caros em dÃ³lar. O ScaleMentors foi desenhado sob medida para quem precisa escalar sem dor de cabeÃ§a. <break time="1.0s" /> Se vocÃª quer implementar essa estrutura na sua mentoria e ver uma demonstraÃ§Ã£o ao vivo, me responde aqui nesta mensagem com a palavra QUERO que eu te mostro como funciona!
+
+4) DEPOIS DE GERAR
+Baixe o áudio em WAV ou MP3 (um arquivo ou um por fala) e envie aqui no chat. Eu encaixo cada fala no segundo certo da animação, ajusto a trilha para ficar por baixo da voz e devolvo o MP4 final com a legenda .srt.

@@ -1,0 +1,25 @@
+# ==============================================================================
+# ROTEIRO DE NARRAÇÃO — VÍDEO 02: CRM & AUTOMAÇÃO INTELIGENTE (SCALEMENTORS)
+# Formato: Vertical 9:16 (1080x1920) | Duração estimada: ~65 segundos
+# Tom de Voz: Executivo, dinâmico, seguro e orientado a escala comercial
+# ==============================================================================
+
+[CENA 01 | 00:00 - 00:12 | O GARGALO COMERCIAL]
+Texto para narração:
+"Quantos clientes em potencial a sua empresa perde todos os meses por demora no WhatsApp ou desorganização comercial? No mercado de alto padrão, cada minuto de espera custa contratos de múltiplos dígitos."
+
+[CENA 02 | 00:12 - 00:25 | SDR COM INTELIGÊNCIA ARTIFICIAL]
+Texto para narração:
+"É por isso que no ecossistema ScaleMentors, o seu negócio conta com um CRM de alta conversão. Assim que o lead entra em contato, nosso agente virtual com Inteligência Artificial inicia o atendimento em poucos segundos."
+
+[CENA 03 | 00:25 - 00:40 | QUALIFICAÇÃO & AGENDAMENTO AUTOMÁTICO]
+Texto para narração:
+"Ele qualifica o faturamento da empresa, identifica os principais desafios e conduz o empresário diretamente para o agendamento da reunião de diagnóstico — sincronizado em tempo real com a agenda do seu time."
+
+[CENA 04 | 00:40 - 00:54 | PIPELINE KANBAN & CADÊNCIA ANTI-VÁCUO]
+Texto para narração:
+"Dentro do painel, você tem clareza absoluta do pipeline: controle de SLA de resposta, cadência automática anti-vácuo e copiloto de IA com scripts prontos para fechamento de vendas high-ticket."
+
+[CENA 05 | 00:54 - 01:05 | CALL TO ACTION & ENCERRAMENTO]
+Texto para narração:
+"Pare de perder negócios por processos manuais e transforme seu WhatsApp em um canal previsível de faturamento. Conheça a tecnologia ScaleMentors e solicite sua demonstração executiva."

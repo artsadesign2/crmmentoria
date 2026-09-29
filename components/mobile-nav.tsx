@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { MdLogout, MdVerifiedUser } from 'react-icons/md';
 import { NAVIGATION_ITEMS } from '@/components/sidebar';
 import { MenuToggle } from '@/components/menu-toggle';
 import { useAuth } from '@/lib/auth-context';
@@ -139,7 +139,7 @@ export function MobileNav({ aberto, onFechar }: { aberto: boolean; onFechar: () 
                 🚀
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black tracking-tight">Rocket Club</p>
+                <p className="truncate text-sm font-black tracking-tight">ScaleMentors</p>
                 <p
                   className="truncate text-[11px]"
                   style={{ color: activePalette.tokens.textSecondary }}
@@ -220,7 +220,7 @@ export function MobileNav({ aberto, onFechar }: { aberto: boolean; onFechar: () 
                   className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold"
                   style={{ color: papel.color }}
                 >
-                  <ShieldCheck size={10} /> {currentRole}
+                  <MdVerifiedUser size={11} /> {currentRole}
                 </span>
               </div>
               <button
@@ -229,7 +229,7 @@ export function MobileNav({ aberto, onFechar }: { aberto: boolean; onFechar: () 
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-red-400 transition-colors hover:bg-red-500/15"
                 aria-label="Sair da conta"
               >
-                <LogOut size={17} />
+                <MdLogout size={18} />
               </button>
             </div>
           </motion.div>

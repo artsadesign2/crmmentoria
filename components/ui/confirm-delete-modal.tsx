@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { MdDeleteForever, MdAutorenew, MdWarning } from 'react-icons/md';
 import { Modal } from './modal';
 import { useTheme } from '@/lib/theme-context';
 
@@ -41,7 +41,7 @@ export function ConfirmDeleteModal({
       <div className="text-center space-y-4 pt-2">
         {/* Animated Trash / Warning Icon */}
         <div className="w-16 h-16 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
-          <Trash2 size={28} className="animate-pulse text-red-500" />
+          <MdDeleteForever size={32} className="animate-pulse text-red-500" />
         </div>
 
         <div className="space-y-1.5">
@@ -88,12 +88,12 @@ export function ConfirmDeleteModal({
           >
             {isDeleting ? (
               <>
-                <Loader2 size={14} className="animate-spin" />
+                <MdAutorenew size={16} className="animate-spin" />
                 <span>Excluindo...</span>
               </>
             ) : (
               <>
-                <Trash2 size={14} />
+                <MdDeleteForever size={16} />
                 <span>{confirmText}</span>
               </>
             )}

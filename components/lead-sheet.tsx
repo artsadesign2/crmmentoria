@@ -248,7 +248,7 @@ export function LeadSheet({
   const openWhatsApp = (phoneStr?: string, nameStr?: string) => {
     const cleanNumber = (phoneStr || '').replace(/\D/g, '');
     if (!cleanNumber) return;
-    const text = encodeURIComponent(customWhatsAppMsg || `Olá ${nameStr || 'Lead'}, tudo bem? Sou da equipe executiva do Rocket Club.`);
+    const text = encodeURIComponent(customWhatsAppMsg || `Olá ${nameStr || 'Lead'}, tudo bem? Sou da equipe executiva do ScaleMentors.`);
     window.open(`https://wa.me/55${cleanNumber}?text=${text}`, '_blank');
   };
 
@@ -564,7 +564,7 @@ export function LeadSheet({
                       <span>Matriz de Qualificação BANT & Diagnóstico de Escala</span>
                     </h4>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Avalie se o prospect possui o perfil executivo e financeiro para a mentoria do Rocket Club.
+                      Avalie se o prospect possui o perfil executivo e financeiro para a mentoria do ScaleMentors.
                     </p>
                   </div>
                 </div>

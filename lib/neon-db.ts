@@ -136,7 +136,7 @@ export async function fetchAllMembersFromDb() {
       status: mappedStatus,
       coverImage: m.coverImage || null,
       lastContact: m.lastContact ? String(m.lastContact).split('T')[0] : '2026-08-10',
-      notes: m.notes || 'Tripulante cadastrado na comunidade Rocket Club.',
+      notes: m.notes || 'Tripulante cadastrado na comunidade ScaleMentors.',
       email: m.email || 'contato@mentorados.com.br',
       phone: m.phone || '(11) 99999-0000',
       instagram: m.instagram || '',
@@ -193,7 +193,7 @@ export async function fetchAllCoursesFromDb() {
   return courses.map((c: any) => ({
     id: c.id,
     title: c.title,
-    description: c.description || 'Curso exclusivo da Rocket Academy',
+    description: c.description || 'Curso exclusivo da Scale Academy',
     category: c.category || 'Geral',
     level: c.level || 'Geral',
     lessonsCount: 12,
