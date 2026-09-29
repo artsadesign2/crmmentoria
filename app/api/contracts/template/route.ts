@@ -29,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await guard(['Master', 'Administrador']);
+  const auth = await guard('Administrador');
   if (auth.response) return auth.response;
 
   try {
