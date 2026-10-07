@@ -92,7 +92,11 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
       const cachedMembers = localStorage.getItem('rocket_club_cached_members');
       if (cachedMembers) setMembersList(JSON.parse(cachedMembers));
     } catch (e) {}
+  }, []);
 
+  // Lazy load fresh members list only when the profile modal is opened
+  useEffect(() => {
+    if (!isProfileOpen) return;
     fetch('/api/members')
       .then((r) => r.json())
       .then((data) => {
@@ -101,7 +105,7 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         }
       })
       .catch(() => {});
-  }, []);
+  }, [isProfileOpen]);
 
   useEffect(() => {
     setProfileName(currentUser.name);

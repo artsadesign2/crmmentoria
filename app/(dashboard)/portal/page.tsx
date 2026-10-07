@@ -58,7 +58,18 @@ export default function MenteePortalPage() {
   const { isLightMode, activePalette } = useTheme();
   const { currentUser, currentRole, isMaster, isAdmin, simulatedBy, switchMenteeSimulation } = useAuth();
   const isSimulating = Boolean(simulatedBy);
-  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
+  const [members, setMembers] = useState<Member[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('rocket_club_cached_members');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return INITIAL_MEMBERS;
+  });
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'goals' | 'academy' | 'diagnosis' | 'financial'>('overview');
   const [aiReport, setAiReport] = useState<DiagnosisReport | null>(null);

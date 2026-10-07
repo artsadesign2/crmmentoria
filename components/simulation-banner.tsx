@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { MdVisibility, MdLogout, MdAutorenew } from 'react-icons/md';
 import { useAuth } from '@/lib/auth-context';
 
@@ -35,12 +36,13 @@ export function SimulationBanner() {
       </div>
 
       <div className="flex items-center gap-2 mx-auto sm:mx-0">
-        <a
+        <Link
           href="/portal"
+          prefetch={true}
           className="inline-flex items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-100 transition-all hover:bg-amber-500/35 hover:scale-105"
         >
           🚀 Ir para o Portal
-        </a>
+        </Link>
 
         <button
           type="button"

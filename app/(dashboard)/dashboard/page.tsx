@@ -70,8 +70,30 @@ const MONTH_SHORTS = [
 export default function DashboardPage() {
   const { isLightMode, activePalette } = useTheme();
   const { currentUser, currentRole, isMaster, isAdmin } = useAuth();
-  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
-  const [transactions, setTransactions] = useState<DbTransaction[]>([]);
+  const [members, setMembers] = useState<Member[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('rocket_club_cached_members');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return INITIAL_MEMBERS;
+  });
+  const [transactions, setTransactions] = useState<DbTransaction[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('rocket_club_cached_financial');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -92,13 +114,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    try {
-      const cachedM = localStorage.getItem('rocket_club_cached_members');
-      if (cachedM) setMembers(JSON.parse(cachedM));
-      const cachedF = localStorage.getItem('rocket_club_cached_financial');
-      if (cachedF) setTransactions(JSON.parse(cachedF));
-    } catch (e) {}
-
     const controller = new AbortController();
 
     // Fetch fresh data in parallel in background with instant navigation cancellation

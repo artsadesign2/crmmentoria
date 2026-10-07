@@ -9,6 +9,7 @@ import { SESSION_COOKIE, verifySession } from '@/lib/auth/jwt';
 import { ToastProvider } from '@/lib/toast-context';
 import { ToastContainer } from '@/components/ui/toast-container';
 import { PwaInstaller } from '@/components/pwa/pwa-installer';
+import { NavigationProgressBar } from '@/components/navigation-progress-bar';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -92,6 +93,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased selection:bg-[var(--primary-color)]/30 selection:text-[var(--primary-color)]">
         <ThemeProvider initialPaletteId={themeCookie}>
+          <NavigationProgressBar />
           <AuthProvider initialUserId={sessionUser}>
             <ToastProvider>
               {children}
