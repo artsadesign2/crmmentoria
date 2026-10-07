@@ -226,6 +226,623 @@ export default function DashboardPage() {
     }
   };
 
+  // Find current mentee info if logged as Cliente or simulating
+  const currentMentee = useMemo(() => {
+    if (!currentUser) return members[0] || INITIAL_MEMBERS[0];
+    const found = members.find(
+      (m) =>
+        (m.email && m.email.toLowerCase() === currentUser.email?.toLowerCase()) ||
+        (m.name && m.name.toLowerCase() === currentUser.name?.toLowerCase()) ||
+        (currentUser.id && m.id === currentUser.id)
+    );
+    return found || members[0] || INITIAL_MEMBERS[0];
+  }, [members, currentUser]);
+
+  // Mentee interactive weekly sprint goals
+  const [menteeQuickGoals, setMenteeQuickGoals] = useState<
+    Array<{ id: string; title: string; category: string; xp: number; done: boolean; deadline: string }>
+  >([
+    { id: 'mq1', title: 'Gravar 3 novos criativos de vendas de alta conversão', category: 'Tráfego', xp: 200, done: true, deadline: 'Esta Semana' },
+    { id: 'mq2', title: 'Estruturar script de qualificação de leads com SDR', category: 'Comercial', xp: 350, done: true, deadline: 'Esta Semana' },
+    { id: 'mq3', title: 'Testar e validar nova oferta de Upsell para base ativa', category: 'Oferta', xp: 250, done: false, deadline: 'Próxima Sexta' },
+    { id: 'mq4', title: 'Documentar fluxo de Onboarding no Notion / CRM', category: 'CS / LTV', xp: 150, done: false, deadline: 'Em 10 dias' },
+  ]);
+
+  const toggleMenteeGoal = (id: string) => {
+    setMenteeQuickGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, done: !g.done } : g))
+    );
+    showToast('Meta atualizada! XP computado no seu histórico.');
+  };
+
+  // ==========================================
+  // VIEW: VISÃO EXCLUSIVA DO MENTORADO (CLIENTE)
+  // ==========================================
+  if (currentRole === 'Cliente') {
+    const completedGoalsCount = menteeQuickGoals.filter((g) => g.done).length;
+    const menteeGoalsXp = menteeQuickGoals.filter((g) => g.done).reduce((acc, g) => acc + g.xp, 1450);
+    const menteeProgressPct = Math.round((completedGoalsCount / menteeQuickGoals.length) * 100);
+
+    return (
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+        {/* Toast */}
+        {toastMsg && (
+          <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 duration-300">
+            <div className="px-4 py-3 rounded-2xl bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 shadow-2xl flex items-center gap-3 text-xs font-bold">
+              <CheckCircle2 size={16} />
+              <span>{toastMsg.text}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Hero Header Banner do Mentorado */}
+        <Card
+          className="relative overflow-hidden p-6 sm:p-8 border transition-all shadow-2xl"
+          style={{
+            backgroundColor: activePalette.tokens.surface,
+            borderColor: activePalette.tokens.surfaceBorder,
+          }}
+        >
+          <div
+            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl -z-10 pointer-events-none opacity-20"
+            style={{ backgroundColor: activePalette.tokens.primary }}
+          />
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="relative shrink-0">
+                {currentMentee.coverImage || currentMentee.avatar ? (
+                  <img
+                    src={currentMentee.coverImage || currentMentee.avatar}
+                    alt={currentMentee.name}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 shadow-xl"
+                    style={{ borderColor: activePalette.tokens.primary }}
+                  />
+                ) : (
+                  <div
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl font-black text-2xl sm:text-3xl flex items-center justify-center shadow-xl border-2"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.primary,
+                    }}
+                  >
+                    {(currentMentee.name || currentUser.name || 'M').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="absolute -bottom-1 -right-1 text-base" title="Mentorado Oficial">
+                  ⚡
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="default" className="py-0.5 px-2.5 text-[10px] font-black uppercase">
+                    ⭐ Mentorado Ativo • Ciclo de Aceleração 2026
+                  </Badge>
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                    style={{
+                      backgroundColor: activePalette.tokens.badgeBg,
+                      color: activePalette.tokens.primary,
+                      borderColor: activePalette.tokens.badgeBorder,
+                    }}
+                  >
+                    Nível Black Mentor
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-3xl font-black text-slate-100 tracking-tight">
+                  Olá, <span className="theme-gradient-text">{currentMentee.name || currentUser.name}</span>! 🚀
+                </h1>
+                <p className={`text-xs sm:text-sm ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {currentMentee.companyName || currentMentee.tradeName || 'Empresa em Escala'} •{' '}
+                  <span style={{ color: activePalette.tokens.primary }} className="font-semibold">
+                    {currentMentee.specialty || 'Empreendedorismo de Alta Performance'}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Portal & Meet CTAs */}
+            <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+              <Link
+                href="/portal"
+                className="px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg hover:scale-105 transition-all"
+                style={{
+                  backgroundColor: activePalette.tokens.primary,
+                  color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                  boxShadow: `0 4px 15px ${activePalette.tokens.glow}`,
+                }}
+              >
+                <Target size={15} />
+                <span>Abrir Meu Portal 360°</span>
+              </Link>
+
+              <button
+                onClick={() => window.open('https://meet.google.com/scalementors', '_blank')}
+                className="px-4 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-emerald-500/40 text-emerald-400 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+              >
+                <Zap size={14} className="animate-pulse" />
+                <span>Sala Google Meet</span>
+              </button>
+            </div>
+          </div>
+
+          {/* XP & Cycle Progress */}
+          <div className="mt-6 pt-4 border-t border-[#1F293D] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="font-mono font-bold" style={{ color: activePalette.tokens.primary }}>
+                {menteeGoalsXp} XP Acumulado
+              </span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400">Patente Atual: Diamante (Próxima: Black Rocket)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">Progresso do Sprint Semanal:</span>
+              <span className="font-bold text-emerald-400">{menteeProgressPct}% Concluído</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 4 Cards de Indicadores do Mentorado */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* 1. Próxima Mentoria Ao Vivo */}
+          <Card
+            className="p-5 relative overflow-hidden transition-all flex flex-col justify-between space-y-3"
+            style={{
+              backgroundColor: activePalette.tokens.surface,
+              borderColor: activePalette.tokens.primary + '50',
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Próxima Mentoria Ao Vivo
+                </span>
+                <div className="text-base font-black text-slate-100 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                  <span>Quinta, 19:30</span>
+                </div>
+                <p className="text-[11px] text-slate-400 line-clamp-1">Hotseat & Análise de Funil</p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                style={{
+                  backgroundColor: activePalette.tokens.badgeBg,
+                  color: activePalette.tokens.primary,
+                  borderColor: activePalette.tokens.badgeBorder,
+                }}
+              >
+                <Calendar size={18} />
+              </div>
+            </div>
+
+            <button
+              onClick={() => window.open('https://meet.google.com/scalementors', '_blank')}
+              className="w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+              style={{
+                backgroundColor: activePalette.tokens.badgeBg,
+                color: activePalette.tokens.primary,
+                border: `1px solid ${activePalette.tokens.badgeBorder}`,
+              }}
+            >
+              <ExternalLink size={13} />
+              <span>Acessar Sala ao Vivo</span>
+            </button>
+          </Card>
+
+          {/* 2. Metas & Entregáveis */}
+          <Card
+            className="p-5 transition-all flex flex-col justify-between space-y-3"
+            style={{
+              backgroundColor: activePalette.tokens.surface,
+              borderColor: activePalette.tokens.surfaceBorder,
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Metas da Sprint
+                </span>
+                <div className="text-xl font-black text-slate-100 font-mono">
+                  {completedGoalsCount} / {menteeQuickGoals.length}{' '}
+                  <span className="text-xs font-sans text-emerald-400">({menteeProgressPct}%)</span>
+                </div>
+                <p className="text-[11px] text-slate-400">+{completedGoalsCount * 250} XP Conquistados</p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                style={{
+                  backgroundColor: activePalette.tokens.badgeBg,
+                  color: activePalette.tokens.primary,
+                  borderColor: activePalette.tokens.badgeBorder,
+                }}
+              >
+                <Target size={18} />
+              </div>
+            </div>
+
+            <Link
+              href="/portal"
+              className="w-full py-2 rounded-xl text-xs font-bold bg-[#0B0F17] hover:bg-[#1E293B] border border-[#1F293D] text-slate-200 transition-all flex items-center justify-center gap-1.5"
+            >
+              <span>Gerenciar Metas</span>
+              <ChevronRight size={13} />
+            </Link>
+          </Card>
+
+          {/* 3. Faturamento vs Meta */}
+          <Card
+            className="p-5 transition-all flex flex-col justify-between space-y-3"
+            style={{
+              backgroundColor: activePalette.tokens.surface,
+              borderColor: activePalette.tokens.surfaceBorder,
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Meu Faturamento Atual
+                </span>
+                <div className="text-xl font-black text-emerald-400 font-mono">
+                  {currentMentee.monthlyRevenue || 'R$ 80.000,00'}
+                </div>
+                <p className="text-[11px] text-slate-400">Meta: R$ 150.000,00/mês</p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                style={{
+                  backgroundColor: activePalette.tokens.badgeBg,
+                  color: activePalette.tokens.primary,
+                  borderColor: activePalette.tokens.badgeBorder,
+                }}
+              >
+                <TrendingUp size={18} />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="w-full h-1.5 bg-[#0B0F17] rounded-full overflow-hidden border border-[#1F293D]">
+                <div className="h-full bg-emerald-400 rounded-full" style={{ width: '55%' }} />
+              </div>
+              <span className="text-[10px] text-slate-500 block text-right font-mono">55% da Meta do Ciclo</span>
+            </div>
+          </Card>
+
+          {/* 4. Academy & Aulas */}
+          <Card
+            className="p-5 transition-all flex flex-col justify-between space-y-3"
+            style={{
+              backgroundColor: activePalette.tokens.surface,
+              borderColor: activePalette.tokens.surfaceBorder,
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Academy & Playbooks
+                </span>
+                <div className="text-xl font-black text-slate-100 font-mono">
+                  14 Aulas <span className="text-xs text-slate-400 font-sans">(68%)</span>
+                </div>
+                <p className="text-[11px] text-slate-400">Módulo: Máquina Comercial</p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                style={{
+                  backgroundColor: activePalette.tokens.badgeBg,
+                  color: activePalette.tokens.primary,
+                  borderColor: activePalette.tokens.badgeBorder,
+                }}
+              >
+                <BookOpen size={18} />
+              </div>
+            </div>
+
+            <Link
+              href="/academy"
+              className="w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              style={{
+                backgroundColor: activePalette.tokens.primary,
+                color: isLightMode ? '#FFFFFF' : '#0B0F17',
+              }}
+            >
+              <span>Continuar Aula</span>
+              <ArrowUpRight size={13} />
+            </Link>
+          </Card>
+        </div>
+
+        {/* Duas Colunas: Minhas Metas da Semana (Checklist) + Próximas Imersões & Central VIP */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Coluna Esquerda: Minhas Metas da Semana */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Target size={18} style={{ color: activePalette.tokens.primary }} />
+                <span>Minhas Metas & Entregáveis Prioritários</span>
+              </h2>
+              <Link
+                href="/portal"
+                className="text-xs font-bold hover:underline"
+                style={{ color: activePalette.tokens.primary }}
+              >
+                Ver Todas as Metas
+              </Link>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-[#111728]/80 border border-[#1F293D] space-y-3 shadow-xl">
+              {menteeQuickGoals.map((goal) => (
+                <div
+                  key={goal.id}
+                  onClick={() => toggleMenteeGoal(goal.id)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    goal.done
+                      ? 'bg-[#0B0F17]/50 border-emerald-500/30'
+                      : 'bg-[#0B0F17] border-[#1F293D] hover:border-slate-500 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
+                        goal.done
+                          ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                          : 'bg-transparent border-slate-600'
+                      }`}
+                    >
+                      {goal.done && <Check size={12} className="font-bold" />}
+                    </div>
+                    <div>
+                      <span
+                        className={`text-xs font-bold ${
+                          goal.done ? 'text-slate-400 line-through' : 'text-slate-100'
+                        }`}
+                      >
+                        {goal.title}
+                      </span>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                        <span className="font-semibold text-slate-400">{goal.category}</span>
+                        <span>•</span>
+                        <span>Prazo: {goal.deadline}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    className="font-mono text-xs font-black shrink-0"
+                    style={{ color: activePalette.tokens.primary }}
+                  >
+                    +{goal.xp} XP
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Coluna Direita: Próximos Encontros & Suporte VIP */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Calendar size={18} style={{ color: activePalette.tokens.primary }} />
+                <span>Próximas Imersões</span>
+              </h2>
+              <Link
+                href="/events"
+                className="text-xs font-bold hover:underline"
+                style={{ color: activePalette.tokens.primary }}
+              >
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {events.slice(0, 2).map((event) => (
+                <div
+                  key={event.id}
+                  className="p-4 rounded-2xl bg-[#111728]/90 border border-[#1F293D] space-y-2 hover:border-slate-600 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-extrabold text-slate-100 leading-tight">
+                      {event.title}
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                      Confirmado
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>📍 {event.location}</span>
+                    <span className="font-bold text-slate-300">
+                      {new Date(event.date).toLocaleDateString('pt-BR')} às {event.time}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Suporte VIP / WhatsApp do Mentor */}
+              <div
+                className="p-4 rounded-2xl border space-y-2.5 text-center"
+                style={{
+                  backgroundColor: activePalette.tokens.surface,
+                  borderColor: activePalette.tokens.primary + '40',
+                }}
+              >
+                <div className="text-xs font-bold text-slate-200">
+                  Precisa de Ajuda ou Validação Rápida?
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Fale diretamente com o seu Mentor e time de CS pelo canal prioritário.
+                </p>
+                <button
+                  onClick={() => window.open('https://wa.me/5511995302672?text=Ol%C3%A1%2C%20sou%20mentorado%20Rocket%20Club%20e%20gostaria%20de%20suporte.', '_blank')}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-black transition-all flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle size={14} />
+                  <span>Linha Direta WhatsApp VIP</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Birthday Block (Trimestral) para Networking */}
+        <Card
+          className="p-5 sm:p-6 space-y-5 bg-gradient-to-b from-[#131926] to-[#0B0F17]"
+          style={{ borderColor: activePalette.tokens.primary + '30' }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1F293D]">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center border"
+                style={{
+                  backgroundColor: activePalette.tokens.badgeBg,
+                  color: activePalette.tokens.primary,
+                  borderColor: activePalette.tokens.badgeBorder,
+                }}
+              >
+                <Gift size={18} />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <span>Mural de Aniversariantes do Clube</span>
+                  <Badge variant="default" className="text-[10px]">
+                    Networking
+                  </Badge>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Felicite seus colegas de mentoria e fortaleça conexões no ecossistema Rocket Club.
+                </p>
+              </div>
+            </div>
+
+            {/* 3-Month Selector Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-[#0B0F17] rounded-xl border border-[#1F293D] self-start sm:self-auto overflow-x-auto">
+              {targetMonths.map((tab, idx) => (
+                <button
+                  key={tab.monthIndex}
+                  onClick={() => setSelectedMonthTab(idx)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                    selectedMonthTab === idx
+                      ? 'shadow-md font-extrabold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-[#131926]'
+                  }`}
+                  style={
+                    selectedMonthTab === idx
+                      ? {
+                          backgroundColor: activePalette.tokens.primary,
+                          color: isLightMode ? '#FFFFFF' : '#0B0F17',
+                        }
+                      : {}
+                  }
+                >
+                  <span>{tab.name}</span>
+                  {tab.isCurrent && (
+                    <span
+                      className="text-[9px] px-1 py-0.2 rounded-full font-black opacity-80"
+                      style={{
+                        backgroundColor: isLightMode ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
+                      }}
+                    >
+                      Atual
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Birthday Members List */}
+          {currentMonthBirthdays.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-[#0B0F17] border border-[#1F293D] text-center space-y-2">
+              <PartyPopper size={32} className="mx-auto opacity-50" style={{ color: activePalette.tokens.primary }} />
+              <p className="text-sm font-semibold text-slate-300">
+                Nenhum aniversariante cadastrado em {targetMonths[selectedMonthTab]?.name}.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+              {currentMonthBirthdays.map((member) => (
+                <Card
+                  key={member.id}
+                  className="p-4 bg-[#0B0F17]/80 hover:bg-[#0B0F17] border-[#1F293D] transition-all flex flex-col justify-between space-y-3 group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-2xl font-bold flex items-center justify-center text-base shadow border overflow-hidden shrink-0"
+                        style={{
+                          backgroundColor: activePalette.tokens.badgeBg,
+                          color: activePalette.tokens.primary,
+                          borderColor: activePalette.tokens.badgeBorder,
+                        }}
+                      >
+                        {member.avatar ? (
+                          <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          member.name.charAt(0)
+                        )}
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <h3 className="text-sm font-bold text-slate-100 transition-colors line-clamp-1">
+                          {member.name}
+                        </h3>
+                        <p className="text-xs text-slate-400 line-clamp-1">{member.companyName}</p>
+                        <span className="text-[10px] text-slate-500 block">{member.specialty}</span>
+                      </div>
+                    </div>
+
+                    {/* Day Badge */}
+                    <div
+                      className="px-2.5 py-1 rounded-xl text-center shrink-0 border"
+                      style={{
+                        backgroundColor: activePalette.tokens.badgeBg,
+                        color: activePalette.tokens.primary,
+                        borderColor: activePalette.tokens.badgeBorder,
+                      }}
+                    >
+                      <span className="text-[10px] font-bold uppercase block">{member.monthShort}</span>
+                      <span className="text-base font-black leading-none">{member.day}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-[#1F293D] flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleOpenBirthdayCard(member)}
+                      className="flex-1 py-1.5 px-2.5 rounded-lg border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
+                      style={{
+                        backgroundColor: activePalette.tokens.badgeBg,
+                        color: activePalette.tokens.primary,
+                        borderColor: activePalette.tokens.badgeBorder,
+                      }}
+                    >
+                      <Sparkles size={13} />
+                      <span>Ver Cartão Comemorativo</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenBirthdayCard(member)}
+                      className="py-1.5 px-3 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition-all flex items-center justify-center gap-1 shrink-0"
+                    >
+                      <MessageCircle size={13} />
+                      <span>Parabenizar</span>
+                    </button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Official Luxury Birthday Card Flyer Modal */}
+        <BirthdayCardModal
+          member={selectedBirthdayMember}
+          isOpen={Boolean(selectedBirthdayMember)}
+          onClose={() => setSelectedBirthdayMember(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Toast */}
@@ -267,10 +884,6 @@ export default function DashboardPage() {
               ) : currentRole === 'Editor' ? (
                 <>
                   Central de <span className="theme-gradient-text">Conteúdo & Academy</span> 📝
-                </>
-              ) : currentRole === 'Cliente' ? (
-                <>
-                  Portal do <span className="theme-gradient-text">Mentorado VIP</span> 🚀
                 </>
               ) : (
                 <>

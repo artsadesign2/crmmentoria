@@ -36,6 +36,7 @@ import {
   MdVisibility,
   MdVisibilityOff,
   MdHowToReg,
+  MdRocketLaunch,
 } from 'react-icons/md';
 import { DEFAULT_TENANT } from '@/lib/tenant';
 import { useNotifications } from '@/lib/notification-context';
@@ -49,6 +50,7 @@ import { MenuToggle } from '@/components/menu-toggle';
 import { toast } from '@/lib/toast-context';
 import { ROLE_HIERARCHIES, UserRole } from '@/lib/permissions';
 import { PasswordStrengthMeter } from '@/components/password-strength-meter';
+import { Member, INITIAL_MEMBERS } from '@/lib/mock-data';
 
 interface TopbarProps {
   onOpenCommandPalette: () => void;
@@ -57,7 +59,7 @@ interface TopbarProps {
 
 export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) {
   const tenant = DEFAULT_TENANT;
-  const { currentUser, currentRole, switchRoleSimulation, updateUser, logout } = useAuth();
+  const { currentUser, currentRole, isMaster, switchRoleSimulation, switchMenteeSimulation, updateUser, logout } = useAuth();
   const { isLightMode, activePalette } = useTheme();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, clearAll } =
@@ -66,6 +68,10 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedSector, setSelectedSector] = useState<string>('TODOS');
+
+  const [membersList, setMembersList] = useState<Member[]>(INITIAL_MEMBERS);
+  const [menteeSearchQuery, setMenteeSearchQuery] = useState('');
+  const [isSimulatingLoading, setIsSimulatingLoading] = useState(false);
 
   const [profileName, setProfileName] = useState(currentUser.name);
   const [profileEmail, setProfileEmail] = useState(currentUser.email);
@@ -83,7 +89,18 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
     try {
       const savedName = localStorage.getItem('rocket_club_company_tradename');
       if (savedName) setTenantName(savedName);
+      const cachedMembers = localStorage.getItem('rocket_club_cached_members');
+      if (cachedMembers) setMembersList(JSON.parse(cachedMembers));
     } catch (e) {}
+
+    fetch('/api/members')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && Array.isArray(data.members) && data.members.length > 0) {
+          setMembersList(data.members);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -218,8 +235,24 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
         </div>
       </div>
 
-      {/* Right Actions: Command Palette, Notifications, User Profile & Logout */}
+      {/* Right Actions: Command Palette, Mentee Mode, Notifications, User Profile & Logout */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Quick Mentee View Trigger for Master */}
+        {isMaster && (
+          <button
+            onClick={() => switchMenteeSimulation()}
+            className={`min-h-[44px] px-3 sm:py-2 sm:min-h-0 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all shadow-sm ${
+              isLightMode
+                ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border-amber-500/30'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/40'
+            }`}
+            title="Acessar com a Visão do Mentorado para Manutenção"
+          >
+            <MdRocketLaunch size={15} className="text-amber-400 shrink-0" />
+            <span className="hidden md:inline">Visão do Mentorado</span>
+          </button>
+        )}
+
         {/* Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}
@@ -581,6 +614,108 @@ export function Topbar({ onOpenCommandPalette, onOpenMobileMenu }: TopbarProps) 
               })}
             </div>
           </div>
+
+          {/* Mentee Impersonation & Maintenance Box (Master Only) */}
+          {isMaster && (
+            <div
+              className={`p-4 rounded-2xl border space-y-3 ${
+                isLightMode ? 'bg-amber-50/70 border-amber-200' : 'bg-amber-950/20 border-amber-500/30'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                    <MdRocketLaunch size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-300">
+                      Visão do Mentorado & Manutenção
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      Acesse a experiência exata do aluno ou preste manutenção nas metas e portal
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={isSimulatingLoading}
+                  onClick={async () => {
+                    setIsSimulatingLoading(true);
+                    await switchMenteeSimulation();
+                    setIsSimulatingLoading(false);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md hover:scale-105 transition-all flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  <MdVisibility size={15} />
+                  <span>Acessar Modo Mentorado</span>
+                </button>
+              </div>
+
+              {/* Mentee Quick Picker */}
+              <div className="space-y-2 pt-2.5 border-t border-amber-500/20">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-slate-300">Ou logar como mentorado específico:</span>
+                  <span className="text-[10px] text-amber-400/80 font-bold">{membersList.length} cadastrados</span>
+                </div>
+
+                <div className="relative">
+                  <MdSearch size={15} className="absolute left-2.5 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar mentorado por nome ou empresa..."
+                    value={menteeSearchQuery}
+                    onChange={(e) => setMenteeSearchQuery(e.target.value)}
+                    className={`w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border focus:outline-none ${
+                      isLightMode ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0B0F17] border-[#1F293D] text-slate-100'
+                    }`}
+                  />
+                </div>
+
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                  {membersList
+                    .filter((m) =>
+                      m.name.toLowerCase().includes(menteeSearchQuery.toLowerCase()) ||
+                      (m.companyName && m.companyName.toLowerCase().includes(menteeSearchQuery.toLowerCase()))
+                    )
+                    .slice(0, 8)
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        disabled={isSimulatingLoading}
+                        onClick={async () => {
+                          setIsSimulatingLoading(true);
+                          await switchMenteeSimulation(m.id);
+                          setIsSimulatingLoading(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left border transition-all ${
+                          isLightMode
+                            ? 'bg-white hover:bg-amber-100/50 border-slate-200 text-slate-800'
+                            : 'bg-[#111728] hover:bg-amber-950/40 border-[#1F293D] text-slate-200 hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black flex items-center justify-center shrink-0 border border-amber-500/30 overflow-hidden">
+                            {m.avatar || m.coverImage ? (
+                              <img src={m.avatar || m.coverImage} alt={m.name} className="w-full h-full object-cover" />
+                            ) : (
+                              m.name.charAt(0)
+                            )}
+                          </div>
+                          <div className="truncate">
+                            <div className="text-xs font-bold truncate text-slate-100">{m.name}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{m.companyName || m.specialty || 'Mentorado Rocket Club'}</div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-amber-300 font-bold px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30 shrink-0 ml-2 hover:bg-amber-500 hover:text-slate-950 transition-colors">
+                          Logar ➔
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Profile Edit Form */}
           <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">

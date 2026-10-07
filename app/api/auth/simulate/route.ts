@@ -41,25 +41,117 @@ export const POST = withAuth(async (request: Request) => {
   const body = await request.json().catch(() => ({}));
   const role = body.role as UserRole | undefined;
   const userId = typeof body.userId === 'string' ? body.userId : undefined;
+  const memberId = typeof body.memberId === 'string' ? body.memberId : undefined;
 
-  if (!userId && (!role || !VALID_ROLES.includes(role))) {
+  let targetUser = null;
+
+  // 1. Simulação direcionada por memberId (da tabela de mentorados)
+  if (memberId) {
+    const member = await prisma.member.findUnique({
+      where: { id: memberId },
+    });
+
+    if (!member) {
+      return NextResponse.json(
+        { ok: false, error: 'Mentorado não encontrado.' },
+        { status: 404 }
+      );
+    }
+
+    // Busca se já existe um usuário com esse email ou cria um vinculado
+    const memberEmail = member.email && member.email.includes('@')
+      ? member.email.trim().toLowerCase()
+      : `mentorado.${member.id.slice(0, 8)}@rocketclub.com.br`;
+
+    targetUser = await prisma.user.findFirst({
+      where: {
+        organizationId: session.organizationId,
+        email: memberEmail,
+      },
+    });
+
+    if (!targetUser) {
+      targetUser = await prisma.user.create({
+        data: {
+          organizationId: session.organizationId,
+          name: member.name,
+          email: memberEmail,
+          passwordHash: '$2a$10$e7xQ7gY9fGqQk7x6bS9/8.vX57n47sW8X1v9K2s.Qk3uYq9w1v8X2', // dummy bcrypt hash
+          role: 'CLIENTE',
+          phone: member.phone || null,
+          avatarUrl: member.cover_image || null,
+          status: 'ATIVO',
+        },
+      });
+    }
+  } else if (userId) {
+    // 2. Simulação direcionada por userId
+    targetUser = await prisma.user.findFirst({
+      where: {
+        organizationId: session.organizationId,
+        id: userId,
+        status: 'ATIVO',
+        NOT: { id: session.userId },
+      },
+    });
+  } else if (role && VALID_ROLES.includes(role)) {
+    // 3. Simulação por papel (ex: 'Cliente', 'Administrador', etc.)
+    const dbRole = labelToRole(role);
+    targetUser = await prisma.user.findFirst({
+      where: {
+        organizationId: session.organizationId,
+        role: dbRole,
+        status: 'ATIVO',
+        NOT: { id: session.userId },
+      },
+    });
+
+    // Se pediu 'Cliente' e ainda não havia nenhum usuário cadastrado com esse papel,
+    // busca o primeiro mentorado da tabela Member ou cria um perfil demo ativo.
+    if (!targetUser && role === 'Cliente') {
+      const firstMember = await prisma.member.findFirst({
+        orderBy: { created_at: 'asc' },
+      });
+
+      if (firstMember) {
+        const email = firstMember.email && firstMember.email.includes('@')
+          ? firstMember.email.trim().toLowerCase()
+          : `mentorado.${firstMember.id.slice(0, 8)}@rocketclub.com.br`;
+
+        targetUser = await prisma.user.create({
+          data: {
+            organizationId: session.organizationId,
+            name: firstMember.name,
+            email,
+            passwordHash: '$2a$10$e7xQ7gY9fGqQk7x6bS9/8.vX57n47sW8X1v9K2s.Qk3uYq9w1v8X2',
+            role: 'CLIENTE',
+            phone: firstMember.phone || null,
+            avatarUrl: firstMember.cover_image || null,
+            status: 'ATIVO',
+          },
+        });
+      } else {
+        targetUser = await prisma.user.create({
+          data: {
+            organizationId: session.organizationId,
+            name: 'Carlos Eduardo Silva (Mentorado VIP)',
+            email: 'carlos.mentorado@rocketclub.com.br',
+            passwordHash: '$2a$10$e7xQ7gY9fGqQk7x6bS9/8.vX57n47sW8X1v9K2s.Qk3uYq9w1v8X2',
+            role: 'CLIENTE',
+            phone: '(11) 98765-4321',
+            status: 'ATIVO',
+          },
+        });
+      }
+    }
+  } else {
     return NextResponse.json(
-      { ok: false, error: 'Informe um papel válido ou o id do usuário a simular.' },
+      { ok: false, error: 'Informe um papel válido, userId ou memberId a simular.' },
       { status: 400 }
     );
   }
 
-  // Sempre escopado à organização da sessão: não se simula usuário de outro tenant.
-  const target = await prisma.user.findFirst({
-    where: {
-      organizationId: session.organizationId,
-      status: 'ATIVO',
-      NOT: { id: session.userId },
-      ...(userId ? { id: userId } : { role: labelToRole(role as UserRole) }),
-    },
-  });
-
-  if (!target) {
+  if (!targetUser) {
     return NextResponse.json(
       {
         ok: false,
@@ -73,9 +165,9 @@ export const POST = withAuth(async (request: Request) => {
 
   const token = await signSession(
     {
-      userId: target.id,
-      organizationId: target.organizationId,
-      role: target.role as DbRole,
+      userId: targetUser.id,
+      organizationId: targetUser.organizationId,
+      role: targetUser.role as DbRole,
       simulatedBy: session.userId,
     },
     SIMULATION_MAX_AGE
@@ -83,8 +175,9 @@ export const POST = withAuth(async (request: Request) => {
 
   const response = NextResponse.json({
     ok: true,
-    simulating: roleToLabel(target.role as DbRole),
-    as: target.name,
+    simulating: roleToLabel(targetUser.role as DbRole),
+    as: targetUser.name,
+    userId: targetUser.id,
   });
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(SIMULATION_MAX_AGE));
   return response;

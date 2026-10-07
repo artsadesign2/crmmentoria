@@ -55,6 +55,7 @@ import { Copy, CheckCheck, Bot, Brain, TrendingUp, AlertOctagon, HelpCircle, Fil
 import { DealCheckoutModal } from '@/components/payments/deal-checkout-modal';
 import { ContractSignModal } from '@/components/contracts/contract-sign-modal';
 import { GamificationBadgeList } from '@/components/gamification/gamification-badge-list';
+import { useAuth } from '@/lib/auth-context';
 
 interface MenteeSheetProps {
   member: (Member & { excludeFromBook?: boolean }) | null;
@@ -76,6 +77,7 @@ export function MenteeSheet({
   onToggleBook,
 }: MenteeSheetProps) {
   const { isLightMode, activePalette } = useTheme();
+  const { isMaster, switchMenteeSimulation } = useAuth();
   const [formData, setFormData] = useState<Partial<Member & { excludeFromBook?: boolean }>>({});
   const [activeTab, setActiveTab] = useState<'profile' | 'contacts' | 'method' | 'achievements' | 'personal' | 'notes'>('profile');
   const [isSaving, setIsSaving] = useState(false);
@@ -382,6 +384,20 @@ export function MenteeSheet({
               <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400 flex items-center gap-1 mr-1">
                 <CheckCircle2 size={13} /> Salvo!
               </span>
+            )}
+
+            {isMaster && (
+              <button
+                type="button"
+                onClick={() => {
+                  void switchMenteeSimulation(member.id);
+                }}
+                className="p-2 sm:p-2.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 transition-all hover:scale-105 flex items-center gap-1.5 shadow-md"
+                title="Logar no sistema com a visão deste mentorado"
+              >
+                <Eye size={15} />
+                <span className="text-[11px] font-bold hidden sm:inline">Ver como Mentorado</span>
+              </button>
             )}
 
             <button

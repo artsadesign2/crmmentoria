@@ -59,10 +59,12 @@ import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 import { MenteeSheet } from '@/components/mentee-sheet';
 import { maskPhone } from '@/lib/masks';
 import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast-context';
 
 export default function MentoradosPage() {
   const { isLightMode, activePalette } = useTheme();
+  const { isMaster, currentRole, switchMenteeSimulation } = useAuth();
   const [members, setMembers] = useState<(Member & { excludeFromBook?: boolean })[]>(() =>
     INITIAL_MEMBERS.map((m) => ({ ...m, excludeFromBook: false }))
   );
@@ -423,6 +425,169 @@ export default function MentoradosPage() {
     window.open(`https://wa.me/55${cleanNumber}?text=${text}`, '_blank');
   };
 
+  if (currentRole === 'Cliente') {
+    return (
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+        {/* Header da Comunidade */}
+        <div
+          className="p-6 sm:p-8 rounded-3xl border relative overflow-hidden shadow-2xl"
+          style={{
+            backgroundColor: activePalette.tokens.surface,
+            borderColor: activePalette.tokens.surfaceBorder,
+          }}
+        >
+          <div
+            className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-20 pointer-events-none"
+            style={{ backgroundColor: activePalette.tokens.primary }}
+          />
+
+          <div className="relative z-10 space-y-3">
+            <Badge variant="default" className="py-1 px-3">
+              <Users size={14} className="mr-1.5" /> Comunidade & Networking Oficial • Rocket Club
+            </Badge>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-100 tracking-tight">
+              Conecte-se com os <span className="theme-gradient-text">Líderes & Mentorados</span>
+            </h1>
+            <p className={`text-xs sm:text-sm max-w-2xl ${isLightMode ? 'text-slate-600' : 'text-slate-400'}`}>
+              Descubra empresários da tripulação Rocket Club, encontre potenciais parceiros, clientes e troque experiências para acelerar seu negócio.
+            </p>
+          </div>
+        </div>
+
+        {/* Busca e Filtros de Networking */}
+        <div className="p-4 rounded-2xl bg-[#111728]/80 border border-[#1F293D] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 w-full">
+            <Search size={16} className="absolute left-3.5 top-3 text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nome, especialidade, nicho ou empresa..."
+              className="w-full bg-[#0B0F17] border border-[#1F293D] rounded-xl pl-10 pr-9 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-yellow-500/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <span className="text-xs font-bold text-slate-400 shrink-0">
+            {filteredMembers.length} mentorados ativos na rede
+          </span>
+        </div>
+
+        {/* Grid de Membros para Networking */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredMembers.map((member) => (
+            <div
+              key={member.id}
+              className="rounded-3xl bg-gradient-to-b from-[#111728]/95 to-[#0D121F]/95 border border-[#1F293D] p-5 shadow-xl hover:border-yellow-500/40 hover:shadow-yellow-500/10 transition-all flex flex-col justify-between space-y-4 group"
+            >
+              {/* Header do Card */}
+              <div className="flex items-start gap-3.5">
+                <div className="relative shrink-0">
+                  {member.coverImage || member.avatar ? (
+                    <img
+                      src={member.coverImage || member.avatar}
+                      alt={member.name}
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-yellow-500/40 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-300 text-slate-950 font-black text-xl flex items-center justify-center shadow-md">
+                      {(member.name || 'M').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-black text-slate-100 group-hover:text-yellow-400 transition-colors truncate">
+                    {member.name}
+                  </h3>
+                  <p className="text-xs font-bold text-yellow-400/90 truncate mt-0.5">
+                    {member.specialty || 'Empreendedorismo'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
+                    <Building size={12} className="text-slate-500" />
+                    <span>{member.tradeName || member.companyName || 'Empresa Própria'}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Bio & Localização */}
+              <div className="space-y-2 py-2 border-y border-[#1F293D]/60 text-xs">
+                {member.residence && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <MapPin size={13} className="text-yellow-400 shrink-0" />
+                    <span>{member.residence}</span>
+                  </div>
+                )}
+                <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                  {member.mainGoal ? `Foco: "${member.mainGoal}"` : 'Membro ativo da mentoria ScaleMentors Rocket Club focado em tração e escala.'}
+                </p>
+              </div>
+
+              {/* Links Sociais e Ação de Conexão */}
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex items-center gap-1 text-slate-400">
+                  {member.instagram && (
+                    <a
+                      href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-lg bg-[#0B0F17] hover:bg-[#1E2840] hover:text-yellow-400 text-slate-400 transition-colors"
+                      title="Instagram"
+                    >
+                      <Instagram size={14} />
+                    </a>
+                  )}
+                  {member.linkedin && (
+                    <a
+                      href={member.linkedin.startsWith('http') ? member.linkedin : `https://linkedin.com/in/${member.linkedin}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-lg bg-[#0B0F17] hover:bg-[#1E2840] hover:text-yellow-400 text-slate-400 transition-colors"
+                      title="LinkedIn"
+                    >
+                      <Linkedin size={14} />
+                    </a>
+                  )}
+                  {member.website && (
+                    <a
+                      href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-lg bg-[#0B0F17] hover:bg-[#1E2840] hover:text-yellow-400 text-slate-400 transition-colors"
+                      title="Website"
+                    >
+                      <Globe size={14} />
+                    </a>
+                  )}
+                </div>
+
+                {member.phone && (
+                  <button
+                    onClick={() => {
+                      const msg = encodeURIComponent(`Olá ${member.name}! Faço parte da mentoria Rocket Club e vi seu perfil na comunidade. Gostaria de me conectar com você! 🚀`);
+                      const cleanPhone = member.phone.replace(/[^\d]/g, '');
+                      window.open(`https://wa.me/${cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`}?text=${msg}`, '_blank');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm"
+                  >
+                    <MessageCircle size={14} />
+                    <span>Conectar</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Toast Notification */}
@@ -778,6 +943,19 @@ export default function MentoradosPage() {
 
                                     {/* Quick Actions */}
                                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                      {isMaster && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void switchMenteeSimulation(member.id);
+                                          }}
+                                          className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 transition-colors"
+                                          title="Logar com a Visão deste Mentorado (Manutenção)"
+                                        >
+                                          <Eye size={13} />
+                                        </button>
+                                      )}
                                       <button
                                         type="button"
                                         onClick={() => setSelectedMember(member)}
@@ -931,6 +1109,20 @@ export default function MentoradosPage() {
                   </span>
 
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {isMaster && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void switchMenteeSimulation(member.id);
+                        }}
+                        className="p-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition-colors"
+                        title="Logar com a Visão deste Mentorado (Manutenção)"
+                      >
+                        <Eye size={15} />
+                      </button>
+                    )}
+
                     {member.phone && (
                       <button
                         type="button"

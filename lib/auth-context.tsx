@@ -27,6 +27,7 @@ interface AuthContextType {
   canAccessModule: (moduleName: keyof RolePermissions) => boolean;
   switchUser: (userId: string) => Promise<ActionResult>;
   switchRoleSimulation: (role: UserRole) => Promise<ActionResult>;
+  switchMenteeSimulation: (memberId?: string) => Promise<ActionResult>;
   addUser: (user: Omit<SystemUser, 'id'>) => Promise<ActionResult>;
   updateUser: (userId: string, updates: Partial<SystemUser>) => Promise<ActionResult>;
   deleteUser: (userId: string) => Promise<ActionResult>;
@@ -220,6 +221,19 @@ export function AuthProvider({
     return result;
   }, []);
 
+  const switchMenteeSimulation = useCallback(async (memberId?: string) => {
+    try {
+      localStorage.removeItem(CACHE_KEY_USER);
+      localStorage.removeItem(CACHE_KEY_PERMS);
+    } catch {}
+    const payload = memberId ? { memberId } : { role: 'Cliente' as UserRole };
+    const result = await postJson('/api/auth/simulate', payload);
+    if (result.success) {
+      window.location.href = '/portal';
+    }
+    return result;
+  }, []);
+
   const exitSimulation = useCallback(async () => {
     try {
       localStorage.removeItem(CACHE_KEY_USER);
@@ -331,6 +345,7 @@ export function AuthProvider({
         canAccessModule,
         switchUser,
         switchRoleSimulation,
+        switchMenteeSimulation,
         addUser,
         updateUser,
         deleteUser,
